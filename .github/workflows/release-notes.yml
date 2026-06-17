@@ -1,0 +1,25 @@
+# 发布工作流：基于 changelogithub 自动生成 GitHub Release 及更新日志
+name: Release Notes
+
+on:
+  push:
+    tags:
+      - 'v*' # 匹配 v 开头的 tag（如 v0.1.0），推送 tag 时自动触发
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      # 拉取代码，fetch-depth: 0 获取完整历史（changelogithub 需要完整 commit 历史来生成更新日志）
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # 安装 pnpm 包管理器（pnpx 命令依赖 pnpm）
+      - uses: pnpm/action-setup@v6
+
+      # 使用 changelogithub 根据 conventional commits 自动生成 Release Notes 并创建 GitHub Release
+      - run: pnpx changelogithub
+        env:
+          # GitHub 自动提供的 token，无需额外配置，用于创建 Release 和访问仓库 API
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,123 @@
+# 手动构建 Windows 应用，支持从 GitHub repo Variables 注入构建元信息（authors / publisher / copyright）
+#
+# ─── 配置 repo Variables（可选）──────────────────────────────────────
+# 入口：仓库 Settings → Secrets and variables → Actions → Variables 标签 → New repository variable
+#       （直链：https://github.com/{owner}/{repo}/settings/variables/actions）
+#
+#   Name            Value 示例                       默认值（未配置时回退）
+#   ──────────────  ──────────────────────────────  ──────────────────────────────────────
+#   APP_AUTHORS     oceangao                         oceangao（也支持 JSON 数组 ["alice","bob"]）
+#   APP_PUBLISHER   oceangao                         oceangao
+#   APP_COPYRIGHT   Copyright (C) 2026 acme          Copyright (C) 2026 oceangao
+#
+#   操作步骤：在 Variables 标签页点击 "New repository variable" → 填入 Name 和 Value → Add variable；
+#             三个变量逐条添加即可。
+#
+# ─── 使用方法 ───────────────────────────────────────────────────────
+# Actions 页面选择 "Build Windows (Custom Config)" → Run workflow 手动触发；
+# 构建产物在本次 workflow 运行页面底部的 Artifacts 区下载（保留 10 天）。
+#
+# 注意：本 workflow 仅在 runner 上临时替换配置文件，不会 commit 回主分支。
+name: Build Windows (Custom Config)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+
+      # 用 repo Variables 临时替换 Cargo.toml 的 authors 与 tauri.conf.json 的 publisher/copyright
+      # 未配置变量时回退到仓库默认值，保证 workflow 任何时候都能跑通
+      - name: Apply custom metadata
+        shell: pwsh
+        env:
+          APP_AUTHORS: ${{ vars.APP_AUTHORS }}
+          APP_PUBLISHER: ${{ vars.APP_PUBLISHER }}
+          APP_COPYRIGHT: ${{ vars.APP_COPYRIGHT }}
+        run: |
+          $authors   = if ($env:APP_AUTHORS)   { $env:APP_AUTHORS }   else { 'oceangao' }
+          $publisher = if ($env:APP_PUBLISHER) { $env:APP_PUBLISHER } else { 'oceangao' }
+          $copyright = if ($env:APP_COPYRIGHT) { $env:APP_COPYRIGHT } else { 'Copyright (C) 2026 oceangao' }
+
+          Write-Host "Applying metadata:"
+          Write-Host "  authors   = $authors"
+          Write-Host "  publisher = $publisher"
+          Write-Host "  copyright = $copyright"
+
+          # --- Cargo.toml: authors ---
+          # JSON 数组输入（["alice", "bob"]）→ 重新格式化为 TOML 数组
+          # 单值输入（alice）→ 包成 ["alice"]
+          if ($authors.TrimStart().StartsWith('[')) {
+            try {
+              $parsed = $authors | ConvertFrom-Json
+              $quoted = @($parsed) | ForEach-Object { '"' + [string]$_ + '"' }
+              $authorsToml = '[' + ($quoted -join ', ') + ']'
+            } catch {
+              $authorsToml = $authors
+            }
+          } else {
+            $authorsToml = '["' + $authors + '"]'
+          }
+          $cargoPath = 'src-tauri/Cargo.toml'
+          $cargo = Get-Content $cargoPath -Raw
+          $cargo = $cargo -replace 'authors\s*=\s*\[[^\]]*\]', "authors = $authorsToml"
+          Set-Content $cargoPath $cargo -NoNewline
+
+          # --- tauri.conf.json: publisher / copyright ---
+          # 用 [regex]::Replace 而非 -replace，避免替换串中的 $ 被当作正则反向引用
+          $tauriPath = 'src-tauri/tauri.conf.json'
+          $tauri = Get-Content $tauriPath -Raw
+          $tauri = [regex]::Replace($tauri, '"publisher":\s*"[^"]*"', "`"publisher`": `"$publisher`"")
+          $tauri = [regex]::Replace($tauri, '"copyright":\s*"[^"]*"', "`"copyright`": `"$copyright`"")
+          Set-Content $tauriPath $tauri -NoNewline
+
+          Write-Host "---- Cargo.toml authors line ----"
+          Select-String -Path $cargoPath -Pattern '^authors' | ForEach-Object { Write-Host $_.Line }
+          Write-Host "---- tauri.conf.json bundle fields ----"
+          Select-String -Path $tauriPath -Pattern '"(publisher|copyright)"' | ForEach-Object { Write-Host $_.Line.Trim() }
+
+      - name: Install app dependencies
+        run: pnpm install
+
+      - name: Build
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tauriScript: pnpm tauri
+          args: ''
+
+      - name: Rename Windows artifact
+        shell: pwsh
+        run: |
+          cd src-tauri/target/release/bundle/nsis
+          Get-ChildItem *.exe | ForEach-Object {
+            $version = if ($_.Name -match '(\d+\.\d+\.\d+)') { $matches[1] } else { '0.0.0' }
+            $newName = "WeHealthTick-${version}-windows-x64-setup.exe"
+            Rename-Item $_.Name $newName
+            Write-Host "Renamed: $($_.Name) -> $newName"
+          }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WeHealthTick-windows-x64-setup
+          path: src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+          retention-days: 10

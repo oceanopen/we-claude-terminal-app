@@ -1,0 +1,31 @@
+{
+  "window.title": "${activeEditorMedium}${separator}${rootName}",
+  // 每次保存的时候自动格式化
+  "editor.formatOnSave": false,
+  // 每次保存的时候将代码按 eslint 格式进行修复
+  "editor.codeActionsOnSave": {
+    // For ESLint
+    "source.fixAll.eslint": "explicit"
+  },
+  // json 文件按 prettier 规范格式化
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  // md 文件按 prettier 规范格式化
+  "[md]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // Enable eslint for all supported languages
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "vue",
+    "html",
+    "css",
+    "less",
+    "scss"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "menu": {
+    "settings": "Settings",
+    "about": "About"
+  },
+  "page": {
+    "title": "Settings"
+  },
+  "row": {
+    "language": "Language",
+    "appearance": "Appearance"
+  },
+  "option": {
+    "followSystem": "Follow system",
+    "light": "Light",
+    "dark": "Dark",
+    "chinese": "中文",
+    "english": "English"
+  },
+  "button": {
+    "reset": "Reset",
+    "cancel": "Cancel",
+    "save": "Save"
+  }
+}
