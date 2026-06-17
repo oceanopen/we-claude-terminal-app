@@ -4393,7 +4393,7 @@ dependencies = [
 
 [[package]]
 name = "we-claude-terminal-monitor"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "log",
  "rusqlite",
