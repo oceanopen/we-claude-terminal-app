@@ -11,7 +11,7 @@
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "tauri": "tauri",
-    "genAppIcons": "tauri icon src/assets/app-icon.svg && rm -rf src-tauri/icons/android && rm -rf src-tauri/icons/ios && cp src-tauri/icons/icon.png src/assets/app-icon.png",
+    "genAppIcons": "tauri icon src/assets/app-icon.svg && rm -rf src-tauri/icons/android && rm -rf src-tauri/icons/ios && cp src-tauri/icons/icon.png src/assets/app-icon.png && cp src/assets/app-icon.svg public/favicon.svg",
     "release": "bumpp"
   },
   "dependencies": {
