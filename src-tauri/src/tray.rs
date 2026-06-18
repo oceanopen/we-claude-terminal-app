@@ -10,6 +10,7 @@ use crate::i18n::{menu_text, resolve, ResolvedLanguage};
 
 /// 已构建的托盘菜单项引用，用于后续动态更新文案。
 struct TrayMenuItems {
+    monitor: MenuItem<tauri::Wry>,
     settings: MenuItem<tauri::Wry>,
     quit: MenuItem<tauri::Wry>,
 }
@@ -28,6 +29,13 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     let lang = current_language(app.handle());
 
+    let monitor_item = MenuItem::with_id(
+        app,
+        "monitor",
+        menu_text(lang, "monitor"),
+        true,
+        None::<&str>,
+    )?;
     let settings_item = MenuItem::with_id(
         app,
         "settings",
@@ -40,6 +48,8 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let menu = Menu::with_items(
         app,
         &[
+            &monitor_item,
+            &PredefinedMenuItem::separator(app)?,
             &settings_item,
             &PredefinedMenuItem::separator(app)?,
             &quit_item,
@@ -52,6 +62,11 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .menu(&menu)
         .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id().as_ref() {
+            "monitor" => {
+                if let Err(e) = crate::monitor::show_monitor_window(app.clone()) {
+                    log::warn!("failed to open monitor window: {e}");
+                }
+            }
             "settings" => {
                 if let Err(e) = crate::settings::show_settings_window(app.clone()) {
                     log::warn!("failed to open settings window: {e}");
@@ -65,6 +80,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .build(app)?;
 
     app.manage(Mutex::new(TrayMenuItems {
+        monitor: monitor_item,
         settings: settings_item,
         quit: quit_item,
     }));
@@ -80,6 +96,7 @@ pub fn refresh_menu_texts(app: &AppHandle) {
         return;
     };
     let lang = current_language(app);
+    let _ = items.monitor.set_text(menu_text(lang, "monitor"));
     let _ = items.settings.set_text(menu_text(lang, "settings"));
     let _ = items.quit.set_text(menu_text(lang, "quit"));
 }

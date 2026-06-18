@@ -3,6 +3,7 @@
   "identifier": "default",
   "description": "enables the default permissions",
   "windows": [
+    "monitor",
     "settings"
   ],
   "permissions": [

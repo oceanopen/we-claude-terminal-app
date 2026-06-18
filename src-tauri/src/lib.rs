@@ -1,5 +1,6 @@
 mod config;
 mod i18n;
+mod monitor;
 mod settings;
 mod tray;
 
@@ -44,6 +45,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             config::get_config,
             config::set_config,
+            monitor::show_monitor_window,
             settings::show_settings_window
         ])
         .run(tauri::generate_context!())

@@ -23,8 +23,10 @@ pub fn resolve(raw: Option<&str>) -> ResolvedLanguage {
 
 pub fn menu_text(lang: ResolvedLanguage, key: &str) -> &'static str {
     match (lang, key) {
+        (ResolvedLanguage::ZhCn, "monitor") => "终端监听",
         (ResolvedLanguage::ZhCn, "settings") => "系统设置",
         (ResolvedLanguage::ZhCn, "quit") => "退出",
+        (ResolvedLanguage::En, "monitor") => "Terminal Monitor",
         (ResolvedLanguage::En, "settings") => "Settings",
         (ResolvedLanguage::En, "quit") => "Quit",
         _ => "",

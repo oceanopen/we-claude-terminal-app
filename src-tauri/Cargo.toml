@@ -26,3 +26,5 @@ tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 sys-locale = "0.3"
+notify = "6"
+dirs = "5"

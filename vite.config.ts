@@ -11,6 +11,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
+        monitor: resolve(__dirname, 'monitor.html'),
         settings: resolve(__dirname, 'settings.html'),
       },
     },
