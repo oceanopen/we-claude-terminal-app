@@ -5,8 +5,8 @@ use tauri::{
     AppHandle, Manager,
 };
 
-use crate::config::{read_config_raw, ConfigState, LANGUAGE_KEY};
-use crate::i18n::{menu_text, resolve, ResolvedLanguage};
+use crate::shared::config::{read_config_raw, ConfigState, LANGUAGE_KEY};
+use crate::shared::i18n::{menu_text, resolve, ResolvedLanguage};
 
 /// 已构建的托盘菜单项引用，用于后续动态更新文案。
 struct TrayMenuItems {

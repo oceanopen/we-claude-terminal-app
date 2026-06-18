@@ -1,6 +1,5 @@
-mod config;
-mod i18n;
 mod monitor;
+mod shared;
 mod settings;
 mod tray;
 
@@ -27,7 +26,7 @@ pub fn run() {
                 )?;
             }
 
-            config::init(app)?;
+            shared::config::init(app)?;
             tray::setup(app)?;
 
             let handle = app.handle().clone();
@@ -35,7 +34,7 @@ pub fn run() {
                 let Ok(value) = serde_json::from_str::<serde_json::Value>(event.payload()) else {
                     return;
                 };
-                if value.get("key").and_then(|v| v.as_str()) == Some(config::LANGUAGE_KEY) {
+                if value.get("key").and_then(|v| v.as_str()) == Some(shared::config::LANGUAGE_KEY) {
                     tray::refresh_menu_texts(&handle);
                 }
             });
@@ -43,8 +42,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            config::get_config,
-            config::set_config,
+            shared::config::get_config,
+            shared::config::set_config,
             monitor::show_monitor_window,
             settings::show_settings_window
         ])
