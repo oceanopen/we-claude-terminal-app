@@ -1,6 +1,9 @@
 mod config;
+mod i18n;
 mod settings;
 mod tray;
+
+use tauri::Listener;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -23,8 +26,18 @@ pub fn run() {
                 )?;
             }
 
-            tray::setup(app)?;
             config::init(app)?;
+            tray::setup(app)?;
+
+            let handle = app.handle().clone();
+            app.listen("config-changed", move |event| {
+                let Ok(value) = serde_json::from_str::<serde_json::Value>(event.payload()) else {
+                    return;
+                };
+                if value.get("key").and_then(|v| v.as_str()) == Some(config::LANGUAGE_KEY) {
+                    tray::refresh_menu_texts(&handle);
+                }
+            });
 
             Ok(())
         })

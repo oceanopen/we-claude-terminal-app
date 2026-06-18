@@ -2,6 +2,8 @@ use rusqlite::{params, Connection, OptionalExtension};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, State};
 
+pub const LANGUAGE_KEY: &str = "language";
+
 pub struct ConfigState(pub Mutex<Connection>);
 
 pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
