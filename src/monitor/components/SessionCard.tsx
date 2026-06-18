@@ -1,4 +1,4 @@
-import type { SessionInfo, SessionStatus } from '../../shared/types/monitor';
+import type { SessionInfo, SessionStatus } from '../../shared/bindings';
 import {
   Button,
   Card,

@@ -3,6 +3,7 @@ use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 use crate::shared::screen::{monitor_window_size, reposition_to_cursor};
 
 #[tauri::command]
+#[specta::specta]
 pub fn show_monitor_window(app: tauri::AppHandle) -> Result<(), String> {
     let monitor_win = match app.get_webview_window("monitor") {
         Some(w) => w,

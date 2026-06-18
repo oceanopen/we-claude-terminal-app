@@ -1,3 +1,4 @@
+import type { ConfigChangedPayload } from './bindings';
 import type { Appearance } from './config';
 import { createTheme, CssBaseline, ThemeProvider } from '@mui/material';
 import { listen } from '@tauri-apps/api/event';
@@ -8,6 +9,7 @@ import {
   DEFAULT_APPEARANCE,
   getConfig,
 } from './config';
+import { EVENT_CONFIG_CHANGED } from './events';
 import { useSystemThemeMode } from './useSystemTheme';
 
 interface Props {
@@ -27,8 +29,8 @@ export default function AppThemeProvider({ children }: Props) {
   }, []);
 
   useEffect(() => {
-    const unlistenPromise = listen<{ key: string; value: string }>(
-      'config-changed',
+    const unlistenPromise = listen<ConfigChangedPayload>(
+      EVENT_CONFIG_CHANGED,
       (e) => {
         if (e.payload.key === APPEARANCE_KEY) {
           const v = e.payload.value;

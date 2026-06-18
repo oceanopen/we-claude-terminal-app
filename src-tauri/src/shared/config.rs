@@ -2,6 +2,8 @@ use rusqlite::{params, Connection, OptionalExtension};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, State};
 
+use crate::shared::types::ConfigChangedPayload;
+
 pub const LANGUAGE_KEY: &str = "language";
 
 pub struct ConfigState(pub Mutex<Connection>);
@@ -48,11 +50,13 @@ pub fn write_config_raw(state: &ConfigState, key: &str, value: &str) -> Result<(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_config(state: State<'_, ConfigState>, key: String) -> Result<Option<String>, String> {
     read_config_raw(&state, &key)
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn set_config(
     app: AppHandle,
     state: State<'_, ConfigState>,
@@ -61,8 +65,8 @@ pub fn set_config(
 ) -> Result<(), String> {
     write_config_raw(&state, &key, &value)?;
     app.emit(
-        "config-changed",
-        serde_json::json!({ "key": key, "value": value }),
+        crate::shared::events::EVENT_CONFIG_CHANGED,
+        ConfigChangedPayload { key, value },
     )
     .map_err(|e| e.to_string())?;
     Ok(())

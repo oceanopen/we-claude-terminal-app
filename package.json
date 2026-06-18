@@ -5,13 +5,15 @@
   "private": false,
   "packageManager": "pnpm@10.18.3",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "pnpm gen:bindings && vite",
+    "build": "pnpm gen:bindings && tsc -b && vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "tauri": "tauri",
+    "gen:bindings": "cargo run --manifest-path src-tauri/Cargo.toml --bin export_bindings",
     "genAppIcons": "tauri icon src/assets/app-icon.svg && rm -rf src-tauri/icons/android && rm -rf src-tauri/icons/ios && cp src-tauri/icons/icon.png src/assets/app-icon.png && cp src/assets/app-icon.svg public/favicon.svg",
+    "verify:bindings": "pnpm gen:bindings && git ls-files --error-unmatch src/shared/bindings.ts && git diff --exit-code src/shared/bindings.ts",
     "release": "bumpp"
   },
   "dependencies": {

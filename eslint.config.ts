@@ -2,7 +2,7 @@ import antfu from '@antfu/eslint-config';
 
 export default await antfu(
   {
-    ignores: ['**/*.yaml', '**/**.yml', 'src-tauri', 'dist', 'node_modules'],
+    ignores: ['**/*.yaml', '**/**.yml', 'src-tauri', 'dist', 'node_modules', 'src/shared/bindings.ts'],
     stylistic: {
       indent: 2,
       quotes: 'single',

@@ -1,4 +1,4 @@
-import type { SessionInfo } from '../../shared/types/monitor';
+import type { SessionInfo } from '../../shared/bindings';
 import { Box } from '@mui/material';
 import EmptyState from './EmptyState';
 import SessionCard from './SessionCard';

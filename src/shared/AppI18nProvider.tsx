@@ -1,3 +1,4 @@
+import type { ConfigChangedPayload } from './bindings';
 import type { Language, ResolvedLanguage } from './config';
 import { listen } from '@tauri-apps/api/event';
 import { useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import {
   getConfig,
   LANGUAGE_KEY,
 } from './config';
+import { EVENT_CONFIG_CHANGED } from './events';
 import i18n from './i18n';
 import { useSystemLanguage } from './useSystemLanguage';
 
@@ -40,8 +42,8 @@ export default function AppI18nProvider({ children }: Props) {
   }, []);
 
   useEffect(() => {
-    const unlistenPromise = listen<{ key: string; value: string }>(
-      'config-changed',
+    const unlistenPromise = listen<ConfigChangedPayload>(
+      EVENT_CONFIG_CHANGED,
       (e) => {
         if (e.payload.key === LANGUAGE_KEY && isLanguage(e.payload.value)) {
           setLanguage(e.payload.value);
