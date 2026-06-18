@@ -1,20 +1,31 @@
-use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
 
-use crate::shared::screen::{monitor_window_size, reposition_to_cursor};
+use crate::shared::screen::{
+    find_monitor_for_tray, ratio_size, work_area_center, DEFAULT_SIZE, MONITOR_RATIO,
+};
 
 #[tauri::command]
 #[specta::specta]
 pub fn show_monitor_window(app: tauri::AppHandle) -> Result<(), String> {
-    let monitor_win = match app.get_webview_window("monitor") {
-        Some(w) => w,
-        None => {
-            let (width, height) = monitor_window_size(&app);
+    // 按 tray.rect() 所在屏算尺寸；探测失败用 DEFAULT_SIZE 兜底，后续 set_position 也跳过。
+    let monitor = find_monitor_for_tray(&app, "tray");
+    let (width, height) = monitor
+        .as_ref()
+        .map(|m| ratio_size(m, MONITOR_RATIO))
+        .unwrap_or(DEFAULT_SIZE);
 
+    let monitor_win = match app.get_webview_window("monitor") {
+        Some(w) => {
+            // 二次唤起：显式重置尺寸，避免窗口实例首次建好后跨分辨率屏固化。
+            let _ = w.set_size(LogicalSize::new(width, height));
+            w
+        }
+        None => {
             let win =
                 WebviewWindowBuilder::new(&app, "monitor", WebviewUrl::App("monitor.html".into()))
                     .title("We Claude Terminal Monitor")
                     .inner_size(width, height)
-                    // 默认在主屏居中；下方 reposition 修正到鼠标所在屏，探测失败保持主屏。
+                    // 默认在主屏居中；下方 set_position 修正到 tray 所在屏，探测失败保持主屏。
                     .center()
                     // 窗口不进任务栏与 Alt+Tab（Windows/Linux），macOS 上为 no-op（Dock 由 ActivationPolicy 控制）。
                     .skip_taskbar(true)
@@ -33,8 +44,11 @@ pub fn show_monitor_window(app: tauri::AppHandle) -> Result<(), String> {
         }
     };
 
-    // 新建和二次唤起都跟随当前鼠标屏重定位；在 show 之前调用，无视觉跳跃。
-    reposition_to_cursor(&monitor_win, &app);
+    // 新建和二次唤起都按 tray 所在屏的 work_area 居中；在 show 之前调用，无视觉跳跃。
+    if let Some(m) = &monitor {
+        let (x, y) = work_area_center(m, width, height);
+        let _ = monitor_win.set_position(LogicalPosition::new(x, y));
+    }
 
     let _ = monitor_win.show();
     let _ = monitor_win.unminimize();
