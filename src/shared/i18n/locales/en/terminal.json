@@ -1,0 +1,23 @@
+{
+  "title": "Terminal Monitor",
+  "empty": {
+    "title": "No active sessions",
+    "desc": "Running Claude Code sessions will appear here"
+  },
+  "status": {
+    "running": "Running",
+    "needsConfirmation": "Needs confirmation",
+    "completed": "Completed"
+  },
+  "action": {
+    "openTerminal": "Open terminal"
+  },
+  "toast": {
+    "unsupported": "{{os}} is not supported yet"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{{minutes}} min ago",
+    "hoursAgo": "{{hours}} h ago"
+  }
+}

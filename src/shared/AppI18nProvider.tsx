@@ -49,7 +49,11 @@ export default function AppI18nProvider({ children }: Props) {
       },
     );
     return () => {
-      unlistenPromise.then(fn => fn());
+      unlistenPromise
+        .then(fn => fn())
+        .catch((err: unknown) => {
+          console.warn('[config-changed] unlisten failed (possible Tauri event race):', err);
+        });
     };
   }, []);
 

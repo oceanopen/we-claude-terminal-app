@@ -1,0 +1,23 @@
+{
+  "title": "终端监听",
+  "empty": {
+    "title": "暂无活跃会话",
+    "desc": "正在运行的 Claude Code 会话将显示在此处"
+  },
+  "status": {
+    "running": "运行中",
+    "needsConfirmation": "待确认",
+    "completed": "已完成"
+  },
+  "action": {
+    "openTerminal": "打开终端"
+  },
+  "toast": {
+    "unsupported": "当前 {{os}} 暂不支持此功能"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "minutesAgo": "{{minutes}} 分钟前",
+    "hoursAgo": "{{hours}} 小时前"
+  }
+}
