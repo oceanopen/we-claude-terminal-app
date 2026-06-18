@@ -1,9 +1,9 @@
+import AppI18nProvider from '@src/shared/AppI18nProvider';
+import AppThemeProvider from '@src/shared/AppThemeProvider';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import AppI18nProvider from '../shared/AppI18nProvider';
-import AppThemeProvider from '../shared/AppThemeProvider';
 import MonitorApp from './MonitorApp';
-import '../settings/index.css';
+import '@src/settings/index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

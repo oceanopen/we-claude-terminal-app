@@ -1,4 +1,4 @@
-import type { SessionInfo } from '../shared/bindings';
+import type { SessionInfo } from '@src/shared/bindings';
 import { Box, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import SessionList from './components/SessionList';

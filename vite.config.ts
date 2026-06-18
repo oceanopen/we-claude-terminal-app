@@ -8,6 +8,11 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@src': resolve(__dirname, 'src'),
+    },
+  },
   build: {
     rollupOptions: {
       input: {

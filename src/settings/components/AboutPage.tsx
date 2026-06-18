@@ -1,8 +1,8 @@
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { Box, Button, Chip, Typography } from '@mui/material';
+import appIcon from '@src/assets/app-icon.png';
 import { useTranslation } from 'react-i18next';
-import appIcon from '../../assets/app-icon.png';
 
 declare const __APP_VERSION__: string;
 

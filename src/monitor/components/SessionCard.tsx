@@ -1,4 +1,4 @@
-import type { SessionInfo, SessionStatus } from '../../shared/bindings';
+import type { SessionInfo, SessionStatus } from '@src/shared/bindings';
 import {
   Button,
   Card,

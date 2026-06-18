@@ -1,5 +1,5 @@
 import type { SelectChangeEvent } from '@mui/material/Select';
-import type { Appearance, Language } from '../../shared/config';
+import type { Appearance, Language } from '@src/shared/config';
 import LanguageIcon from '@mui/icons-material/Language';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 import {
@@ -11,8 +11,6 @@ import {
   Select,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
   APPEARANCE_KEY,
   DEFAULT_APPEARANCE,
@@ -20,11 +18,13 @@ import {
   getConfig,
   LANGUAGE_KEY,
   setConfig,
-} from '../../shared/config';
+} from '@src/shared/config';
 import {
   appearanceOptions,
   languageOptions,
-} from '../../shared/settingOption';
+} from '@src/shared/settingOption';
+import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function SettingsPage() {
   const { t } = useTranslation();
