@@ -83,7 +83,7 @@ function AboutPage() {
         </Typography>
         <FavoriteIcon sx={{ fontSize: 12, color: 'error.main' }} />
         <Typography variant="caption" color="text.secondary">
-          {t('about:forHealth')}
+          {t('about:forClaude')}
         </Typography>
       </Box>
     </Box>

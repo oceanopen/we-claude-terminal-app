@@ -1,7 +1,7 @@
 {
-  "subtitle": "健康打卡",
-  "slogan": "久坐提醒 · 强制休息 · 习惯养成",
+  "subtitle": "监听本地 Claude Code 终端运行状态",
+  "slogan": "实时状态 · 一目了然",
   "checkUpdate": "检查更新",
   "madeWith": "Made with",
-  "forHealth": "for your health"
+  "forClaude": "for Claude Code"
 }
