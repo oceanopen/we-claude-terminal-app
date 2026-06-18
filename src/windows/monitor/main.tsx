@@ -3,7 +3,7 @@ import AppThemeProvider from '@src/shared/AppThemeProvider';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import MonitorApp from './MonitorApp';
-import '@src/settings/index.css';
+import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
