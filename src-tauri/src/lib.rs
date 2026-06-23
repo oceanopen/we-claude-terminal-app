@@ -48,6 +48,7 @@ pub fn run() {
             }
 
             shared::config::init(app)?;
+            shared::state::monitor::init(app)?;
             windows::tray::setup(app)?;
 
             specta_builder.mount_events(app);

@@ -28,8 +28,6 @@ pub struct ConfigChangedPayload {
 // ============================================================
 
 /// 终端会话状态。前端 SessionCard 据此切换状态 Chip 配色与文案。
-// 暂无 Rust 命令返回（后端采集未接入），仅经 specta 导出到 bindings.ts 供前端使用。
-#[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize, Type)]
 pub enum SessionStatus {
     Running,
@@ -38,8 +36,6 @@ pub enum SessionStatus {
 }
 
 /// 终端会话快照。MonitorApp 渲染 SessionCard 列表的数据源。
-// 暂无 Rust 命令构造（后端采集未接入），仅经 specta 导出到 bindings.ts 供前端使用。
-#[allow(dead_code)]
 #[derive(Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionInfo {
