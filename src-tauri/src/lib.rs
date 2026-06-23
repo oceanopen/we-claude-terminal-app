@@ -60,16 +60,36 @@ pub fn run() {
             let discovered = windows::monitor::discover_session_files();
             log::info!("[monitor] discovered {} session(s)", discovered.len());
             for d in &discovered {
-                log::info!(
-                    "[monitor]   {} cwd={} mtime={}",
-                    d.session_id,
-                    d.cwd,
-                    chrono::Local
-                        .timestamp_millis_opt(d.mtime)
-                        .single()
-                        .unwrap_or_default()
-                        .format("%Y-%m-%d %H:%M:%S")
-                );
+                let parsed = windows::monitor::parse_session(&d.path);
+                match parsed {
+                    Some(p) => log::info!(
+                        "[monitor]   {} cwd={} mtime={} title={:?} status={:?} last_event={}",
+                        d.session_id,
+                        d.cwd,
+                        chrono::Local
+                            .timestamp_millis_opt(d.mtime)
+                            .single()
+                            .unwrap_or_default()
+                            .format("%Y-%m-%d %H:%M:%S"),
+                        p.title,
+                        p.status,
+                        chrono::Local
+                            .timestamp_millis_opt(p.last_event_ms)
+                            .single()
+                            .unwrap_or_default()
+                            .format("%Y-%m-%d %H:%M:%S"),
+                    ),
+                    None => log::info!(
+                        "[monitor]   {} cwd={} mtime={} parse=err",
+                        d.session_id,
+                        d.cwd,
+                        chrono::Local
+                            .timestamp_millis_opt(d.mtime)
+                            .single()
+                            .unwrap_or_default()
+                            .format("%Y-%m-%d %H:%M:%S")
+                    ),
+                }
             }
 
             specta_builder.mount_events(app);

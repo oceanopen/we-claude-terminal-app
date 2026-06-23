@@ -129,16 +129,22 @@
   - 返回 `DiscoveredSession { session_id, cwd, mtime, path: PathBuf }`（非元组），path 字段供 Task 14 解析复用
   - `lib.rs` setup 末尾同步调用一次 `discover_session_files()` + `log::info!` 输出，标注 `TODO(Task 17)` 提示 rescan 接入后移除
 - 验证：`cargo build` 通过；`pnpm tauri dev` 启动后终端日志输出 `[monitor] discovered N session(s)`，数量与本机 `ps aux | grep -i claude` 大致吻合，cwd 字段显示真实路径（含 dash 也正确）
-- 备注：`DiscoveredSession` 暂带 `#[allow(dead_code)]`（path/session_id 等字段 Task 14 才消费），任务 14 接入后移除
+- 备注：`DiscoveredSession` 的 `#[allow(dead_code)]` 已在 Task 14 接入后移除（path 字段经 parse_session 消费）
 
-### 任务 14：jsonl 解析（title + status）
-- 文件：`src-tauri/src/windows/monitor.rs`（修改）
+### 任务 14：jsonl 解析（title + status） ✅
+- 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/lib.rs`（修改，bootstrap 集成 parse 输出）
 - 当前：无解析
-- 目标：`fn parse_session(path) -> Option<(title, status)>`：
-  - 逐行读 jsonl（每行 serde_json::Value）
-  - title：找第一条 `type=="user"` 且 `message.content` 为字符串（或第一个 text block）的事件，取纯文本截断 60 字符
-  - status：扫描全部事件，跟踪 pending tool_use（`type=="assistant"` 且 content 含 `tool_use` block）减去后续 `type=="user"` 且 content 含 `tool_result` 的配对；末尾仍有未配对 tool_use → NeedsConfirmation；否则看最后一条 user/assistant 时间戳，30s 内 → Running，否则 → Completed
-- 验证：对当前活跃 claude 会话输出 title + status，人工核对合理
+- 目标：
+  - `pub fn parse_session(path: &Path) -> Option<ParsedSession>`：单遍扫描 jsonl，同时提取 title、计算 status、跟踪 last_event_ms
+  - title：`extract_first_user_text` 取首条 `type=="user"` 事件文本（content 字符串优先，否则首个 text block），`truncate_chars` 按字符截断到 60（UTF-8 边界安全）
+  - status：`HashSet<String>` 收集 assistant 事件的 `tool_use.id`，遇 user 事件的 `tool_result.tool_use_id` 移除；末尾 set 非空 → NeedsConfirmation；否则 `last_event_ms` 距 now ≤ 30s → Running，否则 Completed
+  - 返回 `ParsedSession { title, status, last_event_ms }`（非 (title, status) 元组），last_event_ms 供 Task 17 rescan 组装 `SessionInfo.last_activity`
+  - `lib.rs` setup bootstrap 循环内对每条 DiscoveredSession 调 `parse_session(&d.path)`，log 输出 title/status/last_event（chrono 本地时区 ISO 日期）；parse 失败打印 `parse=err`
+- 验证：`cargo build` + `cargo clippy` 通过；`pnpm tauri dev` 启动后日志输出每条 session 的 title + status + last_event；当前活跃会话 status 应为 Running 或 NeedsConfirmation
+- 备注：
+  - **title 不过滤 + 取最后一条**（按用户决策调整）：`extract_latest_user_text` 提取 user 事件文本（content 字符串优先，否则首个 text block），parse_session 覆盖式赋值取最后一条；含 `<command-name>...` 等 slash command 噪声（如需过滤可在前端接入后追加）
+  - **status 用 ID-set 配对**（非任务描述的计数法）：对取消/旁路场景更鲁棒；正常 1:1 配对场景结果与计数法一致
+  - `DiscoveredSession` 的 `#[allow(dead_code)]` 已移除（path 字段经 `&d.path` 消费）；`ParsedSession` 暂保留该标注（Task 15/17 消费后移除）
 
 ### 任务 15：get_monitor_sessions 命令
 - 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/lib.rs`（修改 `build_specta_builder`）

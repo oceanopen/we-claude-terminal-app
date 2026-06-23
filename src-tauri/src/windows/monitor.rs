@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -8,6 +9,7 @@ use tauri::{LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuil
 use crate::shared::screen::{
     find_monitor_for_tray, ratio_size, work_area_center, DEFAULT_SIZE, MONITOR_RATIO,
 };
+use crate::shared::types::SessionStatus;
 
 // ============================================================
 // 会话发现（Task 13）
@@ -24,15 +26,30 @@ const STALENESS_SECS: i64 = 30 * 60;
 /// peek_cwd 的扫描行数上限。前几十行内必有首个带 cwd 字段的事件，超出则视为异常文件放弃。
 const PEEK_CWD_MAX_LINES: usize = 50;
 
+/// title 截断长度（字符数，按 Unicode code point 计）。任务描述指定 60 字符。
+const TITLE_MAX_CHARS: usize = 60;
+
+/// status 判定的"最近活动"窗口：last_event 距 now 在此秒数内视为 Running，否则 Completed。
+const RUNNING_RECENT_SECS: i64 = 30;
+
 /// discover 阶段的中间结果：拿到文件 + cwd + mtime，但尚未解析 title/status（Task 14）。
 /// path 字段供 Task 14 parse 复用，避免再次按 session_id 反查文件。
-#[allow(dead_code)]
 pub(crate) struct DiscoveredSession {
     pub session_id: String,
     pub cwd: String,
     /// 毫秒时间戳，与 SessionInfo.last_activity 单位对齐。
     pub mtime: i64,
     pub path: PathBuf,
+}
+
+/// parse_session 的结果：title/status/last_event_ms。
+/// last_event_ms 暴露给 Task 17 rescan 组装 SessionInfo.last_activity，避免再回退用文件 mtime。
+#[allow(dead_code)]
+pub(crate) struct ParsedSession {
+    pub title: String,
+    pub status: SessionStatus,
+    /// 最后一条 user/assistant 事件的毫秒时间戳。
+    pub last_event_ms: i64,
 }
 
 /// `~/.claude/projects`，home_dir 探测失败返回 None。
@@ -161,6 +178,150 @@ pub fn discover_session_files() -> Vec<DiscoveredSession> {
         }
     }
     found
+}
+
+// ============================================================
+// 会话解析（Task 14）
+// ============================================================
+//
+// 单遍扫描 jsonl 同时完成：title 提取 / pending tool_use 配对 / last_event 跟踪。
+// status 优先级：pending tool_use 非空 → NeedsConfirmation；否则 last_event 距 now
+// 在 RUNNING_RECENT_SECS 内 → Running；否则 Completed。
+
+/// 取 user 事件的可用文本：`message.content` 为字符串时直接返回；
+/// 为数组时取首个 `type=="text"` block 的 text。其他形态返回 None。
+/// 函数本身只描述「如何从单个事件取文本」；首条/末条语义由调用方决定
+/// （parse_session 采用覆盖式赋值，扫描结束后自然得到最后一条 user text）。
+/// 注意：按用户决策不过滤 slash command 噪声（如 `<command-name>...`）。
+fn extract_latest_user_text(obj: &serde_json::Value) -> Option<String> {
+    let content = obj.get("message")?.get("content")?;
+    if let Some(s) = content.as_str() {
+        return if s.is_empty() { None } else { Some(s.to_string()) };
+    }
+    let blocks = content.as_array()?;
+    for b in blocks {
+        if b.get("type").and_then(|v| v.as_str()) == Some("text") {
+            if let Some(s) = b.get("text").and_then(|v| v.as_str()) {
+                if !s.is_empty() {
+                    return Some(s.to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+/// 按 Unicode code point 截断，避免非 ASCII 字符（如中文）在 UTF-8 字节边界中间切片导致 panic。
+fn truncate_chars(s: &str, max: usize) -> String {
+    if s.chars().count() <= max {
+        return s.to_string();
+    }
+    let end = s
+        .char_indices()
+        .nth(max)
+        .map(|(idx, _)| idx)
+        .unwrap_or(s.len());
+    s[..end].to_string()
+}
+
+/// 解析 ISO 8601 / RFC 3339 时间戳（如 `2026-06-23T09:18:24.791Z`）为毫秒。
+/// chrono::DateTime::parse_from_rfc3339 接受带 offsets 的变体；纯 Z 后缀也覆盖。
+fn parse_iso8601_to_millis(s: &str) -> Option<i64> {
+    chrono::DateTime::parse_from_rfc3339(s)
+        .ok()
+        .map(|dt| dt.timestamp_millis())
+}
+
+/// 解析单个会话 jsonl：提取 title、计算 status、跟踪 last_event_ms。
+///
+/// 扫描规则：
+/// - title：覆盖式取每条 `type=="user"` 事件经 `extract_latest_user_text` 提取的文本（截断到
+///   TITLE_MAX_CHARS）；扫描结束后 title 自然为最后一条匹配的 user text；整文件无匹配则为空字符串。
+/// - status：HashSet 收集 assistant 事件的 tool_use.id，遇到 user 事件的 tool_result.tool_use_id
+///   则移除。末尾 set 非空 → NeedsConfirmation；否则比较 last_event_ms 与 now。
+/// - last_event_ms：所有 user/assistant 事件 timestamp 的最大值；无任何时间戳则为 0。
+///
+/// 任一行解析失败 silently skip；文件打不开 / 全部行损坏返回 None。
+pub fn parse_session(path: &Path) -> Option<ParsedSession> {
+    let file = File::open(path).ok()?;
+    let reader = BufReader::new(file);
+
+    let mut title: Option<String> = None;
+    let mut pending_tool_use: HashSet<String> = HashSet::new();
+    let mut last_event_ms: i64 = 0;
+
+    for line in reader.lines() {
+        let Ok(line) = line else {
+            break;
+        };
+        let Ok(obj) = serde_json::from_str::<serde_json::Value>(&line) else {
+            continue;
+        };
+        let Some(t) = obj.get("type").and_then(|v| v.as_str()) else {
+            continue;
+        };
+
+        // title：覆盖式赋值，扫描结束后 title 为最后一条 user text。
+        if t == "user" {
+            if let Some(text) = extract_latest_user_text(&obj) {
+                title = Some(truncate_chars(&text, TITLE_MAX_CHARS));
+            }
+        }
+
+        // 时间戳：仅 user/assistant 事件携带 timestamp。
+        if (t == "user" || t == "assistant")
+            && let Some(ts) = obj.get("timestamp").and_then(|v| v.as_str())
+            && let Some(ms) = parse_iso8601_to_millis(ts)
+        {
+            last_event_ms = ms;
+        }
+
+        // pending tool_use 配对。
+        if t == "assistant" {
+            if let Some(blocks) = obj
+                .get("message")
+                .and_then(|m| m.get("content"))
+                .and_then(|c| c.as_array())
+            {
+                for b in blocks {
+                    if b.get("type").and_then(|v| v.as_str()) == Some("tool_use")
+                        && let Some(id) = b.get("id").and_then(|v| v.as_str())
+                    {
+                        pending_tool_use.insert(id.to_string());
+                    }
+                }
+            }
+        } else if t == "user" {
+            if let Some(blocks) = obj
+                .get("message")
+                .and_then(|m| m.get("content"))
+                .and_then(|c| c.as_array())
+            {
+                for b in blocks {
+                    if b.get("type").and_then(|v| v.as_str()) == Some("tool_result")
+                        && let Some(id) = b.get("tool_use_id").and_then(|v| v.as_str())
+                    {
+                        pending_tool_use.remove(id);
+                    }
+                }
+            }
+        }
+    }
+
+    let now_ms = systemtime_to_millis(SystemTime::now());
+    let status = if !pending_tool_use.is_empty() {
+        SessionStatus::NeedsConfirmation
+    } else if now_ms - last_event_ms <= RUNNING_RECENT_SECS * 1000 {
+        SessionStatus::Running
+    } else {
+        SessionStatus::Completed
+    };
+
+    Some(ParsedSession {
+        title: title.unwrap_or_default(),
+        status,
+        last_event_ms,
+    })
 }
 
 #[tauri::command]
