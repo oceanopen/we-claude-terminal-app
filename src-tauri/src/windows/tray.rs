@@ -24,7 +24,12 @@ fn current_language(app: &AppHandle) -> ResolvedLanguage {
 }
 
 pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let icon = tauri::image::Image::from_bytes(include_bytes!("../../icons/32x32.png"))
+    // CARGO_MANIFEST_DIR 在编译期解析为 src-tauri/ 绝对路径，作 crate root 锚点，
+    // 避免相对路径随源文件位置移动而失效。
+    let icon = tauri::image::Image::from_bytes(include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/icons/32x32.png"
+    )))
         .expect("failed to load tray icon");
 
     let lang = current_language(app.handle());
