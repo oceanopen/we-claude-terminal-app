@@ -76,7 +76,7 @@
 - 目标：硬编码 3 条 mock `SessionInfo`（覆盖三种状态），用 `useTranslation('terminal')`，外层 `Box sx={{ height:'100vh', display:'flex', flexDirection:'column' }}` + 顶部标题栏 + `SessionList`
 - 验证：**里程碑 2** — 打开 monitor 窗口看到 3 张示例卡片（三种状态各一张），三段式结构清晰
 
-## Phase C — i18n 接入
+## Phase C — i18n 接入（交互还不确定，所以这一步暂时先跳过）
 
 ### 任务 11：全量文案 i18n 化
 - 文件：`SessionCard.tsx`、`SessionList.tsx`、`EmptyState.tsx`、`MonitorApp.tsx`（修改）

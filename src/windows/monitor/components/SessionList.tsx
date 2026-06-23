@@ -18,7 +18,9 @@ function SessionList({ sessions }: SessionListProps) {
         overflow: 'auto',
         display: 'grid',
         gap: 2,
-        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
+        gridTemplateColumns: '1fr',
+        maxWidth: 1000,
+        mx: 'auto',
         alignItems: 'start',
       }}
     >
