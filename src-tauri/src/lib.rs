@@ -1,7 +1,5 @@
-mod monitor;
 mod shared;
-mod settings;
-mod tray;
+mod windows;
 
 use tauri::Listener;
 use tauri_specta::{collect_commands, Builder};
@@ -13,8 +11,8 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
     use crate::shared::types::{ConfigChangedPayload, SessionInfo, SessionStatus};
     Builder::<tauri::Wry>::new()
         .commands(collect_commands![
-            monitor::show_monitor_window,
-            settings::show_settings_window,
+            windows::monitor::show_monitor_window,
+            windows::settings::show_settings_window,
             shared::config::get_config,
             shared::config::set_config,
         ])
@@ -50,7 +48,7 @@ pub fn run() {
             }
 
             shared::config::init(app)?;
-            tray::setup(app)?;
+            windows::tray::setup(app)?;
 
             specta_builder.mount_events(app);
 
@@ -60,7 +58,7 @@ pub fn run() {
                     return;
                 };
                 if value.get("key").and_then(|v| v.as_str()) == Some(shared::config::LANGUAGE_KEY) {
-                    tray::refresh_menu_texts(&handle);
+                    windows::tray::refresh_menu_texts(&handle);
                 }
             });
 

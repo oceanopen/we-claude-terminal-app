@@ -24,7 +24,7 @@ fn current_language(app: &AppHandle) -> ResolvedLanguage {
 }
 
 pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/32x32.png"))
+    let icon = tauri::image::Image::from_bytes(include_bytes!("../../icons/32x32.png"))
         .expect("failed to load tray icon");
 
     let lang = current_language(app.handle());
@@ -63,12 +63,12 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id().as_ref() {
             "monitor" => {
-                if let Err(e) = crate::monitor::show_monitor_window(app.clone()) {
+                if let Err(e) = crate::windows::monitor::show_monitor_window(app.clone()) {
                     log::warn!("failed to open monitor window: {e}");
                 }
             }
             "settings" => {
-                if let Err(e) = crate::settings::show_settings_window(app.clone()) {
+                if let Err(e) = crate::windows::settings::show_settings_window(app.clone()) {
                     log::warn!("failed to open settings window: {e}");
                 }
             }
