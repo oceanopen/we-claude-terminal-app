@@ -8,6 +8,7 @@ import { invoke as __TAURI_INVOKE } from "@tauri-apps/api/core";
 /** Commands */
 export const commands = {
 	showMonitorWindow: () => typedError<null, string>(__TAURI_INVOKE("show_monitor_window")),
+	getMonitorSessions: () => typedError<SessionInfo[], string>(__TAURI_INVOKE("get_monitor_sessions")),
 	showSettingsWindow: () => typedError<null, string>(__TAURI_INVOKE("show_settings_window")),
 	getConfig: (key: string) => typedError<string | null, string>(__TAURI_INVOKE("get_config", { key })),
 	setConfig: (key: string, value: string) => typedError<null, string>(__TAURI_INVOKE("set_config", { key, value })),

@@ -126,7 +126,7 @@
   - `fn claude_projects_dir() -> Option<PathBuf>`：`dirs::home_dir().join(".claude").join("projects")`，home_dir 探测失败返回 None
   - **未实现 `decode_cwd`**：原设想 `-`→`/` 反推 cwd 在含 dash 的真实路径上失效（如 `we-claude-terminal-monitor` 会被错误拆成 4 段）。改为 `fn peek_cwd(path) -> Option<String>` 逐行读 jsonl 取首条带 `cwd` 字段事件的 cwd，jsonl 内 cwd 才是 ground truth，slug 有损不可逆
   - `fn discover_session_files() -> Vec<DiscoveredSession>`：遍历 projects 下每个子目录的**直接** .jsonl 文件（跳过 `subagents/` 等嵌套），`is_uuid_like` stem 校验（8-4-4-4-12 hex），staleness 过滤 `mtime < now - 30min` 剔除，peek_cwd 读 cwd
-  - 返回 `DiscoveredSession { session_id, cwd, mtime, path: PathBuf }`（非元组），path 字段供 Task 14 解析复用
+  - 返回 `DiscoveredSession { session_id, cwd, path: PathBuf }`（非元组），path 字段供 Task 14 解析复用；mtime 字段在 Task 15 接入后移除（bootstrap 改用 SessionInfo.last_activity）
   - `lib.rs` setup 末尾同步调用一次 `discover_session_files()` + `log::info!` 输出，标注 `TODO(Task 17)` 提示 rescan 接入后移除
 - 验证：`cargo build` 通过；`pnpm tauri dev` 启动后终端日志输出 `[monitor] discovered N session(s)`，数量与本机 `ps aux | grep -i claude` 大致吻合，cwd 字段显示真实路径（含 dash 也正确）
 - 备注：`DiscoveredSession` 的 `#[allow(dead_code)]` 已在 Task 14 接入后移除（path 字段经 parse_session 消费）
@@ -144,13 +144,21 @@
 - 备注：
   - **title 不过滤 + 取最后一条**（按用户决策调整）：`extract_latest_user_text` 提取 user 事件文本（content 字符串优先，否则首个 text block），parse_session 覆盖式赋值取最后一条；含 `<command-name>...` 等 slash command 噪声（如需过滤可在前端接入后追加）
   - **status 用 ID-set 配对**（非任务描述的计数法）：对取消/旁路场景更鲁棒；正常 1:1 配对场景结果与计数法一致
-  - `DiscoveredSession` 的 `#[allow(dead_code)]` 已移除（path 字段经 `&d.path` 消费）；`ParsedSession` 暂保留该标注（Task 15/17 消费后移除）
+  - `DiscoveredSession` 的 `#[allow(dead_code)]` 已移除（path 字段经 `&d.path` 消费）；`ParsedSession` 的 `#[allow(dead_code)]` 也在 Task 15 接入后移除（title/status/last_event_ms 经 SessionInfo 组装消费）
 
-### 任务 15：get_monitor_sessions 命令
-- 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/lib.rs`（修改 `build_specta_builder`）
+### 任务 15：get_monitor_sessions 命令 ✅
+- 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/lib.rs`（修改 `build_specta_builder` + setup bootstrap）、`src-tauri/src/shared/state/monitor.rs`（修改，加 `write_sessions`）、`src/shared/bindings.ts`（自动生成）
 - 当前：无此命令
-- 目标：`#[tauri::command] #[specta::specta] fn get_monitor_sessions(state: State<SessionStore>) -> Result<Vec<SessionInfo>, String>` 读 store clone 返回；`lib.rs::build_specta_builder()` 的 `collect_commands!` 数组追加此命令（变更后必须重跑 `pnpm gen:bindings` 同步 bindings.ts）
-- 验证：前端 devtools console `await window.__TAURI__.core.invoke('get_monitor_sessions')` 返回真实数组
+- 目标：
+  - `shared/state/monitor.rs` 加 `pub fn write_sessions(store, sessions)`：clear 后按 session_id 全量 insert（替换式，对齐 Task 17 rescan 语义）
+  - `windows/monitor.rs` 加 `#[tauri::command] #[specta::specta] pub fn get_monitor_sessions(state: State<'_, SessionStore>) -> Result<Vec<SessionInfo>, String>`：锁 store，`values().cloned().collect()` 返回
+  - `lib.rs::build_specta_builder()` 的 `collect_commands!` 数组追加 `windows::monitor::get_monitor_sessions`（在 show_monitor_window 后）
+  - 重跑 `pnpm gen:bindings` 同步 bindings.ts，commands 列表追加 `getMonitorSessions`
+- 验证：`cargo build` 通过；bindings.ts 含 `getMonitorSessions`；`pnpm tauri dev` 启动后 devtools console `await window.__TAURI__.core.invoke('get_monitor_sessions')` 返回真实数组（含 session_id / cwd / project_name / title / status / last_activity）
+- 备注：
+  - **扩展 setup bootstrap 写入 store**（提前部分 Task 17 逻辑）：discover → parse → 组装 `Vec<SessionInfo>`（project_name 取 cwd basename）→ `write_sessions` 写入 store → log 输出 SessionInfo 字段；Task 17 rescan 接入后整体替换为 rescan 调用
+  - **移除 DiscoveredSession.mtime 字段**：bootstrap 重构后改用 SessionInfo.last_activity（来自 parse_session 的 last_event_ms），mtime 仅 discover 内部 staleness 过滤用，无需外露
+  - `DiscoveredSession` 与 `ParsedSession` 的 `#[allow(dead_code)]` 已全部移除：Task 15 bootstrap 经 SessionInfo 组装链路消费了全部字段（session_id/cwd/path/title/status/last_event_ms）
 
 ### 任务 16：前端接入真实数据
 - 文件：`src/windows/monitor/MonitorApp.tsx`（修改）、可选新增 `src/shared/api/monitor.ts` 封装 invoke

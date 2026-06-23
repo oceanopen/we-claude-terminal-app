@@ -4,12 +4,13 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use tauri::{LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{LogicalPosition, LogicalSize, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 use crate::shared::screen::{
     find_monitor_for_tray, ratio_size, work_area_center, DEFAULT_SIZE, MONITOR_RATIO,
 };
-use crate::shared::types::SessionStatus;
+use crate::shared::state::monitor::SessionStore;
+use crate::shared::types::{SessionInfo, SessionStatus};
 
 // ============================================================
 // 会话发现（Task 13）
@@ -32,19 +33,17 @@ const TITLE_MAX_CHARS: usize = 60;
 /// status 判定的"最近活动"窗口：last_event 距 now 在此秒数内视为 Running，否则 Completed。
 const RUNNING_RECENT_SECS: i64 = 30;
 
-/// discover 阶段的中间结果：拿到文件 + cwd + mtime，但尚未解析 title/status（Task 14）。
+/// discover 阶段的中间结果：拿到 session_id + cwd + 文件路径，但尚未解析 title/status（Task 14）。
 /// path 字段供 Task 14 parse 复用，避免再次按 session_id 反查文件。
+/// 注：mtime 不外露——staleness 过滤在 discover 内部用局部变量完成，外部消费 SessionInfo.last_activity 即可。
 pub(crate) struct DiscoveredSession {
     pub session_id: String,
     pub cwd: String,
-    /// 毫秒时间戳，与 SessionInfo.last_activity 单位对齐。
-    pub mtime: i64,
     pub path: PathBuf,
 }
 
 /// parse_session 的结果：title/status/last_event_ms。
 /// last_event_ms 暴露给 Task 17 rescan 组装 SessionInfo.last_activity，避免再回退用文件 mtime。
-#[allow(dead_code)]
 pub(crate) struct ParsedSession {
     pub title: String,
     pub status: SessionStatus,
@@ -172,7 +171,6 @@ pub fn discover_session_files() -> Vec<DiscoveredSession> {
             found.push(DiscoveredSession {
                 session_id: stem.to_string(),
                 cwd,
-                mtime: mtime_ms,
                 path,
             });
         }
@@ -322,6 +320,15 @@ pub fn parse_session(path: &Path) -> Option<ParsedSession> {
         status,
         last_event_ms,
     })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_monitor_sessions(
+    state: State<'_, SessionStore>,
+) -> Result<Vec<SessionInfo>, String> {
+    let map = state.0.lock().map_err(|e| e.to_string())?;
+    Ok(map.values().cloned().collect())
 }
 
 #[tauri::command]
