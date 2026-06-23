@@ -4,6 +4,10 @@ mod windows;
 use tauri::Listener;
 use tauri_specta::{collect_commands, Builder};
 
+// chrono::Local 用于把 d.mtime 毫秒时间戳格式化为本地时区日期（Task 13 验证日志）。
+// timestamp_millis_opt 是 trait 方法，需显式导入 TimeZone trait 才能调用。
+use chrono::TimeZone;
+
 // 集中注册所有 IPC 命令到 tauri-specta Builder。
 // run()（注册 invoke handler）与 bin/export_bindings.rs（生成 TS 绑定）共用此函数，
 // 保证命令清单单一来源，避免两份注册表漂移。
@@ -50,6 +54,23 @@ pub fn run() {
             shared::config::init(app)?;
             shared::state::monitor::init(app)?;
             windows::tray::setup(app)?;
+
+            // TODO(Task 17): rescan 接入后移除——本块仅为 Task 13 discover 一次性验证。
+            // 同步执行：discover 本质是几百次 file I/O，启动期可接受；避免引入 async 复杂度。
+            let discovered = windows::monitor::discover_session_files();
+            log::info!("[monitor] discovered {} session(s)", discovered.len());
+            for d in &discovered {
+                log::info!(
+                    "[monitor]   {} cwd={} mtime={}",
+                    d.session_id,
+                    d.cwd,
+                    chrono::Local
+                        .timestamp_millis_opt(d.mtime)
+                        .single()
+                        .unwrap_or_default()
+                        .format("%Y-%m-%d %H:%M:%S")
+                );
+            }
 
             specta_builder.mount_events(app);
 

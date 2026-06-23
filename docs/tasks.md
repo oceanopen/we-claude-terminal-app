@@ -109,7 +109,8 @@
 
 ## Phase D — Rust 真实数据
 
-### 任务 12：Rust 数据模型 + Store
+### 任务 12：Rust 数据模型 + Store ✅
+> ✅ 完成（commit b92e9d0）：`SessionStore(Mutex<HashMap<String, SessionInfo>>)` 落在 `shared/state/monitor.rs`（非任务描述设想的 monitor.rs 内），`init(app)` 模式对齐 config；lib.rs setup 调用 `shared::state::monitor::init(app)?`。`SessionStatus`/`SessionInfo` 的 `#[allow(dead_code)]` 已移除。
 - 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/shared/types.rs`（已有 SessionInfo/SessionStatus 定义）、`src-tauri/src/lib.rs`（修改）
 - 当前：`types.rs` 已定义 `SessionStatus` / `SessionInfo`（带 `#[allow(dead_code)]` 注释「后端采集未接入」），但**尚无** `SessionStore`
 - 目标：
@@ -118,14 +119,17 @@
   - `lib.rs` setup 里 `app.manage(SessionStore::default())`
 - 验证：`cargo build` 通过
 
-### 任务 13：cwd 解码 + 会话发现
-- 文件：`src-tauri/src/windows/monitor.rs`（修改）
+### 任务 13：cwd 解码 + 会话发现 ✅
+- 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/lib.rs`（修改，setup bootstrap 验证）
 - 当前：无发现逻辑
 - 目标：
-  - `fn claude_projects_dir() -> PathBuf`：`dirs::home_dir().join(".claude").join("projects")`
-  - `fn decode_cwd(dir_name: &str) -> String`：`-Users-foo-bar` → `/Users/foo/bar`（把前导 `-` 替换为 `/`，其余 `-` 替换为 `/`）
-  - `fn discover_session_files() -> Vec<(session_id, cwd, mtime)>`：遍历 projects 下每个子目录，正则/过滤 `<uuid>.jsonl`，读 mtime；staleness 过滤 `mtime < now - 30min` 的剔除
-- 验证：临时加日志，输出发现的 sessions（应与本机 ps aux 的 claude 进程数大致吻合）
+  - `fn claude_projects_dir() -> Option<PathBuf>`：`dirs::home_dir().join(".claude").join("projects")`，home_dir 探测失败返回 None
+  - **未实现 `decode_cwd`**：原设想 `-`→`/` 反推 cwd 在含 dash 的真实路径上失效（如 `we-claude-terminal-monitor` 会被错误拆成 4 段）。改为 `fn peek_cwd(path) -> Option<String>` 逐行读 jsonl 取首条带 `cwd` 字段事件的 cwd，jsonl 内 cwd 才是 ground truth，slug 有损不可逆
+  - `fn discover_session_files() -> Vec<DiscoveredSession>`：遍历 projects 下每个子目录的**直接** .jsonl 文件（跳过 `subagents/` 等嵌套），`is_uuid_like` stem 校验（8-4-4-4-12 hex），staleness 过滤 `mtime < now - 30min` 剔除，peek_cwd 读 cwd
+  - 返回 `DiscoveredSession { session_id, cwd, mtime, path: PathBuf }`（非元组），path 字段供 Task 14 解析复用
+  - `lib.rs` setup 末尾同步调用一次 `discover_session_files()` + `log::info!` 输出，标注 `TODO(Task 17)` 提示 rescan 接入后移除
+- 验证：`cargo build` 通过；`pnpm tauri dev` 启动后终端日志输出 `[monitor] discovered N session(s)`，数量与本机 `ps aux | grep -i claude` 大致吻合，cwd 字段显示真实路径（含 dash 也正确）
+- 备注：`DiscoveredSession` 暂带 `#[allow(dead_code)]`（path/session_id 等字段 Task 14 才消费），任务 14 接入后移除
 
 ### 任务 14：jsonl 解析（title + status）
 - 文件：`src-tauri/src/windows/monitor.rs`（修改）
