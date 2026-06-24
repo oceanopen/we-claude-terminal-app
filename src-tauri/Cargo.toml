@@ -41,5 +41,8 @@ tauri-plugin-shell = "2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 sys-locale = "0.3"
 notify = "6"
+# Pin 0.4.1：与上方 notify 6.x 配套（0.5+ 绑定更新版 notify，不兼容 6.x）。
+# 提供 per-file + 时间窗去抖，省掉手写 mpsc + timeout 循环。
+notify-debouncer-mini = "0.4.1"
 dirs = "5"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }

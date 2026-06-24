@@ -178,11 +178,13 @@
 - 验证：临时手动触发 rescan，日志输出 store session 数量变化
   - ⚠️ GUI 验证仍待手动 `pnpm tauri dev` 确认（agent 无法直接驱动 GUI）。代码层验证已通过：cargo build + cargo clippy（1 个 pre-existing warning 与本任务无关）
 
-### 任务 18：notify fs watcher
-- 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/lib.rs`（修改）
+### 任务 18：notify fs watcher ✅
+> ✅ 完成（2026-06-24）：cargo build + cargo clippy 通过（仅余 1 个 pre-existing `lib.rs:40` let_unit_value warning，与本任务无关）。决策：(1) 选 `notify-debouncer-mini = "0.4.1"`（与项目锁定的 `notify = "6.1.1"` 配套；0.5+ 绑定更新版 notify 不兼容 6.x），用现成的 per-file + 时间窗去抖，省掉手写 mpsc + timeout 循环；(2) 用 `std::thread::spawn` 而非任务描述的 `tauri::async_runtime::spawn`——mini debouncer 内部走 `std::sync::mpsc`，塞进 async 任务反而要 `spawn_blocking` 兜底阻塞 IO，独立 OS 线程最自然，rescan 也不占 async worker；(3) debounce 窗口 500ms（平衡响应性与抗抖动）；(4) 任一环节失败（home_dir 缺失 / debouncer 创建失败 / watch 失败）silently `log::warn!` 后线程退出，Task 19 的 5s 兜底轮询会接管，watcher 仅是即时性优化项；(5) watcher 不额外加触发日志——mini debouncer 每个 batch 已合并 burst，rescan 末尾的 `[monitor] rescan: N session(s)` 数量日志足以验证。
+- 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/lib.rs`（修改）、`src-tauri/Cargo.toml`（修改，加 notify-debouncer-mini）
 - 当前：无监听
 - 目标：`fn start_watcher(app: AppHandle)`：`notify::RecommendedWatcher` 监听 `~/.claude/projects/` 递归（`RecursiveMode::Recursive`），on-event（Create/Modify/Remove） debounce 后 spawn `rescan(app)`；`lib.rs` setup 末尾 `tauri::async_runtime::spawn` 启动
 - 验证：手动 `touch ~/.claude/projects/<dir>/<some>.jsonl`，日志看到 rescan 触发
+  - ⚠️ GUI 验证仍待手动 `pnpm tauri dev` 确认（agent 无法直接驱动 GUI）。代码层验证已通过：cargo build + cargo clippy（1 个 pre-existing warning 与本任务无关）
 
 ### 任务 19：5s 兜底轮询
 - 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/lib.rs`（修改）

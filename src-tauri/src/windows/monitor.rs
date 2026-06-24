@@ -2,8 +2,9 @@ use std::collections::HashSet;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use notify::RecursiveMode;
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 use crate::shared::screen::{
@@ -354,6 +355,66 @@ pub fn rescan(app: &AppHandle) {
     write_sessions(&store, sessions);
 
     log::info!("[monitor] rescan: {} session(s)", count);
+}
+
+// ============================================================
+// 文件系统监听（Task 18）
+// ============================================================
+//
+// notify + notify-debouncer-mini 监听 ~/.claude/projects/ 递归变更，
+// 每 WATCH_DEBOUNCE_MS 去抖窗口合并 burst 后触发一次 rescan。
+// 独立 OS 线程持有 debouncer + 接收 channel：
+//   - mini debouncer 内部走 std::sync::mpsc，不适合塞进 async 任务；
+//   - rescan 是 sync 阻塞 IO，独立线程避免占用 async runtime worker；
+//   - 任一环节失败 silently warn 后线程退出——Task 19 的 5s 兜底轮询会接管，
+//     watcher 仅是即时性优化项，失败不影响功能正确性。
+
+/// 去抖窗口：mini debouncer 在此窗口内对同一文件的多次事件合并为一次。
+/// 500ms 平衡响应性（用户感知新会话延迟 ≤0.5s）与抗抖动（单 turn 内 burst 合并）。
+const WATCH_DEBOUNCE_MS: u64 = 500;
+
+/// 启动 fs watcher 后台线程。setup 末尾调用一次，线程生命周期与进程一致。
+///
+/// 失败模式（均 silently warn 后线程退出，Task 19 兜底轮询接管）：
+/// - home_dir 探测失败 → claude_projects_dir 返回 None
+/// - debouncer 创建失败（理论上极少，notify backend 初始化出错）
+/// - watch() 失败（路径不存在 / 权限不足）
+pub fn start_watcher(app: AppHandle) {
+    std::thread::spawn(move || {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let mut debouncer = match notify_debouncer_mini::new_debouncer(
+            Duration::from_millis(WATCH_DEBOUNCE_MS),
+            tx,
+        ) {
+            Ok(d) => d,
+            Err(e) => {
+                log::warn!("[monitor] watcher init failed: {}", e);
+                return;
+            }
+        };
+
+        let Some(dir) = claude_projects_dir() else {
+            log::warn!("[monitor] watcher: home_dir not available");
+            return;
+        };
+        if let Err(e) = debouncer.watcher().watch(&dir, RecursiveMode::Recursive) {
+            log::warn!(
+                "[monitor] watcher.watch failed on {}: {}",
+                dir.display(),
+                e
+            );
+            return;
+        }
+
+        log::info!("[monitor] watcher started on {}", dir.display());
+
+        // 每个去抖批次触发一次 rescan。rescan 内部自带 jsonl/staleness 过滤，
+        // 末尾输出 `[monitor] rescan: N session(s)` 数量日志；watcher 不额外加日志避免刷屏。
+        // rx 返回 Err 表示 debouncer 已 drop（仅应用退出时发生），线程自然终止。
+        while rx.recv().is_ok() {
+            rescan(&app);
+        }
+    });
 }
 
 #[tauri::command]

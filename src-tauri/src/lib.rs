@@ -53,6 +53,7 @@ pub fn run() {
             windows::tray::setup(app)?;
 
             windows::monitor::rescan(app.handle());
+            windows::monitor::start_watcher(app.handle().clone());
 
             specta_builder.mount_events(app);
 
