@@ -4,3 +4,7 @@
 /// 配置项变更时广播（ConfigChangedPayload）。订阅方（AppThemeProvider / AppI18nProvider）
 /// 与托盘菜单刷新逻辑据此响应配置变化。
 pub const EVENT_CONFIG_CHANGED: &str = "config-changed";
+
+/// monitor 窗口会话列表变更时广播（payload = `&[SessionInfo]` 快照）。
+/// rescan（fs watcher / 5s 兜底轮询）末尾触发；MonitorApp 据此 setSessions 增量刷新。
+pub const EVENT_MONITOR_SESSIONS_CHANGED: &str = "monitor:sessions-changed";

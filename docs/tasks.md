@@ -194,11 +194,13 @@
 - 验证：日志周期输出 rescan
   - ⚠️ GUI 验证仍待手动 `pnpm tauri dev` 确认（agent 无法直接驱动 GUI）。代码层验证已通过：cargo build + cargo clippy（1 个 pre-existing warning 与本任务无关）
 
-### 任务 20：事件推送
-- 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/shared/events.rs`（加事件常量）、`src-tauri/src/shared/types.rs`（加事件 payload 类型并经 specta 导出）
+### 任务 20：事件推送 ✅
+> ✅ 完成（2026-06-24）：cargo build + cargo clippy 通过（仅余 1 个 pre-existing `lib.rs:40` let_unit_value warning，属早期 macOS Dock 配置代码，与本任务无关）。决策：(1) **payload 复用 SessionInfo 不新建包装结构体**——任务描述设想在 types.rs 加 `SessionsChangedPayload`，但 `app.emit` 支持 serde 序列化 `&[SessionInfo]`，前端 `e.payload` 直接是数组，与任务 21 设想的 `setSessions(e.payload)` 语义对齐，新增包装层是纯冗余；SessionInfo 已 specta 导出，**无需**重新 `gen:bindings`（类型零增量）；(2) **emit 失败 `log::warn!` 不阻塞 rescan**——事件丢失最多让前端这一轮不刷新，下一轮 watcher/poller 触发时会重新 emit，对齐 watcher/poller 的容错风格；(3) **snapshot clone 在 write_sessions 前**——write_sessions 是替换式 move 写入，emit 必须先 clone 复用，否则借用冲突；(4) 事件名 `monitor:sessions-changed` 与任务 21 前端 listen 字符串严格对齐，常量双份维护（events.rs + events.ts 镜像，对齐 `config-changed` 模式，specta 不自动导出 const &str）。
+- 文件：`src-tauri/src/windows/monitor.rs`（修改，rescan 末尾加 emit + 补 `tauri::Emitter` import）、`src-tauri/src/shared/events.rs`（加 `EVENT_MONITOR_SESSIONS_CHANGED`）、`src/shared/events.ts`（加前端镜像常量）
 - 当前：rescan 只写 store
 - 目标：rescan 末尾 `app.emit(EVENT_MONITOR_SESSIONS_CHANGED, &sessions_vec)`（sessions_vec 为 store 当前快照）；事件常量与 payload 类型按 `config-changed` 模式建好
 - 验证：前端临时 listen，console 看到事件 payload
+  - ⚠️ GUI 验证仍待手动 `pnpm tauri dev` 确认（agent 无法直接驱动 GUI）。代码层验证已通过：cargo build + cargo clippy（1 个 pre-existing warning 与本任务无关）
 
 ### 任务 21：前端 listen 接入
 - 文件：`src/windows/monitor/MonitorApp.tsx`（修改）

@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use notify::RecursiveMode;
-use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, State, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 use crate::shared::screen::{
     find_monitor_for_tray, ratio_size, work_area_center, DEFAULT_SIZE, MONITOR_RATIO,
@@ -351,8 +351,18 @@ pub fn rescan(app: &AppHandle) {
         .collect();
 
     let count = sessions.len();
+    // write_sessions 是替换式 move 写入，emit 需要先 clone 一份快照复用。
+    // payload 用 &[SessionInfo]：SessionInfo 已是 specta 导出类型，前端 e.payload 直接是数组，
+    // 与 MonitorApp 的 setSessions(e.payload) 语义对齐，无需包装结构体。
+    let snapshot = sessions.clone();
     let store = app.state::<SessionStore>();
     write_sessions(&store, sessions);
+
+    // emit 失败不阻塞 rescan 主流程——事件丢失最多让前端这一轮不刷新，
+    // 下一轮 watcher/poller 触发时会重新 emit。对齐 watcher/poller 的容错风格。
+    if let Err(e) = app.emit(crate::shared::events::EVENT_MONITOR_SESSIONS_CHANGED, &snapshot) {
+        log::warn!("[monitor] emit sessions-changed failed: {}", e);
+    }
 
     log::info!("[monitor] rescan: {} session(s)", count);
 }
