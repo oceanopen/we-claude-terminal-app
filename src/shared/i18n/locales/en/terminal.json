@@ -4,6 +4,11 @@
     "title": "No active sessions",
     "desc": "Running Claude Code sessions will appear here"
   },
+  "error": {
+    "title": "Failed to load sessions",
+    "desc": "Please retry",
+    "retry": "Retry"
+  },
   "status": {
     "running": "Running",
     "needsConfirmation": "Needs confirmation",

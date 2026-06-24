@@ -4,6 +4,11 @@
     "title": "暂无活跃会话",
     "desc": "正在运行的 Claude Code 会话将显示在此处"
   },
+  "error": {
+    "title": "加载会话失败",
+    "desc": "请稍后重试",
+    "retry": "重试"
+  },
   "status": {
     "running": "运行中",
     "needsConfirmation": "待确认",

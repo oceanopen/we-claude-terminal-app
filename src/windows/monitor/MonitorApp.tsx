@@ -1,39 +1,39 @@
 import type { SessionInfo } from '@src/shared/bindings';
-import { Box, Typography } from '@mui/material';
+import {
+  Alert,
+  AlertTitle,
+  Box,
+  Button,
+  CircularProgress,
+  Typography,
+} from '@mui/material';
+import { commands } from '@src/shared/bindings';
+import { unwrap } from '@src/shared/commands';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SessionList from './components/SessionList';
 
-const NOW = Date.now();
-
-const mockSessions: SessionInfo[] = [
-  {
-    sessionId: 'mock-1',
-    cwd: '/Users/gaopan/MyFiles/Project/we-claude-terminal-monitor',
-    projectName: 'we-claude-terminal-monitor',
-    title: '实现终端监听窗口的会话卡片组件与三段式布局',
-    status: 'Running',
-    lastActivity: NOW - 30 * 1000,
-  },
-  {
-    sessionId: 'mock-2',
-    cwd: '/Users/gaopan/MyFiles/Project/data-pipeline',
-    projectName: 'data-pipeline',
-    title: '执行数据库迁移脚本并校验数据一致性',
-    status: 'NeedsConfirmation',
-    lastActivity: NOW - 2 * 60 * 1000,
-  },
-  {
-    sessionId: 'mock-3',
-    cwd: '/Users/gaopan/MyFiles/Project/blog-system',
-    projectName: 'blog-system',
-    title: '重构用户认证模块，统一 OAuth 与本地登录流程',
-    status: 'Completed',
-    lastActivity: NOW - 2 * 60 * 60 * 1000,
-  },
-];
+type LoadStatus = 'loading' | 'ready' | 'error';
 
 function MonitorApp() {
   const { t } = useTranslation();
+  const [status, setStatus] = useState<LoadStatus>('loading');
+  const [sessions, setSessions] = useState<SessionInfo[]>([]);
+
+  const load = useCallback(async () => {
+    setStatus('loading');
+    try {
+      const data = await unwrap(commands.getMonitorSessions());
+      setSessions(data);
+      setStatus('ready');
+    } catch {
+      setStatus('error');
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -43,7 +43,34 @@ function MonitorApp() {
         </Typography>
       </Box>
       <Box sx={{ flex: 1, overflow: 'auto' }}>
-        <SessionList sessions={mockSessions} />
+        {status === 'loading' && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        )}
+        {status === 'error' && (
+          <Box sx={{ p: 2 }}>
+            <Alert
+              severity="error"
+              action={(
+                <Button color="inherit" size="small" onClick={load}>
+                  {t('terminal:error.retry')}
+                </Button>
+              )}
+            >
+              <AlertTitle>{t('terminal:error.title')}</AlertTitle>
+              {t('terminal:error.desc')}
+            </Alert>
+          </Box>
+        )}
+        {status === 'ready' && <SessionList sessions={sessions} />}
       </Box>
     </Box>
   );

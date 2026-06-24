@@ -160,11 +160,13 @@
   - **移除 DiscoveredSession.mtime 字段**：bootstrap 重构后改用 SessionInfo.last_activity（来自 parse_session 的 last_event_ms），mtime 仅 discover 内部 staleness 过滤用，无需外露
   - `DiscoveredSession` 与 `ParsedSession` 的 `#[allow(dead_code)]` 已全部移除：Task 15 bootstrap 经 SessionInfo 组装链路消费了全部字段（session_id/cwd/path/title/status/last_event_ms）
 
-### 任务 16：前端接入真实数据
-- 文件：`src/windows/monitor/MonitorApp.tsx`（修改）、可选新增 `src/shared/api/monitor.ts` 封装 invoke
+### 任务 16：前端接入真实数据 ✅
+> ✅ 完成（2026-06-24）：tsc + vite build + eslint 全通过。决策：不新增 `src/shared/api/monitor.ts`（单点使用不做抽象，与项目原则一致），直接在组件内 `unwrap(commands.getMonitorSessions())`；状态机用 `LoadStatus = 'loading' | 'ready' | 'error'` + `useCallback(load, [])` + `useEffect(() => void load(), [load])` 模式（对齐 exhaustive-deps）；loading 用纯 `CircularProgress` 居中无文字；error 用 MUI `Alert severity=error` + `action={<Button onClick={load}>retry</Button>}` 内联横幅（非弹窗），可重试。
+- 文件：`src/windows/monitor/MonitorApp.tsx`（修改）、`src/shared/i18n/locales/zh-CN/terminal.json`（修改，加 error 节）、`src/shared/i18n/locales/en/terminal.json`（修改，加 error 节）
 - 当前：硬编码 3 条 mock
 - 目标：`useEffect` 里 `invoke('get_monitor_sessions')`，setSessions；加 loading 态（CircularProgress）+ error 态（Alert）；移除 mock
 - 验证：**里程碑 4** — 打开 monitor 窗口看到本机真实 claude 会话列表，标题是首条 user 消息，状态合理
+  - ⚠️ GUI 验证仍待手动 `pnpm tauri dev` 确认（agent 无法直接驱动 GUI）。代码层验证已通过：tsc -b、vite build、eslint 全绿
 
 ## Phase E — 实时监听
 
@@ -221,6 +223,6 @@
 | M1 窗口可打开 ✅ | 1-4 | 点托盘首项弹出 monitor 窗口（尺寸/定位按 tray 所在屏，不再写死 520×640） |
 | M2 静态卡片可见 ✅ | 5-10 | 窗口显示 3 张 mock 卡（三段式），tsc+build+lint 通过，GUI 已迭代验证 |
 | M3 i18n 切换 ✅ | 11 | 设置页切语言，卡片文案实时变（复用现有 `config-changed` 事件 + AppI18nProvider） |
-| M4 真实数据 | 12-16 | 窗口显示本机真实 claude 会话 |
+| M4 真实数据 ✅（代码层） | 12-16 | 窗口显示本机真实 claude 会话；代码实施 + tsc/build/lint 全通过，GUI 验证待手动 `pnpm tauri dev` |
 | M5 实时监听 | 17-21 | 新开会话实时出现，老化后消失 |
 | M6 打开终端 toast | 22-23 | 点击按钮弹「暂不支持」toast |
