@@ -34,6 +34,16 @@ function formatRelativeTime(lastActivity: number, t: (key: string, opts?: Record
   return t('terminal:time.hoursAgo', { hours: Math.floor(diffSec / 3600) });
 }
 
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : String(n);
+}
+
+// YYYY-MM-DD HH:mm:ss（本地时区，24 小时制）。无 i18n 差异，与相对时间并排展示精确时刻。
+function formatAbsoluteTime(lastActivity: number): string {
+  const d = new Date(lastActivity);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
 interface SessionCardProps {
   session: SessionInfo;
 }
@@ -82,6 +92,8 @@ function SessionCard({ session }: SessionCardProps) {
         </Typography>
         <Typography variant="caption" color="text.secondary">
           {formatRelativeTime(session.lastActivity, t)}
+          {'  |  '}
+          {formatAbsoluteTime(session.lastActivity)}
         </Typography>
       </CardContent>
       <Divider />

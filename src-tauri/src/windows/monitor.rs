@@ -370,8 +370,8 @@ pub fn rescan(app: &AppHandle) {
 //     watcher 仅是即时性优化项，失败不影响功能正确性。
 
 /// 去抖窗口：mini debouncer 在此窗口内对同一文件的多次事件合并为一次。
-/// 500ms 平衡响应性（用户感知新会话延迟 ≤0.5s）与抗抖动（单 turn 内 burst 合并）。
-const WATCH_DEBOUNCE_MS: u64 = 500;
+/// 1s 平衡响应性与抗抖动（单 turn 内 fsevents burst 合并为一次 rescan）。
+const WATCH_DEBOUNCE_MS: u64 = 1000;
 
 /// 启动 fs watcher 后台线程。setup 末尾调用一次，线程生命周期与进程一致。
 ///
