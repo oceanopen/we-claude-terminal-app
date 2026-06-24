@@ -464,6 +464,28 @@ pub fn get_monitor_sessions(
     Ok(map.values().cloned().collect())
 }
 
+/// v1 占位：不实现真实打开终端，按编译目标 OS 返回标识字符串作为 Err。
+/// 前端（任务 23）用 `t('terminal:toast.unsupported', { os })` 插值生成最终 toast 文案——
+/// 不在后端做 i18n，以便语言切换跟随，并复用 Phase B 任务 5 已预埋的 `{{os}}` 资源。
+///
+/// 参数为 v2 预留：session_id 用于定位 cwd、app 用于调 shell plugin。v1 用 `let _ =` 抑制 warning。
+#[tauri::command]
+#[specta::specta]
+pub fn open_terminal(session_id: String, app: AppHandle) -> Result<(), String> {
+    let _ = session_id;
+    let _ = &app;
+    let os = if cfg!(target_os = "macos") {
+        "macOS"
+    } else if cfg!(target_os = "windows") {
+        "Windows"
+    } else if cfg!(target_os = "linux") {
+        "Linux"
+    } else {
+        "this OS"
+    };
+    Err(os.to_string())
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn show_monitor_window(app: tauri::AppHandle) -> Result<(), String> {

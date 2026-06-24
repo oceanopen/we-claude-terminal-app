@@ -212,11 +212,16 @@
 
 ## Phase F — 打开终端按钮
 
-### 任务 22：open_terminal 命令
+### 任务 22：open_terminal 命令 ✅
+> ✅ 完成（2026-06-24）：cargo build + cargo clippy 通过（仅余 1 个 pre-existing `lib.rs:41` let_unit_value warning，与本任务无关）。决策（经 feature-dev 流程与用户确认）：
+> 1. **方案 B（后端返 OS 标识 + 前端 i18n 插值）取代任务描述字面的硬编码中/英文 Err**：后端 `cfg!(target_os)` 返回 OS 标识字符串（`"macOS"` / `"Windows"` / `"Linux"` / 兜底 `"this OS"`），前端任务 23 用 `t('terminal:toast.unsupported', { os })` 插值生成最终 toast 文案。理由：(a) Phase B 任务 5 已在 terminal.json 预埋 `toast.unsupported` 含 `{{os}}` 占位符，硬编码会让其成为死代码；(b) 任务描述字面只写了中文 Err 且未覆盖英文 Err 与 Linux 分支；(c) 语言切换需跟随，i18n 必须在前端做才符合项目 AppI18nProvider 架构。
+> 2. **用 `cfg!(target_os = ...)` 运行期宏而非 `#[cfg]` 属性**：if/else if 链自然兜底非三主流平台（返回 `"this OS"`），避免 `#[cfg]` 多分支缺 else 导致其他平台编译失败。
+> 3. **保留 `session_id` + `app` 参数 + `let _ =` 抑制 warning**：v2 真实打开终端时 session_id 定位 cwd、app 调 shell plugin；v1 用 `let _ = session_id; let _ = &app;` 抑制 unused。specta 导出的参数名（`sessionId`）不变，v2 扩展零成本；`AppHandle` 是 Tauri 注入参数，specta 不暴露给前端（对齐 `showMonitorWindow` 模式），bindings.ts 签名为 `openTerminal: (sessionId: string) => ...`。
 - 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/lib.rs`（修改 `build_specta_builder`）
 - 当前：无此命令
 - 目标：`#[tauri::command] #[specta::specta] fn open_terminal(session_id: String, app: AppHandle) -> Result<(), String>`：v1 不实现真实打开，按 `cfg!(target_os)` 返回中/英文 Err：macOS → `"当前 macOS 暂不支持此功能"` / Windows → `"当前 Windows 暂不支持此功能"`；在 `build_specta_builder()` 的 `collect_commands!` 数组追加
 - 验证：devtools invoke 返回对应错误
+  - ⚠️ 实际实施改为返回 OS 标识字符串（见上方决策 §1），devtools `invoke('open_terminal', { sessionId: 'x' })` 返回 `{ status: 'error', error: 'macOS' }`（macOS 平台）；最终 toast 文案由任务 23 前端 i18n 插值生成。GUI 验证待手动 `pnpm tauri dev`。代码层验证已通过：cargo build + cargo clippy（1 个 pre-existing warning 与本任务无关），bindings.ts 含 `openTerminal`
 
 ### 任务 23：按钮接 toast
 - 文件：`src/windows/monitor/components/SessionCard.tsx`（修改）、`src/windows/monitor/MonitorApp.tsx`（修改，加 Snackbar）

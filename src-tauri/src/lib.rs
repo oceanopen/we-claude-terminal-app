@@ -13,6 +13,7 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
         .commands(collect_commands![
             windows::monitor::show_monitor_window,
             windows::monitor::get_monitor_sessions,
+            windows::monitor::open_terminal,
             windows::settings::show_settings_window,
             shared::config::get_config,
             shared::config::set_config,
