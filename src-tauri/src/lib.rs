@@ -2,12 +2,7 @@ mod shared;
 mod windows;
 
 use tauri::Listener;
-use tauri::Manager;
 use tauri_specta::{collect_commands, Builder};
-
-// chrono::Local 用于把 d.mtime 毫秒时间戳格式化为本地时区日期（Task 13 验证日志）。
-// timestamp_millis_opt 是 trait 方法，需显式导入 TimeZone trait 才能调用。
-use chrono::TimeZone;
 
 // 集中注册所有 IPC 命令到 tauri-specta Builder。
 // run()（注册 invoke handler）与 bin/export_bindings.rs（生成 TS 绑定）共用此函数，
@@ -57,49 +52,7 @@ pub fn run() {
             shared::state::monitor::init(app)?;
             windows::tray::setup(app)?;
 
-            // TODO(Task 17): rescan 接入后移除——本块为 Task 13/14/15 一次性验证 + store 预填。
-            // 同步执行：discover 本质是几百次 file I/O，启动期可接受；避免引入 async 复杂度。
-            let discovered = windows::monitor::discover_session_files();
-            let sessions: Vec<crate::shared::types::SessionInfo> = discovered
-                .iter()
-                .filter_map(|d| {
-                    let parsed = windows::monitor::parse_session(&d.path)?;
-                    let project_name = std::path::Path::new(&d.cwd)
-                        .file_name()
-                        .and_then(|s| s.to_str())
-                        .unwrap_or("")
-                        .to_string();
-                    Some(crate::shared::types::SessionInfo {
-                        session_id: d.session_id.clone(),
-                        cwd: d.cwd.clone(),
-                        project_name,
-                        title: parsed.title,
-                        status: parsed.status,
-                        last_activity: parsed.last_event_ms,
-                    })
-                })
-                .collect();
-
-            // 写入 store 供 get_monitor_sessions 读取。
-            let store = app.state::<shared::state::monitor::SessionStore>();
-            shared::state::monitor::write_sessions(&store, sessions.clone());
-
-            log::info!("[monitor] discovered {} session(s)", sessions.len());
-            for s in &sessions {
-                log::info!(
-                    "[monitor]   {} project={} cwd={} title={:?} status={:?} last_activity={}",
-                    s.session_id,
-                    s.project_name,
-                    s.cwd,
-                    s.title,
-                    s.status,
-                    chrono::Local
-                        .timestamp_millis_opt(s.last_activity)
-                        .single()
-                        .unwrap_or_default()
-                        .format("%Y-%m-%d %H:%M:%S")
-                );
-            }
+            windows::monitor::rescan(app.handle());
 
             specta_builder.mount_events(app);
 

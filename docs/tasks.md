@@ -170,11 +170,13 @@
 
 ## Phase E — 实时监听
 
-### 任务 17：rescan 全量逻辑
-- 文件：`src-tauri/src/windows/monitor.rs`（修改）
+### 任务 17：rescan 全量逻辑 ✅
+> ✅ 完成（2026-06-24）：cargo build + cargo clippy 通过（仅余 1 个 pre-existing `lib.rs:40` let_unit_value warning，属早期 macOS Dock 配置代码，与本任务无关）。决策：(1) bootstrap 块整体替换为单行 `windows::monitor::rescan(app.handle())`，setup 不再保留首次详情日志（数量日志已够验证）；(2) rescan 签名 `&AppHandle`（`App::handle()` 返回引用，by-value 反而要 `.clone()` 多一次 Arc clone）；(3) rescan 仅输出 `[monitor] rescan: N session(s)` 数量日志（Task 18/19 会高频触发）；(4) 无返回值（对齐任务描述，Task 20 直接在 rescan 末尾加 emit 即可）。
+- 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/lib.rs`（修改）
 - 当前：发现 + 解析是分离函数
 - 目标：封装 `fn rescan(app: &AppHandle)`：调 discover → parse 全部 → 组装 SessionInfo → 写入 store（替换而非合并，保证消失的会话被清除）
 - 验证：临时手动触发 rescan，日志输出 store session 数量变化
+  - ⚠️ GUI 验证仍待手动 `pnpm tauri dev` 确认（agent 无法直接驱动 GUI）。代码层验证已通过：cargo build + cargo clippy（1 个 pre-existing warning 与本任务无关）
 
 ### 任务 18：notify fs watcher
 - 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/lib.rs`（修改）

@@ -4,12 +4,12 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use tauri::{LogicalPosition, LogicalSize, Manager, State, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 use crate::shared::screen::{
     find_monitor_for_tray, ratio_size, work_area_center, DEFAULT_SIZE, MONITOR_RATIO,
 };
-use crate::shared::state::monitor::SessionStore;
+use crate::shared::state::monitor::{SessionStore, write_sessions};
 use crate::shared::types::{SessionInfo, SessionStatus};
 
 // ============================================================
@@ -320,6 +320,40 @@ pub fn parse_session(path: &Path) -> Option<ParsedSession> {
         status,
         last_event_ms,
     })
+}
+
+// ============================================================
+// 全量重扫
+// ============================================================
+
+/// 仅输出数量日志：调用方（fs watcher / 周期轮询）会高频触发，详情日志会刷屏。
+pub fn rescan(app: &AppHandle) {
+    let discovered = discover_session_files();
+    let sessions: Vec<SessionInfo> = discovered
+        .iter()
+        .filter_map(|d| {
+            let parsed = parse_session(&d.path)?;
+            let project_name = Path::new(&d.cwd)
+                .file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_string();
+            Some(SessionInfo {
+                session_id: d.session_id.clone(),
+                cwd: d.cwd.clone(),
+                project_name,
+                title: parsed.title,
+                status: parsed.status,
+                last_activity: parsed.last_event_ms,
+            })
+        })
+        .collect();
+
+    let count = sessions.len();
+    let store = app.state::<SessionStore>();
+    write_sessions(&store, sessions);
+
+    log::info!("[monitor] rescan: {} session(s)", count);
 }
 
 #[tauri::command]
