@@ -202,11 +202,13 @@
 - 验证：前端临时 listen，console 看到事件 payload
   - ⚠️ GUI 验证仍待手动 `pnpm tauri dev` 确认（agent 无法直接驱动 GUI）。代码层验证已通过：cargo build + cargo clippy（1 个 pre-existing warning 与本任务无关）
 
-### 任务 21：前端 listen 接入
+### 任务 21：前端 listen 接入 ✅
+> ✅ 完成（2026-06-24）：tsc + vite build + eslint 全通过。决策：(1) **事件订阅独立 useEffect**（不并入 load effect）——`load` 的 loading/error 状态机只管首屏 invoke，事件回调直接 `setSessions(e.payload)` 切换数据，不触发 loading 态，避免已渲染列表每次 rescan（watcher 1s debounce + poller 5s）闪烁 `CircularProgress`；两个 effect 职责单一，cleanup 边界清晰。(2) **cleanup 严格用记忆模板** `.then(fn => fn()).catch(err => console.warn('[monitor:sessions-changed] unlisten failed (possible Tauri event race):', err))`——`<StrictMode>`（`src/windows/monitor/main.tsx`）dev 双调用 effect 触发 listen 注册与 unlisten 时序竞态，`listeners[eventId]` 可能为 undefined → unhandled rejection；且 Tauri `UnlistenFn` 声明 `() => void` 运行时却是 async，直接 `fn().catch()` TS 报 catch on void，必须 `.then(fn => fn())` 包进 Promise 链（见 [[tauri-listen-unlisten-race]]，AppI18nProvider / AppThemeProvider 同模式）。(3) **payload 直接 `SessionInfo[]`**——任务 20 决策 emit 用 `&[SessionInfo]` 不包装，`e.payload` 直接是数组，与 `setSessions` 签名天然对齐无需中间转换。(4) **import 排序** eslint `perfectionist/sort-imports` 要求 `@src/*` 在 `@tauri-apps/*` 之前，与 AppI18nProvider 一致。
 - 文件：`src/windows/monitor/MonitorApp.tsx`（修改）
 - 当前：仅初次 invoke
 - 目标：`listen('monitor:sessions-changed', e => setSessions(e.payload))`；初次仍 invoke 拿首屏；卸载时 unlisten（参考记忆 [[tauri-listen-unlisten-race]]：cleanup 用 `.then(fn=>fn()).catch()` 避开 StrictMode 竞态）
 - 验证：**里程碑 5** — 新开终端跑 `claude`，monitor 窗口实时出现新卡片；对话推进时状态/title 变化；关闭会话 30min 后卡片消失
+  - ⚠️ GUI 验证仍待手动 `pnpm tauri dev` 确认（agent 无法直接驱动 GUI）。代码层验证已通过：tsc -b、eslint、vite build 全绿，dist/monitor.html 产出正常
 
 ## Phase F — 打开终端按钮
 
@@ -232,5 +234,5 @@
 | M2 静态卡片可见 ✅ | 5-10 | 窗口显示 3 张 mock 卡（三段式），tsc+build+lint 通过，GUI 已迭代验证 |
 | M3 i18n 切换 ✅ | 11 | 设置页切语言，卡片文案实时变（复用现有 `config-changed` 事件 + AppI18nProvider） |
 | M4 真实数据 ✅（代码层） | 12-16 | 窗口显示本机真实 claude 会话；代码实施 + tsc/build/lint 全通过，GUI 验证待手动 `pnpm tauri dev` |
-| M5 实时监听 | 17-21 | 新开会话实时出现，老化后消失 |
+| M5 实时监听 ✅（代码层） | 17-21 | 新开会话实时出现，老化后消失；代码实施 + tsc/build/lint 全通过，GUI 验证待手动 `pnpm tauri dev` |
 | M6 打开终端 toast | 22-23 | 点击按钮弹「暂不支持」toast |

@@ -9,6 +9,8 @@ import {
 } from '@mui/material';
 import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
+import { EVENT_MONITOR_SESSIONS_CHANGED } from '@src/shared/events';
+import { listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SessionList from './components/SessionList';
@@ -34,6 +36,22 @@ function MonitorApp() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const unlistenPromise = listen<SessionInfo[]>(
+      EVENT_MONITOR_SESSIONS_CHANGED,
+      (e) => {
+        setSessions(e.payload);
+      },
+    );
+    return () => {
+      unlistenPromise
+        .then(fn => fn())
+        .catch((err: unknown) => {
+          console.warn('[monitor:sessions-changed] unlisten failed (possible Tauri event race):', err);
+        });
+    };
+  }, []);
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
