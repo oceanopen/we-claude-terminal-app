@@ -46,9 +46,10 @@ function formatAbsoluteTime(lastActivity: number): string {
 
 interface SessionCardProps {
   session: SessionInfo;
+  onOpenTerminal: (sessionId: string) => void;
 }
 
-function SessionCard({ session }: SessionCardProps) {
+function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
   const { t } = useTranslation();
 
   return (
@@ -98,7 +99,7 @@ function SessionCard({ session }: SessionCardProps) {
       </CardContent>
       <Divider />
       <CardActions>
-        <Button size="small">{t('terminal:action.openTerminal')}</Button>
+        <Button size="small" onClick={() => onOpenTerminal(session.sessionId)}>{t('terminal:action.openTerminal')}</Button>
       </CardActions>
     </Card>
   );

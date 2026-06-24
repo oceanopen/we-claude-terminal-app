@@ -5,9 +5,10 @@ import SessionCard from './SessionCard';
 
 interface SessionListProps {
   sessions: SessionInfo[];
+  onOpenTerminal: (sessionId: string) => void;
 }
 
-function SessionList({ sessions }: SessionListProps) {
+function SessionList({ sessions, onOpenTerminal }: SessionListProps) {
   if (sessions.length === 0) {
     return <EmptyState />;
   }
@@ -25,7 +26,7 @@ function SessionList({ sessions }: SessionListProps) {
       }}
     >
       {sessions.map(s => (
-        <SessionCard key={s.sessionId} session={s} />
+        <SessionCard key={s.sessionId} session={s} onOpenTerminal={onOpenTerminal} />
       ))}
     </Box>
   );

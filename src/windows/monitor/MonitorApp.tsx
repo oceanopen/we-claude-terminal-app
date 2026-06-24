@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Snackbar,
   Typography,
 } from '@mui/material';
 import { commands } from '@src/shared/bindings';
@@ -21,6 +22,7 @@ function MonitorApp() {
   const { t } = useTranslation();
   const [status, setStatus] = useState<LoadStatus>('loading');
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setStatus('loading');
@@ -32,6 +34,16 @@ function MonitorApp() {
       setStatus('error');
     }
   }, []);
+
+  const handleOpenTerminal = useCallback(async (sessionId: string) => {
+    // unwrap 在 error 时 throw r.error：任务 22 后端按 cfg!(target_os) 返回 OS 标识字符串
+    // （如 'macOS'），catch 拿到后用 toast.unsupported + {{os}} 插值生成最终文案。
+    try {
+      await unwrap(commands.openTerminal(sessionId));
+    } catch (e) {
+      setToast(t('terminal:toast.unsupported', { os: String(e) }));
+    }
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -88,8 +100,15 @@ function MonitorApp() {
             </Alert>
           </Box>
         )}
-        {status === 'ready' && <SessionList sessions={sessions} />}
+        {status === 'ready' && <SessionList sessions={sessions} onOpenTerminal={handleOpenTerminal} />}
       </Box>
+      <Snackbar
+        open={toast !== null}
+        message={toast ?? ''}
+        onClose={() => setToast(null)}
+        autoHideDuration={4000}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 }

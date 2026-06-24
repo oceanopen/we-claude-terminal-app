@@ -210,7 +210,7 @@
 - 验证：**里程碑 5** — 新开终端跑 `claude`，monitor 窗口实时出现新卡片；对话推进时状态/title 变化；关闭会话 30min 后卡片消失
   - ⚠️ GUI 验证仍待手动 `pnpm tauri dev` 确认（agent 无法直接驱动 GUI）。代码层验证已通过：tsc -b、eslint、vite build 全绿，dist/monitor.html 产出正常
 
-## Phase F — 打开终端按钮
+## Phase F — 打开终端按钮 ✅
 
 ### 任务 22：open_terminal 命令 ✅
 > ✅ 完成（2026-06-24）：cargo build + cargo clippy 通过（仅余 1 个 pre-existing `lib.rs:41` let_unit_value warning，与本任务无关）。决策（经 feature-dev 流程与用户确认）：
@@ -223,11 +223,16 @@
 - 验证：devtools invoke 返回对应错误
   - ⚠️ 实际实施改为返回 OS 标识字符串（见上方决策 §1），devtools `invoke('open_terminal', { sessionId: 'x' })` 返回 `{ status: 'error', error: 'macOS' }`（macOS 平台）；最终 toast 文案由任务 23 前端 i18n 插值生成。GUI 验证待手动 `pnpm tauri dev`。代码层验证已通过：cargo build + cargo clippy（1 个 pre-existing warning 与本任务无关），bindings.ts 含 `openTerminal`
 
-### 任务 23：按钮接 toast
-- 文件：`src/windows/monitor/components/SessionCard.tsx`（修改）、`src/windows/monitor/MonitorApp.tsx`（修改，加 Snackbar）
+### 任务 23：按钮接 toast ✅
+> ✅ 完成（2026-06-24）：tsc -b + eslint + vite build 全通过（dist/monitor.html + monitor-CXk3KY46.js 22.61kB 产出正常）。决策（经 feature-dev 流程与用户确认）：
+> 1. **toast 状态提升到 MonitorApp + SessionList 透传 onOpenTerminal 回调（方案 A）**：SessionCard 仅触发 `onOpenTerminal(sessionId)`，命令调用与 toast 逻辑集中在 MonitorApp 的 `handleOpenTerminal`。改 3 文件（SessionCard / SessionList / MonitorApp），非任务描述字面的 2 文件——状态提升后 SessionCard 触发必须经 SessionList 钻孔。理由：(a) Snackbar 单例与卡片生命周期解耦，会话消失（watcher/poller rescan 触发 rescan）时 toast 不闪退；(b) 符合任务描述「MonitorApp 顶层 Snackbar」意图；(c) MUI Snackbar 用 Portal 渲染，单例避免多实例定位冲突。
+> 2. **错误提取用 unwrap 的 throw 模式而非任务描述的 `.catch`**：项目 `commands.openTerminal()` 经 bindings.ts 包装为 `CommandResult<null, string>` 联合类型，`unwrap`（`src/shared/commands.ts:11-17`）在 `status==='error'` 时 `throw r.error`。故 `handleOpenTerminal` 用 `try { await unwrap(commands.openTerminal(sessionId)) } catch (e)`，catch 拿到任务 22 返回的 OS 标识（如 `'macOS'`），`String(e)` 兜底类型窄化后用 `t('terminal:toast.unsupported', { os })` 插值生成「当前 macOS 暂不支持此功能」。与 getMonitorSessions 复用同一 unwrap 模式，保持调用一致性。
+> 3. **Snackbar 配置 autoHideDuration=4000 + anchorOrigin={vertical:'bottom',horizontal:'center'}**：4s 是常见 toast 时长，底部居中不遮挡卡片列表顶部；onClose 统一 `setToast(null)`，autoHideDuration 到期也触发 onClose 自然清空状态。
+- 文件：`src/windows/monitor/components/SessionCard.tsx`（修改）、`src/windows/monitor/components/SessionList.tsx`（修改，透传回调）、`src/windows/monitor/MonitorApp.tsx`（修改，加 Snackbar）
 - 当前：按钮 onClick 空函数
 - 目标：按钮 onClick → `invoke('open_terminal', { sessionId })`，`.catch(msg => setToast(msg))`；MonitorApp 顶层 `<Snackbar open={!!toast} message={toast} onClose={...} />`；文案也可走 i18n `toast.unsupported` 带 `{{os}}` 插值
 - 验证：**里程碑 6** — 点击任一卡片「打开终端」按钮，弹出「当前 macOS 暂不支持此功能」toast（Windows 下同理）
+  - ⚠️ 实际实施见上方决策：状态提升到 MonitorApp（handleOpenTerminal 用 unwrap try/catch + i18n 插值），SessionList 透传 onOpenTerminal 回调；GUI 验证待手动 `pnpm tauri dev`。代码层验证已通过：tsc -b、eslint、vite build 全绿
 
 ---
 
@@ -240,4 +245,4 @@
 | M3 i18n 切换 ✅ | 11 | 设置页切语言，卡片文案实时变（复用现有 `config-changed` 事件 + AppI18nProvider） |
 | M4 真实数据 ✅（代码层） | 12-16 | 窗口显示本机真实 claude 会话；代码实施 + tsc/build/lint 全通过，GUI 验证待手动 `pnpm tauri dev` |
 | M5 实时监听 ✅（代码层） | 17-21 | 新开会话实时出现，老化后消失；代码实施 + tsc/build/lint 全通过，GUI 验证待手动 `pnpm tauri dev` |
-| M6 打开终端 toast | 22-23 | 点击按钮弹「暂不支持」toast |
+| M6 打开终端 toast ✅（代码层） | 22-23 | 点击按钮弹「当前 macOS 暂不支持此功能」toast；代码实施 + tsc/build/lint 全通过，GUI 验证待手动 `pnpm tauri dev` |
