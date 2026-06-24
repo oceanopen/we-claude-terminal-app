@@ -186,11 +186,13 @@
 - 验证：手动 `touch ~/.claude/projects/<dir>/<some>.jsonl`，日志看到 rescan 触发
   - ⚠️ GUI 验证仍待手动 `pnpm tauri dev` 确认（agent 无法直接驱动 GUI）。代码层验证已通过：cargo build + cargo clippy（1 个 pre-existing warning 与本任务无关）
 
-### 任务 19：5s 兜底轮询
-- 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/lib.rs`（修改）
+### 任务 19：5s 兜底轮询 ✅
+> ✅ 完成（2026-06-24）：cargo build + cargo clippy 通过（仅余 1 个 pre-existing `lib.rs:40` let_unit_value warning，与本任务无关）。决策：(1) 选 `std::thread::spawn` 而非任务描述的 `tokio::spawn`——与 Task 18 `start_watcher` 同模式（rescan 是 sync 阻塞 IO，塞进 async 任务需 spawn_blocking 兜底绕回线程池，不如直接起线程；同模式也让读者一眼看出 watcher / poller 是兄弟机制）；(2) 周期实现 `loop { sleep(5s); rescan }`，不漂移对齐——兜底是粗粒度（5s），即时性由 watcher 负责，rescan 耗时几十毫秒造成的周期漂移用户无感知；(3) 常量命名 `RESCAN_POLL_INTERVAL_SECS = 5`（与 `WATCH_DEBOUNCE_MS` 风格对齐）；(4) 不额外加触发日志——rescan 末尾的 `[monitor] rescan: N session(s)` 数量日志每 5s 会出现一次，足以验证；(5) poller 线程无失败路径（无 watch init / 无 home_dir 探测），与 watcher 不同——它的存在本身就是兜底，无需被兜底。
+- 文件：`src-tauri/src/windows/monitor.rs`（修改，加 `start_poller` + `RESCAN_POLL_INTERVAL_SECS`）、`src-tauri/src/lib.rs`（修改，setup 末尾 `start_watcher` 后追加 `start_poller`）
 - 当前：无轮询
 - 目标：`tokio::spawn` 周期任务，每 5s 调 `rescan(app)`（兜底 notify 漏报 + 推动 staleness 老化）
 - 验证：日志周期输出 rescan
+  - ⚠️ GUI 验证仍待手动 `pnpm tauri dev` 确认（agent 无法直接驱动 GUI）。代码层验证已通过：cargo build + cargo clippy（1 个 pre-existing warning 与本任务无关）
 
 ### 任务 20：事件推送
 - 文件：`src-tauri/src/windows/monitor.rs`（修改）、`src-tauri/src/shared/events.rs`（加事件常量）、`src-tauri/src/shared/types.rs`（加事件 payload 类型并经 specta 导出）

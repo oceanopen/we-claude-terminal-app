@@ -417,6 +417,34 @@ pub fn start_watcher(app: AppHandle) {
     });
 }
 
+// ============================================================
+// 兜底轮询（Task 19）
+// ============================================================
+//
+// 每 RESCAN_POLL_INTERVAL_SECS 全量 rescan 一次，作用有二：
+//   - 兜底 fs watcher 漏报（macOS fsevents 对某些操作不保证递归通知；
+//     watcher 线程异常退出时由注释约定也由本轮询接管）；
+//   - 推动 staleness 老化——discover 按 mtime 过滤，需周期重扫才能让
+//     "30min 未活动" 的会话从列表消失（纯事件驱动只在有 fs 变更时才重扫）。
+//
+// 与 start_watcher 同走 std::thread::spawn（而非任务描述的 tokio::spawn）：
+//   - rescan 是 sync 阻塞 IO（discover 遍历 + 每文件 parse_session 读 jsonl），
+//     塞进 async 任务需 spawn_blocking 兜底，绕一圈回到线程池，不如直接起线程；
+//   - 与 watcher 同模式，读者一眼能看出二者是兄弟机制，避免"为什么一个 thread 一个 async"的疑问；
+//   - 周期漂移（rescan 耗时叠加到 sleep 上）无关紧要——兜底本身是粗粒度（5s），
+//     即时性由 watcher 负责，poller 仅做老化与漏报兜底。
+
+/// 兜底轮询周期。粗粒度——即时性由 fs watcher 负责，本常量只驱动漏报兜底与 staleness 老化。
+const RESCAN_POLL_INTERVAL_SECS: u64 = 5;
+
+/// 启动兜底轮询后台线程。setup 末尾调用一次，线程生命周期与进程一致。
+pub fn start_poller(app: AppHandle) {
+    std::thread::spawn(move || loop {
+        std::thread::sleep(Duration::from_secs(RESCAN_POLL_INTERVAL_SECS));
+        rescan(&app);
+    });
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn get_monitor_sessions(
