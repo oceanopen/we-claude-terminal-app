@@ -4,8 +4,8 @@
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
-// Number 用于把 i64 等 BigInt-style 类型在 specta 导出时映射为 TS `number`。
-// last_activity 是毫秒时间戳（远小于 2^53），精度安全。
+// Number 用于把 i64/u32 等 BigInt-style 类型在 specta 导出时映射为 TS `number`。
+// startedAt/updatedAt 是毫秒时间戳（远小于 2^53），精度安全。
 use specta_typescript::Number;
 
 // ============================================================
@@ -24,27 +24,61 @@ pub struct ConfigChangedPayload {
 }
 
 // ============================================================
-// 终端会话：monitor 窗口卡片数据
+// 终端会话：monitor 窗口卡片 / pet 窗口桌宠状态
 // ============================================================
 
-/// 终端会话状态。前端 SessionCard 据此切换状态 Chip 配色与文案。
+/// 终端会话状态。直接映射 `~/.claude/sessions/<pid>.json` 里的 `status` 字段
+/// （busy/waiting/idle）外加本地推断的 Dead（进程已退出但 json 残留）。
+/// 前端 SessionCard 据此切换状态 Chip 配色与文案。
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize, Type)]
 pub enum SessionStatus {
-    Running,
-    NeedsConfirmation,
-    Completed,
+    /// 运行中：Claude 正在执行工具/生成回复。
+    Busy,
+    /// 等待输入：Claude 已完成回复，等用户输入。
+    Waiting,
+    /// 空闲：会话长时间无活动，但仍存活。
+    Idle,
+    /// 已失效：进程已退出，json 残留。discover 阶段会过滤掉，理论上不会出现在前端。
+    Dead,
 }
 
-/// 终端会话快照。MonitorApp 渲染 SessionCard 列表的数据源。
+/// 宿主终端应用。通过 `ps -p <ppid>` 链式反查 Claude 进程的祖先进程名得出。
+/// 用于决定跳转时调用哪个 AppleScript 脚本。
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize, Type)]
+pub enum TerminalApp {
+    ITerm2,
+    Terminal,
+    IntelliJ,
+    /// 未识别的宿主终端（如 VSCode 内嵌、Wezterm、Alacritty 等）。跳转按钮将禁用。
+    Unknown,
+}
+
+/// 终端会话快照。MonitorApp 渲染 SessionCard 列表的数据源；
+/// PetApp 聚合所有会话取"最忙"状态作为桌宠展示态。
 #[derive(Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionInfo {
+    /// Claude Code 进程 pid（也是 `~/.claude/sessions/<pid>.json` 的文件名）。
+    pub pid: u32,
+    /// Claude Code 会话 ID（uuid）。从 json 的 `sessionId` 字段读取。
     pub session_id: String,
+    /// 会话工作目录绝对路径。
     pub cwd: String,
+    /// projectName = basename(cwd)，用于 UI 展示与 AppleScript 模糊匹配。
     pub project_name: String,
-    pub title: String,
+    /// 会话状态（Busy/Waiting/Idle/Dead）。
     pub status: SessionStatus,
-    /// 最后活动时间（毫秒时间戳）。前端据此渲染相对时间（刚刚 / N 分钟前）。
+    /// 会话启动时间（毫秒时间戳）。对应 json 的 `startedAt`。
     #[specta(type = Number)]
-    pub last_activity: i64,
+    pub started_at: i64,
+    /// 最后一次状态更新时间（毫秒时间戳）。对应 json 的 `updatedAt`。
+    #[specta(type = Number)]
+    pub updated_at: i64,
+    /// 宿主终端应用类型，决定跳转策略。
+    pub host_app: TerminalApp,
+    /// 宿主终端进程 pid（用于 AppleScript 间接定位）。
+    pub host_pid: u32,
+    /// 宿主终端的 tty 设备路径（如 `/dev/ttys004`），AppleScript 精确匹配用。
+    /// 无法识别时为空字符串。
+    pub tty: String,
 }

@@ -5,8 +5,8 @@ use tauri::{App, Manager};
 
 use crate::shared::types::SessionInfo;
 
-// 字段暂无读写访问（后端采集未接入），待 rescan / get_monitor_sessions 接入后移除。
-#[allow(dead_code)]
+/// 会话存储。key 为 pid 字符串（与 `~/.claude/sessions/<pid>.json` 文件名一致）。
+/// 每次全量 rescan 走替换式写入，保证 Dead 会话立即清除。
 #[derive(Default)]
 pub struct SessionStore(pub Mutex<HashMap<String, SessionInfo>>);
 
@@ -15,8 +15,8 @@ pub fn init(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// 替换式写入：clear 后按 session_id 为 key 全量 insert。
-/// 替换而非合并，保证消失的会话被清除（对齐 Task 17 rescan 语义）。
+/// 替换式写入：clear 后按 pid 为 key 全量 insert。
+/// 替换而非合并，保证消失的会话被清除。
 pub fn write_sessions(store: &SessionStore, sessions: Vec<SessionInfo>) {
     let mut map = store
         .0
@@ -24,6 +24,6 @@ pub fn write_sessions(store: &SessionStore, sessions: Vec<SessionInfo>) {
         .expect("SessionStore mutex poisoned");
     map.clear();
     for s in sessions {
-        map.insert(s.session_id.clone(), s);
+        map.insert(s.pid.to_string(), s);
     }
 }

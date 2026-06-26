@@ -4,6 +4,7 @@
   "description": "enables the default permissions",
   "windows": [
     "monitor",
+    "pet",
     "settings"
   ],
   "permissions": [
@@ -19,6 +20,8 @@
     "core:window:allow-inner-size",
     "core:window:allow-outer-size",
     "core:window:allow-is-visible",
+    "core:window:allow-set-ignore-cursor-events",
+    "core:window:allow-set-always-on-top",
     "shell:allow-open"
   ]
 }

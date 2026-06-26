@@ -7,11 +7,13 @@ use tauri::{
 
 use crate::shared::config::{read_config_raw, ConfigState, LANGUAGE_KEY};
 use crate::shared::i18n::{menu_text, resolve, ResolvedLanguage};
+use crate::windows::pet::get_pet_visibility_state;
 
 /// 已构建的托盘菜单项引用，用于后续动态更新文案。
 struct TrayMenuItems {
     monitor: MenuItem<tauri::Wry>,
     settings: MenuItem<tauri::Wry>,
+    pet: MenuItem<tauri::Wry>,
     quit: MenuItem<tauri::Wry>,
 }
 
@@ -23,14 +25,21 @@ fn current_language(app: &AppHandle) -> ResolvedLanguage {
     resolve(raw.as_deref())
 }
 
+/// 桌宠当前显隐 → menu text key。隐藏时显示"显示桌宠"，显示时显示"隐藏桌宠"。
+fn pet_menu_key(app: &AppHandle) -> &'static str {
+    if get_pet_visibility_state(app.clone()) {
+        "pet-hide"
+    } else {
+        "pet-show"
+    }
+}
+
 pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    // CARGO_MANIFEST_DIR 在编译期解析为 src-tauri/ 绝对路径，作 crate root 锚点，
-    // 避免相对路径随源文件位置移动而失效。
     let icon = tauri::image::Image::from_bytes(include_bytes!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/icons/32x32.png"
     )))
-        .expect("failed to load tray icon");
+    .expect("failed to load tray icon");
 
     let lang = current_language(app.handle());
 
@@ -48,12 +57,21 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         true,
         None::<&str>,
     )?;
+    let pet_item = MenuItem::with_id(
+        app,
+        "pet",
+        menu_text(lang, pet_menu_key(app.handle())),
+        true,
+        None::<&str>,
+    )?;
     let quit_item = MenuItem::with_id(app, "quit", menu_text(lang, "quit"), true, None::<&str>)?;
 
     let menu = Menu::with_items(
         app,
         &[
             &monitor_item,
+            &PredefinedMenuItem::separator(app)?,
+            &pet_item,
             &PredefinedMenuItem::separator(app)?,
             &settings_item,
             &PredefinedMenuItem::separator(app)?,
@@ -72,6 +90,13 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                     log::warn!("failed to open monitor window: {e}");
                 }
             }
+            "pet" => {
+                if let Err(e) = crate::windows::pet::toggle_pet_window(app.clone()) {
+                    log::warn!("failed to toggle pet window: {e}");
+                }
+                // 切换后立刻刷新菜单文案。
+                crate::windows::tray::refresh_menu_texts(app);
+            }
             "settings" => {
                 if let Err(e) = crate::windows::settings::show_settings_window(app.clone()) {
                     log::warn!("failed to open settings window: {e}");
@@ -87,6 +112,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     app.manage(Mutex::new(TrayMenuItems {
         monitor: monitor_item,
         settings: settings_item,
+        pet: pet_item,
         quit: quit_item,
     }));
 
@@ -103,5 +129,6 @@ pub fn refresh_menu_texts(app: &AppHandle) {
     let lang = current_language(app);
     let _ = items.monitor.set_text(menu_text(lang, "monitor"));
     let _ = items.settings.set_text(menu_text(lang, "settings"));
+    let _ = items.pet.set_text(menu_text(lang, pet_menu_key(app)));
     let _ = items.quit.set_text(menu_text(lang, "quit"));
 }

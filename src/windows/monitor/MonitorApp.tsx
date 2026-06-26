@@ -1,4 +1,4 @@
-import type { SessionInfo } from '@src/shared/bindings';
+import type { NavErr, SessionInfo } from '@src/shared/bindings';
 import {
   Alert,
   AlertTitle,
@@ -10,13 +10,29 @@ import {
 } from '@mui/material';
 import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
-import { EVENT_MONITOR_SESSIONS_CHANGED } from '@src/shared/events';
+import {
+  EVENT_MONITOR_SESSIONS_CHANGED,
+  EVENT_SESSION_NAV_FAILED,
+} from '@src/shared/events';
 import { listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import SessionList from './components/SessionList';
 
 type LoadStatus = 'loading' | 'ready' | 'error';
+
+function navErrToToastKey(err: NavErr): { key: string; opts?: Record<string, unknown> } {
+  switch (err.kind) {
+    case 'unsupportedHostApp':
+      return { key: 'terminal:toast.unsupportedHostApp' };
+    case 'osaScriptFailed':
+      return { key: 'terminal:toast.osaScriptFailed', opts: { stderr: err.stderr } };
+    case 'sessionNotFound':
+      return { key: 'terminal:toast.sessionNotFound' };
+    case 'io':
+      return { key: 'terminal:toast.io', opts: { message: err.message } };
+  }
+}
 
 function MonitorApp() {
   const { t } = useTranslation();
@@ -35,15 +51,11 @@ function MonitorApp() {
     }
   }, []);
 
-  const handleOpenTerminal = useCallback(async (sessionId: string) => {
-    // unwrap 在 error 时 throw r.error：任务 22 后端按 cfg!(target_os) 返回 OS 标识字符串
-    // （如 'macOS'），catch 拿到后用 toast.unsupported + {{os}} 插值生成最终文案。
-    try {
-      await unwrap(commands.openTerminal(sessionId));
-    } catch (e) {
-      setToast(t('terminal:toast.unsupported', { os: String(e) }));
-    }
-  }, [t]);
+  const handleOpenTerminal = useCallback(async (pid: number) => {
+    // navigate_to_session 成功路径返回 Ok(())；失败时后端 emit session-navigation-failed，
+    // 由下面的 listen 统一处理 toast（不在这里 catch），命令调用本身静默。
+    await commands.navigateToSession(pid);
+  }, []);
 
   useEffect(() => {
     void load();
@@ -64,6 +76,20 @@ function MonitorApp() {
         });
     };
   }, []);
+
+  useEffect(() => {
+    const unlistenPromise = listen<NavErr>(EVENT_SESSION_NAV_FAILED, (e) => {
+      const { key, opts } = navErrToToastKey(e.payload);
+      setToast(t(key, opts));
+    });
+    return () => {
+      unlistenPromise
+        .then(fn => fn())
+        .catch((err: unknown) => {
+          console.warn('[monitor:session-navigation-failed] unlisten failed:', err);
+        });
+    };
+  }, [t]);
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>

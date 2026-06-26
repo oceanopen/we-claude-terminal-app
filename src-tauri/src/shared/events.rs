@@ -8,3 +8,7 @@ pub const EVENT_CONFIG_CHANGED: &str = "config-changed";
 /// monitor 窗口会话列表变更时广播（payload = `&[SessionInfo]` 快照）。
 /// rescan（fs watcher / 5s 兜底轮询）末尾触发；MonitorApp 据此 setSessions 增量刷新。
 pub const EVENT_MONITOR_SESSIONS_CHANGED: &str = "monitor:sessions-changed";
+
+/// 终端跳转失败时广播（payload = `SessionNavFailed`）。
+/// navigate_to_session 命令失败时 emit；MonitorApp / PetApp 据此弹 toast。
+pub const EVENT_SESSION_NAV_FAILED: &str = "monitor:session-navigation-failed";

@@ -1,5 +1,6 @@
-import type { SessionInfo, SessionStatus } from '@src/shared/bindings';
+import type { SessionInfo, SessionStatus, TerminalApp } from '@src/shared/bindings';
 import {
+  Box,
   Button,
   Card,
   CardActions,
@@ -11,20 +12,32 @@ import {
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-const chipColor: Record<SessionStatus, 'primary' | 'warning' | 'default'> = {
-  Running: 'primary',
-  NeedsConfirmation: 'warning',
-  Completed: 'default',
+const chipColor: Record<SessionStatus, 'warning' | 'info' | 'default' | 'error'> = {
+  Busy: 'warning',
+  Waiting: 'info',
+  Idle: 'default',
+  Dead: 'error',
 };
 
 const statusI18nKey: Record<SessionStatus, string> = {
-  Running: 'terminal:status.running',
-  NeedsConfirmation: 'terminal:status.needsConfirmation',
-  Completed: 'terminal:status.completed',
+  Busy: 'terminal:status.busy',
+  Waiting: 'terminal:status.waiting',
+  Idle: 'terminal:status.idle',
+  Dead: 'terminal:status.dead',
 };
 
-function formatRelativeTime(lastActivity: number, t: (key: string, opts?: Record<string, unknown>) => string): string {
-  const diffSec = Math.max(0, Math.floor((Date.now() - lastActivity) / 1000));
+const hostAppI18nKey: Record<TerminalApp, string> = {
+  ITerm2: 'terminal:hostApp.ITerm2',
+  Terminal: 'terminal:hostApp.Terminal',
+  IntelliJ: 'terminal:hostApp.IntelliJ',
+  Unknown: 'terminal:hostApp.Unknown',
+};
+
+// 暂不支持跳转的宿主终端（前端禁用按钮，避免无效 osascript 调用）。
+const UNSUPPORTED_HOST: TerminalApp[] = ['IntelliJ', 'Unknown'];
+
+function formatRelativeTime(updatedAt: number, t: (key: string, opts?: Record<string, unknown>) => string): string {
+  const diffSec = Math.max(0, Math.floor((Date.now() - updatedAt) / 1000));
   if (diffSec < 60) {
     return t('terminal:time.justNow');
   }
@@ -34,28 +47,19 @@ function formatRelativeTime(lastActivity: number, t: (key: string, opts?: Record
   return t('terminal:time.hoursAgo', { hours: Math.floor(diffSec / 3600) });
 }
 
-function pad2(n: number): string {
-  return n < 10 ? `0${n}` : String(n);
-}
-
-// YYYY-MM-DD HH:mm:ss（本地时区，24 小时制）。无 i18n 差异，与相对时间并排展示精确时刻。
-function formatAbsoluteTime(lastActivity: number): string {
-  const d = new Date(lastActivity);
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
-}
-
 interface SessionCardProps {
   session: SessionInfo;
-  onOpenTerminal: (sessionId: string) => void;
+  onOpenTerminal: (pid: number) => void;
 }
 
 function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
   const { t } = useTranslation();
+  const unsupported = UNSUPPORTED_HOST.includes(session.hostApp);
 
   return (
     <Card variant="outlined">
       <CardHeader
-        title={session.projectName}
+        title={session.projectName || session.cwd}
         slotProps={{ title: { fontWeight: 600, noWrap: true } }}
         sx={{ '& .MuiCardHeader-action': { alignSelf: 'center', mt: 0 } }}
         action={(
@@ -68,17 +72,21 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
       />
       <Divider />
       <CardContent>
-        <Typography
-          sx={{
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-            mb: 1,
-          }}
-        >
-          {session.title}
-        </Typography>
+        <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Chip
+            size="small"
+            variant="outlined"
+            label={t(hostAppI18nKey[session.hostApp])}
+          />
+          {session.tty && (
+            <Typography
+              color="text.secondary"
+              sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
+            >
+              {session.tty}
+            </Typography>
+          )}
+        </Box>
         <Typography
           color="text.secondary"
           sx={{
@@ -87,19 +95,24 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
+            mb: 0.5,
           }}
         >
           {session.cwd}
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          {formatRelativeTime(session.lastActivity, t)}
-          {'  |  '}
-          {formatAbsoluteTime(session.lastActivity)}
+          {formatRelativeTime(session.updatedAt, t)}
         </Typography>
       </CardContent>
       <Divider />
       <CardActions>
-        <Button size="small" onClick={() => onOpenTerminal(session.sessionId)}>{t('terminal:action.openTerminal')}</Button>
+        <Button
+          size="small"
+          disabled={unsupported}
+          onClick={() => onOpenTerminal(session.pid)}
+        >
+          {t('terminal:action.openTerminal')}
+        </Button>
       </CardActions>
     </Card>
   );

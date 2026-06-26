@@ -1,4 +1,6 @@
+mod sessions;
 mod shared;
+mod terminal;
 mod windows;
 
 use tauri::Listener;
@@ -8,12 +10,18 @@ use tauri_specta::{collect_commands, Builder};
 // run()（注册 invoke handler）与 bin/export_bindings.rs（生成 TS 绑定）共用此函数，
 // 保证命令清单单一来源，避免两份注册表漂移。
 pub fn build_specta_builder() -> Builder<tauri::Wry> {
-    use crate::shared::types::{ConfigChangedPayload, SessionInfo, SessionStatus};
+    use crate::shared::types::{ConfigChangedPayload, SessionInfo, SessionStatus, TerminalApp};
+    use crate::terminal::NavErr;
     Builder::<tauri::Wry>::new()
         .commands(collect_commands![
             windows::monitor::show_monitor_window,
             windows::monitor::get_monitor_sessions,
-            windows::monitor::open_terminal,
+            windows::monitor::navigate_to_session,
+            windows::pet::show_pet_window,
+            windows::pet::hide_pet_window,
+            windows::pet::toggle_pet_window,
+            windows::pet::set_pet_click_through,
+            windows::pet::get_pet_visibility_state,
             windows::settings::show_settings_window,
             shared::config::get_config,
             shared::config::set_config,
@@ -22,7 +30,9 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
         // 用 typ 显式注册，让 specta 把它们导出到 bindings.ts 供前端复用。
         .typ::<ConfigChangedPayload>()
         .typ::<SessionStatus>()
+        .typ::<TerminalApp>()
         .typ::<SessionInfo>()
+        .typ::<NavErr>()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -53,9 +63,12 @@ pub fn run() {
             shared::state::monitor::init(app)?;
             windows::tray::setup(app)?;
 
-            windows::monitor::rescan(app.handle());
-            windows::monitor::start_watcher(app.handle().clone());
-            windows::monitor::start_poller(app.handle().clone());
+            sessions::rescan(app.handle());
+            sessions::watch::start(app.handle().clone());
+            sessions::poll::start(app.handle().clone());
+
+            // 桌宠窗口默认启动时显示（用户可通过托盘菜单"隐藏桌宠"关闭）。
+            windows::pet::startup_show(app.handle());
 
             specta_builder.mount_events(app);
 

@@ -17,6 +17,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         monitor: resolve(__dirname, 'monitor.html'),
+        pet: resolve(__dirname, 'pet.html'),
         settings: resolve(__dirname, 'settings.html'),
       },
     },

@@ -10,13 +10,21 @@ export const commands = {
 	showMonitorWindow: () => typedError<null, string>(__TAURI_INVOKE("show_monitor_window")),
 	getMonitorSessions: () => typedError<SessionInfo[], string>(__TAURI_INVOKE("get_monitor_sessions")),
 	/**
-	 *  v1 占位：不实现真实打开终端，按编译目标 OS 返回标识字符串作为 Err。
-	 *  前端（任务 23）用 `t('terminal:toast.unsupported', { os })` 插值生成最终 toast 文案——
-	 *  不在后端做 i18n，以便语言切换跟随，并复用 Phase B 任务 5 已预埋的 `{{os}}` 资源。
-	 * 
-	 *  参数为 v2 预留：session_id 用于定位 cwd、app 用于调 shell plugin。v1 用 `let _ =` 抑制 warning。
+	 *  跳转到 pid 对应的宿主终端会话。
+	 *  成功返回 Ok(())；失败 emit `monitor:session-navigation-failed` 事件，
+	 *  前端据 NavErr.kind 渲染差异化 toast。
 	 */
-	openTerminal: (sessionId: string) => typedError<null, string>(__TAURI_INVOKE("open_terminal", { sessionId })),
+	navigateToSession: (pid: number) => typedError<null, string>(__TAURI_INVOKE("navigate_to_session", { pid })),
+	showPetWindow: () => typedError<null, string>(__TAURI_INVOKE("show_pet_window")),
+	hidePetWindow: () => typedError<null, string>(__TAURI_INVOKE("hide_pet_window")),
+	togglePetWindow: () => typedError<boolean, string>(__TAURI_INVOKE("toggle_pet_window")),
+	/**
+	 *  前端 mouseenter/leave 调用，控制桌宠窗口的鼠标穿透态。
+	 *  mouseenter → enabled=false（接收点击）；mouseleave → enabled=true（穿透到下层）。
+	 */
+	setPetClickThrough: (enabled: boolean) => typedError<null, string>(__TAURI_INVOKE("set_pet_click_through", { enabled })),
+	/**  查询桌宠当前显隐状态。供前端启动时初始化 UI。 */
+	getPetVisibilityState: () => __TAURI_INVOKE<boolean>("get_pet_visibility_state"),
 	showSettingsWindow: () => typedError<null, string>(__TAURI_INVOKE("show_settings_window")),
 	getConfig: (key: string) => typedError<string | null, string>(__TAURI_INVOKE("get_config", { key })),
 	setConfig: (key: string, value: string) => typedError<null, string>(__TAURI_INVOKE("set_config", { key, value })),
@@ -34,19 +42,69 @@ export type ConfigChangedPayload = {
 	value: string,
 };
 
-/**  终端会话快照。MonitorApp 渲染 SessionCard 列表的数据源。 */
+/**  跳转失败原因。对应前端 navigation-failed toast 文案细分。 */
+export type NavErr = 
+/**  宿主终端未识别（如 VSCode 内嵌 / Wezterm 等）。 */
+{ kind: "unsupportedHostApp" } | 
+/**  osascript 执行失败（exit code 非零）。 */
+{ kind: "osaScriptFailed"; stderr: string } | 
+/**  SessionStore 找不到对应 pid 的会话（可能刚过期）。 */
+{ kind: "sessionNotFound" } | 
+/**  其他 IO 错误。 */
+{ kind: "io"; message: string };
+
+/**
+ *  终端会话快照。MonitorApp 渲染 SessionCard 列表的数据源；
+ *  PetApp 聚合所有会话取"最忙"状态作为桌宠展示态。
+ */
 export type SessionInfo = {
+	/**  Claude Code 进程 pid（也是 `~/.claude/sessions/<pid>.json` 的文件名）。 */
+	pid: number,
+	/**  Claude Code 会话 ID（uuid）。从 json 的 `sessionId` 字段读取。 */
 	sessionId: string,
+	/**  会话工作目录绝对路径。 */
 	cwd: string,
+	/**  projectName = basename(cwd)，用于 UI 展示与 AppleScript 模糊匹配。 */
 	projectName: string,
-	title: string,
+	/**  会话状态（Busy/Waiting/Idle/Dead）。 */
 	status: SessionStatus,
-	/**  最后活动时间（毫秒时间戳）。前端据此渲染相对时间（刚刚 / N 分钟前）。 */
-	lastActivity: number,
+	/**  会话启动时间（毫秒时间戳）。对应 json 的 `startedAt`。 */
+	startedAt: number,
+	/**  最后一次状态更新时间（毫秒时间戳）。对应 json 的 `updatedAt`。 */
+	updatedAt: number,
+	/**  宿主终端应用类型，决定跳转策略。 */
+	hostApp: TerminalApp,
+	/**  宿主终端进程 pid（用于 AppleScript 间接定位）。 */
+	hostPid: number,
+	/**
+	 *  宿主终端的 tty 设备路径（如 `/dev/ttys004`），AppleScript 精确匹配用。
+	 *  无法识别时为空字符串。
+	 */
+	tty: string,
 };
 
-/**  终端会话状态。前端 SessionCard 据此切换状态 Chip 配色与文案。 */
-export type SessionStatus = "Running" | "NeedsConfirmation" | "Completed";
+/**
+ *  终端会话状态。直接映射 `~/.claude/sessions/<pid>.json` 里的 `status` 字段
+ *  （busy/waiting/idle）外加本地推断的 Dead（进程已退出但 json 残留）。
+ *  前端 SessionCard 据此切换状态 Chip 配色与文案。
+ */
+export type SessionStatus = 
+/**  运行中：Claude 正在执行工具/生成回复。 */
+"Busy" | 
+/**  等待输入：Claude 已完成回复，等用户输入。 */
+"Waiting" | 
+/**  空闲：会话长时间无活动，但仍存活。 */
+"Idle" | 
+/**  已失效：进程已退出，json 残留。discover 阶段会过滤掉，理论上不会出现在前端。 */
+"Dead";
+
+/**
+ *  宿主终端应用。通过 `ps -p <ppid>` 链式反查 Claude 进程的祖先进程名得出。
+ *  用于决定跳转时调用哪个 AppleScript 脚本。
+ */
+export type TerminalApp = "ITerm2" | "Terminal" | "IntelliJ" | 
+/**  未识别的宿主终端（如 VSCode 内嵌、Wezterm、Alacritty 等）。跳转按钮将禁用。 */
+"Unknown";
 
 /* Tauri Specta runtime */
 async function typedError<T, E>(result: Promise<T>): Promise<{ status: "ok"; data: T } | { status: "error"; error: E }> {
