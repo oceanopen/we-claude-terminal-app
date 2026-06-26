@@ -1,8 +1,16 @@
 //! tauri-specta 绑定生成器：导出 TypeScript 绑定到 src/shared/bindings.ts。
 //!
-//! 触发方式：`pnpm gen:bindings`（见 package.json）。
+//! 触发方式：`pnpm gen:bindings`（见 package.json）—— 实际跑
+//! `cargo run --manifest-path src-tauri/Cargo.toml --features gen-bindings --bin export_bindings`。
 //! 修改 src-tauri/src/shared/types.rs 或任何 #[tauri::command] 签名后必须重新运行，
 //! 否则前后端类型会漂移。
+//!
+//! 为什么放在 src/cli/ 而不是 cargo 默认的 src/bin/？
+//! Tauri 2.x bundler 的 Stage 2 会无脑扫描 src-tauri/src/bin/ 目录（tauri#15325），
+//! 把扫到的 .rs 当作 bundle binary 找产物，导致 `tauri build` 失败。
+//! 放在 src/cli/ + [[bin]] 显式 path，bundler 扫不到这里，绕开 bug；
+//! 同时 [[bin]] 产物落在 target/<profile>/ 根，与 WebView2Loader.dll 同目录，
+//! Windows 上也不需要 DLL 复制 hack。
 
 use specta_typescript::Typescript;
 use we_claude_terminal_monitor_lib::build_specta_builder;
