@@ -1,7 +1,7 @@
 {
   "name": "we-claude-terminal-monitor",
   "type": "module",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": false,
   "packageManager": "pnpm@10.18.3",
   "scripts": {

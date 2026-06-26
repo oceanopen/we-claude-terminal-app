@@ -1,6 +1,6 @@
 [package]
 name = "we-claude-terminal-monitor"
-version = "0.0.2"
+version = "0.0.3"
 description = "We Claude Terminal Monitor Desktop App"
 authors = ["oceangao"]
 license = ""
