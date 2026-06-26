@@ -70,7 +70,7 @@ function AboutPage() {
         }}
         onClick={() => {
           import('@tauri-apps/plugin-shell').then(({ open }) => {
-            open('https://github.com/oceanopen/we-claude-terminal-monitor');
+            open('https://github.com/oceanopen/we-claude-terminal-app');
           });
         }}
       >
