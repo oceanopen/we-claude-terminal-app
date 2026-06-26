@@ -65,19 +65,19 @@ jobs:
           tauriScript: pnpm tauri # 指定 Tauri CLI 入口命令
           args: ${{ matrix.args }} # 传递构建参数（如 macOS 的 --target universal-apple-darwin）
 
-      # 重命名 macOS 产物为统一格式：WeHealthTick-{版本号}-macos-universal.dmg
+      # 重命名 macOS 产物为统一格式：WeClaudeTerminal-{版本号}-macos-universal.dmg
       - name: Rename macOS artifacts
         if: matrix.platform == 'macos-latest'
         run: |
           cd src-tauri/target/universal-apple-darwin/release/bundle/dmg
           for f in *.dmg; do
             version=$(echo "$f" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-            new_name="WeHealthTick-${version}-macos-universal.dmg"
+            new_name="WeClaudeTerminal-${version}-macos-universal.dmg"
             mv "$f" "$new_name"
             echo "Renamed: $f -> $new_name"
           done
 
-      # 重命名 Windows 产物为统一格式：WeHealthTick-{版本号}-windows-x64-setup.exe
+      # 重命名 Windows 产物为统一格式：WeClaudeTerminal-{版本号}-windows-x64-setup.exe
       - name: Rename Windows artifacts
         if: matrix.platform == 'windows-latest'
         shell: pwsh
@@ -85,7 +85,7 @@ jobs:
           cd src-tauri/target/release/bundle/nsis
           Get-ChildItem *.exe | ForEach-Object {
             $version = if ($_.Name -match '(\d+\.\d+\.\d+)') { $matches[1] } else { '0.0.0' }
-            $newName = "WeHealthTick-${version}-windows-x64-setup.exe"
+            $newName = "WeClaudeTerminal-${version}-windows-x64-setup.exe"
             Rename-Item $_.Name $newName
             Write-Host "Renamed: $($_.Name) -> $newName"
           }

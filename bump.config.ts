@@ -12,7 +12,7 @@ export default defineConfig({
     const lockPath = 'src-tauri/Cargo.lock';
     const lockContent = readFileSync(lockPath, 'utf-8');
     const updated = lockContent.replace(
-      /(name = "we-claude-terminal-monitor"\nversion = ")[^"]*(")/,
+      /(name = "we-claude-terminal"\nversion = ")[^"]*(")/,
       `$1${newVersion}$2`,
     );
     writeFileSync(lockPath, updated);

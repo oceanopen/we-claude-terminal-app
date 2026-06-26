@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "We Claude Terminal Monitor",
+  "productName": "We Claude Terminal",
   "version": "0.0.3",
-  "identifier": "com.we.claude.terminal.monitor",
+  "identifier": "com.we.claude.terminal",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -27,8 +27,8 @@
     "publisher": "oceangao",
     "copyright": "Copyright (C) 2026 oceangao",
     "category": "Utility",
-    "shortDescription": "We Claude Terminal Monitor Desktop App",
-    "longDescription": "We Claude Terminal Monitor Desktop App",
+    "shortDescription": "We Claude Terminal Desktop App",
+    "longDescription": "We Claude Terminal Desktop App",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

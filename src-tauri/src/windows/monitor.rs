@@ -94,7 +94,7 @@ pub fn show_monitor_window(app: tauri::AppHandle) -> Result<(), String> {
         None => {
             let win =
                 WebviewWindowBuilder::new(&app, "monitor", WebviewUrl::App("monitor.html".into()))
-                    .title("We Claude Terminal Monitor")
+                    .title("We Claude Terminal")
                     .inner_size(width, height)
                     .center()
                     .skip_taskbar(true)

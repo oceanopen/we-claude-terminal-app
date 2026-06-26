@@ -26,7 +26,7 @@ pub fn show_settings_window(app: tauri::AppHandle) -> Result<(), String> {
                 "settings",
                 WebviewUrl::App("settings.html".into()),
             )
-            .title("We Claude Terminal Monitor")
+            .title("We Claude Terminal")
             .inner_size(width, height)
             // 默认在主屏居中；下方 set_position 修正到 tray 所在屏，探测失败保持主屏。
             .center()

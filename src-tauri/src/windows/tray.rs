@@ -81,7 +81,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     TrayIconBuilder::with_id("tray")
         .icon(icon)
-        .tooltip("We Claude Terminal Monitor")
+        .tooltip("We Claude Terminal")
         .menu(&menu)
         .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id().as_ref() {
