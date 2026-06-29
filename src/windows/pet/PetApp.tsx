@@ -2,6 +2,7 @@ import type { SessionInfo, SessionStatus } from '@src/shared/bindings';
 import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
 import { EVENT_MONITOR_SESSIONS_CHANGED } from '@src/shared/events';
+import { countActiveSessions } from '@src/shared/sessionStatus';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useCallback, useEffect, useState } from 'react';
@@ -24,7 +25,8 @@ function aggregateStatus(sessions: SessionInfo[]): { status: SessionStatus; coun
   const top = [...sessions].sort(
     (a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status],
   )[0];
-  return { status: top.status, count: sessions.length };
+  // 数量口径：仅统计非空闲会话（Busy+Waiting）。top.status 仍看全部会话，保证全部空闲时显示 Idle 表情。
+  return { status: top.status, count: countActiveSessions(sessions) };
 }
 
 function PetApp() {

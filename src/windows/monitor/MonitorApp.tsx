@@ -14,6 +14,7 @@ import {
   EVENT_MONITOR_SESSIONS_CHANGED,
   EVENT_SESSION_NAV_FAILED,
 } from '@src/shared/events';
+import { isActiveSession } from '@src/shared/sessionStatus';
 import { listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -91,11 +92,18 @@ function MonitorApp() {
     };
   }, [t]);
 
+  // 仅展示非空闲会话（Busy+Waiting）：监听窗口聚焦活跃终端，空闲会话不渲染。
+  // sessions 仍保留全量（事件订阅原始 payload），activeSessions 作为派生值传入 SessionList。
+  const activeSessions = sessions.filter(isActiveSession);
+
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           {t('terminal:title')}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {t('terminal:activeCount', { count: activeSessions.length })}
         </Typography>
       </Box>
       <Box sx={{ flex: 1, overflow: 'auto' }}>
@@ -126,7 +134,7 @@ function MonitorApp() {
             </Alert>
           </Box>
         )}
-        {status === 'ready' && <SessionList sessions={sessions} onOpenTerminal={handleOpenTerminal} />}
+        {status === 'ready' && <SessionList sessions={activeSessions} onOpenTerminal={handleOpenTerminal} />}
       </Box>
       <Snackbar
         open={toast !== null}
