@@ -8,19 +8,20 @@ interface PetSpriteProps {
 }
 
 // 4 种 emoji 表情映射。
+// Idle 用乌龟（缓慢=空闲）、Dead 用冬眠熊（无会话休眠态），两个非活跃状态都用动物保持视觉统一。
 // 后续若需要动画可替换为 SVG / Lottie，props 接口不变。
 const EMOJI: Record<SessionStatus, string> = {
   Busy: '🐱',
   Waiting: '😺',
-  Idle: '💤',
-  Dead: '👻',
+  Idle: '🐢',
+  Dead: '🐻',
 };
 
 const COLOR: Record<SessionStatus, string> = {
   Busy: '#ff9800', // warning 橙
   Waiting: '#03a9f4', // info 蓝
   Idle: '#9e9e9e', // 灰
-  Dead: '#e57373', // error 红
+  Dead: '#616161', // 深灰（无会话休眠非错误，去警示红；比 Idle 深一档区分）
 };
 
 function PetSprite({ status, count }: PetSpriteProps) {
