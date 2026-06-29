@@ -24,10 +24,6 @@
   <!-- Highlight (small, lower-right) -->
   <circle cx="284" cy="276" r="8" fill="#FFFFFF"/>
 
-  <!-- DEV badge: red circle at top-right corner, overflows the rounded square for high visibility -->
-  <circle cx="408" cy="104" r="92" fill="#E53935" stroke="#FFFFFF" stroke-width="10"/>
-  <text x="408" y="104"
-        font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
-        font-size="56" font-weight="900"
-        fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">DEV</text>
+  <!-- DEV badge: 右下角红色实心圆 + 白色描边，风格对齐 we-health-tick-app/alerting-dev.svg -->
+  <circle cx="380" cy="380" r="85" fill="#EF4444" stroke="#FFFFFF" stroke-width="24"/>
 </svg>
