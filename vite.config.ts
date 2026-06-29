@@ -8,6 +8,11 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
   plugins: [react()],
+  // strictPort: 端口被占时直接报错而非递增，避免 tauri.devUrl 连不上前端。
+  server: {
+    port: 7102,
+    strictPort: true,
+  },
   resolve: {
     alias: {
       '@src': resolve(__dirname, 'src'),
