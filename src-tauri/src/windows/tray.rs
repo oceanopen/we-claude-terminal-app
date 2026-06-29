@@ -36,11 +36,25 @@ fn pet_menu_key(app: &AppHandle) -> &'static str {
 }
 
 pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let icon = tauri::image::Image::from_bytes(include_bytes!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/icons/32x32.png"
-    )))
-    .expect("failed to load tray icon");
+    // dev 模式用带 DEV 角标的图标，避免本地调试版与正式安装版在状态栏混淆。
+    // include_bytes! 返回编译期固定大小数组 &[u8; N]，两套图标字节数不同，
+    // 用 as_slice 统一为 &[u8]，cfg!(debug_assertions) 在编译期求值后编译器只保留对应分支。
+    let icon_bytes: &[u8] = if cfg!(debug_assertions) {
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/icons/32x32-dev.png"
+        ))
+        .as_slice()
+    } else {
+        include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/icons/32x32.png")).as_slice()
+    };
+    let icon = tauri::image::Image::from_bytes(icon_bytes).expect("failed to load tray icon");
+
+    let tooltip = if cfg!(debug_assertions) {
+        "We Claude Terminal [DEV]"
+    } else {
+        "We Claude Terminal"
+    };
 
     let lang = current_language(app.handle());
 
@@ -88,7 +102,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     TrayIconBuilder::with_id("tray")
         .icon(icon)
-        .tooltip("We Claude Terminal")
+        .tooltip(tooltip)
         .menu(&menu)
         .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id().as_ref() {
