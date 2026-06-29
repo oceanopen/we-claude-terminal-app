@@ -53,6 +53,8 @@ log = "0.4"
 tauri = { version = "2.11.2", features = ["tray-icon", "macos-private-api", "image-png", "specta"] }
 tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 sys-locale = "0.3"
 notify = "6"

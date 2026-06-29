@@ -2,6 +2,15 @@
   "subtitle": "监听本地 Claude Code 终端运行状态",
   "slogan": "实时状态 · 一目了然",
   "checkUpdate": "检查更新",
+  "checking": "检查中...",
+  "upToDate": "已是最新版本 v{{version}}",
+  "updateAvailable": "发现新版本 v{{version}}",
+  "downloadAndInstall": "下载并安装 v{{version}}",
+  "downloading": "下载中 {{percent}}%",
+  "relaunch": "重启并安装",
+  "updateReady": "更新已就绪，点击重启以完成安装",
+  "checkFailed": "检查失败：{{error}}",
+  "retry": "重试",
   "madeWith": "Made with",
   "forClaude": "for Claude Code"
 }

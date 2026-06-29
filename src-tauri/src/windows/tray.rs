@@ -14,6 +14,7 @@ struct TrayMenuItems {
     monitor: MenuItem<tauri::Wry>,
     settings: MenuItem<tauri::Wry>,
     pet: MenuItem<tauri::Wry>,
+    restart: MenuItem<tauri::Wry>,
     quit: MenuItem<tauri::Wry>,
 }
 
@@ -65,16 +66,22 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         None::<&str>,
     )?;
     let quit_item = MenuItem::with_id(app, "quit", menu_text(lang, "quit"), true, None::<&str>)?;
+    let restart_item = MenuItem::with_id(
+        app,
+        "restart",
+        menu_text(lang, "restart"),
+        true,
+        None::<&str>,
+    )?;
 
     let menu = Menu::with_items(
         app,
         &[
             &monitor_item,
-            &PredefinedMenuItem::separator(app)?,
             &pet_item,
             &PredefinedMenuItem::separator(app)?,
             &settings_item,
-            &PredefinedMenuItem::separator(app)?,
+            &restart_item,
             &quit_item,
         ],
     )?;
@@ -102,6 +109,9 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                     log::warn!("failed to open settings window: {e}");
                 }
             }
+            "restart" => {
+                app.restart();
+            }
             "quit" => {
                 app.exit(0);
             }
@@ -113,6 +123,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         monitor: monitor_item,
         settings: settings_item,
         pet: pet_item,
+        restart: restart_item,
         quit: quit_item,
     }));
 
@@ -130,5 +141,6 @@ pub fn refresh_menu_texts(app: &AppHandle) {
     let _ = items.monitor.set_text(menu_text(lang, "monitor"));
     let _ = items.settings.set_text(menu_text(lang, "settings"));
     let _ = items.pet.set_text(menu_text(lang, pet_menu_key(app)));
+    let _ = items.restart.set_text(menu_text(lang, "restart"));
     let _ = items.quit.set_text(menu_text(lang, "quit"));
 }

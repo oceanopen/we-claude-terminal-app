@@ -29,11 +29,13 @@ pub fn menu_text(lang: ResolvedLanguage, key: &str) -> &'static str {
         (ResolvedLanguage::ZhCn, "settings") => "系统设置",
         (ResolvedLanguage::ZhCn, "pet-show") => "显示桌宠",
         (ResolvedLanguage::ZhCn, "pet-hide") => "隐藏桌宠",
+        (ResolvedLanguage::ZhCn, "restart") => "重启",
         (ResolvedLanguage::ZhCn, "quit") => "退出",
         (ResolvedLanguage::En, "monitor") => "Terminal Monitor",
         (ResolvedLanguage::En, "settings") => "Settings",
         (ResolvedLanguage::En, "pet-show") => "Show Pet",
         (ResolvedLanguage::En, "pet-hide") => "Hide Pet",
+        (ResolvedLanguage::En, "restart") => "Restart",
         (ResolvedLanguage::En, "quit") => "Quit",
         _ => "",
     }

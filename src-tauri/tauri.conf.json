@@ -19,11 +19,22 @@
   "plugins": {
     "shell": {
       "open": true
+    },
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/oceanopen/we-claude-terminal-app/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEMyRDMyOUU0NzBFMzVBOUIKUldTYld1Tnc1Q25Ud2wwamFMOThFSEc5NnBDenRnd25vbk9FU1V3cDJmNlJLOUYwL3RRMjFmdHEK",
+      "windows": {
+        "installMode": "passive"
+      }
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["dmg", "nsis"],
+    "createUpdaterArtifacts": true,
+    "targets": ["app", "dmg", "msi", "nsis"],
     "publisher": "oceangao",
     "copyright": "Copyright (C) 2026 oceangao",
     "category": "Utility",
