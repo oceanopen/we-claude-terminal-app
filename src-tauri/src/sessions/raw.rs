@@ -35,26 +35,26 @@ pub fn parse(content: &str) -> Result<RawSessionFile, serde_json::Error> {
 mod tests {
     use super::*;
 
-    // 真实样例：来自 ~/.claude/sessions/60723.json（本机 2026-06-26 抓取）。
+    // 占位样例：保留 procStart/version/peerProtocol/kind/entrypoint 等额外字段，
     // 用于回归 Claude Code 写入 schema 漂移时立即报警。
-    const SAMPLE: &str = r#"{"pid":60723,"sessionId":"f83d86d1-978e-435f-a88f-a272661f8d89","cwd":"/Users/gaopan/MyFiles/Project/we-health-tick-app","startedAt":1782441061291,"procStart":"Fri Jun 26 02:30:59 2026","version":"2.1.153","peerProtocol":1,"kind":"interactive","entrypoint":"cli","status":"idle","updatedAt":1782441061223}"#;
+    const SAMPLE: &str = r#"{"pid":1,"sessionId":"00000000-0000-0000-0000-000000000001","cwd":"/home/user/project","startedAt":1700000000000,"procStart":"Mon Jan 1 00:00:00 2024","version":"2.1.153","peerProtocol":1,"kind":"interactive","entrypoint":"cli","status":"idle","updatedAt":1700000000000}"#;
 
     #[test]
-    fn parses_real_session_file() {
-        let s = parse(SAMPLE).expect("real sample must parse");
-        assert_eq!(s.pid, 60723);
-        assert_eq!(s.session_id, "f83d86d1-978e-435f-a88f-a272661f8d89");
-        assert_eq!(s.cwd, "/Users/gaopan/MyFiles/Project/we-health-tick-app");
-        assert_eq!(s.started_at, 1782441061291);
+    fn parses_sample_session_file() {
+        let s = parse(SAMPLE).expect("sample must parse");
+        assert_eq!(s.pid, 1);
+        assert_eq!(s.session_id, "00000000-0000-0000-0000-000000000001");
+        assert_eq!(s.cwd, "/home/user/project");
+        assert_eq!(s.started_at, 1700000000000);
         assert_eq!(s.status, "idle");
-        assert_eq!(s.updated_at, 1782441061223);
+        assert_eq!(s.updated_at, 1700000000000);
     }
 
     #[test]
     fn ignores_extra_fields() {
         // peerProtocol / version 等字段当前不声明，serde 默认忽略。
         let s = parse(SAMPLE).unwrap();
-        assert_eq!(s.pid, 60723);
+        assert_eq!(s.pid, 1);
     }
 
     #[test]

@@ -3,9 +3,9 @@
 // 数据源：
 //   ~/.claude/sessions/<pid>.json
 // 内容示例：
-//   {"pid":60723,"sessionId":"...","cwd":"/path","startedAt":1782441061291,
+//   {"pid":1,"sessionId":"...","cwd":"/path","startedAt":1700000000000,
 //    "procStart":"...","version":"2.1.153","kind":"interactive","entrypoint":"cli",
-//    "status":"idle","updatedAt":1782441061223}
+//    "status":"idle","updatedAt":1700000000000}
 //
 // 子模块职责（单一关注点）：
 //   raw      —— 反序列化 json 为 RawSessionFile
