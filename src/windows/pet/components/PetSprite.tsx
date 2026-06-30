@@ -1,6 +1,5 @@
 import type { SessionStatus } from '@src/shared/bindings';
-import { Box, Tooltip, Typography } from '@mui/material';
-import { useTranslation } from 'react-i18next';
+import { Box, Typography } from '@mui/material';
 
 interface PetSpriteProps {
   status: SessionStatus;
@@ -25,59 +24,52 @@ const COLOR: Record<SessionStatus, string> = {
 };
 
 function PetSprite({ status, count }: PetSpriteProps) {
-  const { t } = useTranslation();
   const emoji = EMOJI[status];
   const color = COLOR[status];
 
   return (
-    <Tooltip
-      title={`${t(`pet:tooltip.${status.toLowerCase()}`)}${count > 0 ? ` (×${count})` : ''}`}
-      placement="left"
-      arrow
+    <Box
+      sx={{
+        position: 'relative',
+        width: 96,
+        height: 96,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '50%',
+        // 半透明背景圆 + 颜色边框，让 emoji 在任意桌面背景下都可见。
+        bgcolor: 'rgba(255,255,255,0.85)',
+        border: `3px solid ${color}`,
+        boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+      }}
     >
-      <Box
-        sx={{
-          position: 'relative',
-          width: 96,
-          height: 96,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: '50%',
-          // 半透明背景圆 + 颜色边框，让 emoji 在任意桌面背景下都可见。
-          bgcolor: 'rgba(255,255,255,0.85)',
-          border: `3px solid ${color}`,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-        }}
-      >
-        <Typography sx={{ fontSize: 56, lineHeight: 1, userSelect: 'none' }}>
-          {emoji}
-        </Typography>
-        {count > 0 && (
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: -4,
-              right: -4,
-              minWidth: 22,
-              height: 22,
-              px: 0.5,
-              borderRadius: 11,
-              bgcolor: color,
-              color: '#fff',
-              fontSize: 12,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '2px solid #fff',
-            }}
-          >
-            {count}
-          </Box>
-        )}
-      </Box>
-    </Tooltip>
+      <Typography sx={{ fontSize: 56, lineHeight: 1, userSelect: 'none' }}>
+        {emoji}
+      </Typography>
+      {count > 0 && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: -4,
+            right: -4,
+            minWidth: 22,
+            height: 22,
+            px: 0.5,
+            borderRadius: 11,
+            bgcolor: color,
+            color: '#fff',
+            fontSize: 12,
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '2px solid #fff',
+          }}
+        >
+          {count}
+        </Box>
+      )}
+    </Box>
   );
 }
 

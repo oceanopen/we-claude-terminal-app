@@ -14,9 +14,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-use tauri::utils::config::WindowEffectsConfig;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
-use tauri::window::{Effect, EffectState};
 
 use crate::shared::config::{read_config_raw, write_config_raw, ConfigState};
 use crate::shared::screen::{MonitorInfo, find_monitor_for_tray};
@@ -78,13 +76,6 @@ pub fn ensure_pet_window(app: &AppHandle) -> tauri::Result<()> {
         .position(x, y)
         // 关键透明/置顶属性
         .transparent(true)
-        // macOS 原生毛玻璃（NSVisualEffectView，浅色 Sidebar 材质）+ 64px 圆角裁剪。
-        .effects(WindowEffectsConfig {
-            effects: vec![Effect::Sidebar],
-            state: Some(EffectState::Active),
-            radius: Some(64.0),
-            color: None,
-        })
         .decorations(false)
         .always_on_top(true)
         .skip_taskbar(true)
