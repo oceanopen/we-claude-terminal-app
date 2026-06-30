@@ -6,7 +6,6 @@ import { countActiveSessions } from '@src/shared/sessionStatus';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useCallback, useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import PetSprite from './components/PetSprite';
 
 // 状态聚合优先级（取所有会话中"最忙"的那个作为桌宠展示态）。
@@ -30,9 +29,9 @@ function aggregateStatus(sessions: SessionInfo[]): { status: SessionStatus; coun
 }
 
 function PetApp() {
-  const { t } = useTranslation();
   const [status, setStatus] = useState<SessionStatus>('Dead');
   const [count, setCount] = useState(0);
+  const [hovered, setHovered] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -58,16 +57,15 @@ function PetApp() {
     };
   }, [refresh]);
 
-  // 鼠标穿透切换：mouseenter 关闭穿透（接收点击），mouseleave 恢复穿透（让下层窗口接收）。
-  // 鼠标按下时直接 startDragging（拖动桌宠），避免误触 click。
+  // 鼠标悬停反馈：mouseenter 高亮、mouseleave 恢复（驱动 opacity 过渡）。
+  // 鼠标按下时 startDragging 拖动桌宠（不再绑定 click，避免与拖拽冲突）。
   const handleMouseEnter = useCallback(() => {
-    void commands.setPetClickThrough(false);
+    setHovered(true);
   }, []);
   const handleMouseLeave = useCallback(() => {
-    void commands.setPetClickThrough(true);
+    setHovered(false);
   }, []);
   const handleMouseDown = useCallback(async () => {
-    // startDragging 由 mousedown 触发，与 click 区分用：拖动后 mouseup 不会触发 click。
     try {
       await getCurrentWindow().startDragging();
     } catch (e) {
@@ -75,29 +73,22 @@ function PetApp() {
     }
   }, []);
 
-  // 点击桌宠（非拖动）→ 拉起监控窗口。
-  const handleClick = useCallback(() => {
-    void unwrap(commands.showMonitorWindow()).catch(e =>
-      console.warn('[pet] showMonitorWindow failed:', e),
-    );
-  }, []);
-
   return (
     <div
+      className="pet-surface"
       style={{
         width: '100%',
         height: '100%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        cursor: 'pointer',
         userSelect: 'none',
+        opacity: hovered ? 1 : 0.3,
+        transition: 'opacity 0.2s',
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onMouseDown={handleMouseDown}
-      onClick={handleClick}
-      title={`${t(`pet:tooltip.${status.toLowerCase()}`)}\n${t('pet:hint')}`}
     >
       <PetSprite status={status} count={count} />
     </div>

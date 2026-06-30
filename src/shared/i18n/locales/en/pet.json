@@ -4,6 +4,5 @@
     "waiting": "Claude awaits your input",
     "idle": "Claude is dozing",
     "dead": "(no active session)"
-  },
-  "hint": "Click to open terminal monitor"
+  }
 }

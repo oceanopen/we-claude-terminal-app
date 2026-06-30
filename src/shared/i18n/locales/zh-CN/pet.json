@@ -4,6 +4,5 @@
     "waiting": "Claude 在等你输入",
     "idle": "Claude 在打盹",
     "dead": "（无活跃会话）"
-  },
-  "hint": "点击打开终端监听"
+  }
 }

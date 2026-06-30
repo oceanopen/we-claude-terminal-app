@@ -18,11 +18,6 @@ export const commands = {
 	showPetWindow: () => typedError<null, string>(__TAURI_INVOKE("show_pet_window")),
 	hidePetWindow: () => typedError<null, string>(__TAURI_INVOKE("hide_pet_window")),
 	togglePetWindow: () => typedError<boolean, string>(__TAURI_INVOKE("toggle_pet_window")),
-	/**
-	 *  前端 mouseenter/leave 调用，控制桌宠窗口的鼠标穿透态。
-	 *  mouseenter → enabled=false（接收点击）；mouseleave → enabled=true（穿透到下层）。
-	 */
-	setPetClickThrough: (enabled: boolean) => typedError<null, string>(__TAURI_INVOKE("set_pet_click_through", { enabled })),
 	/**  查询桌宠当前显隐状态。供前端启动时初始化 UI。 */
 	getPetVisibilityState: () => __TAURI_INVOKE<boolean>("get_pet_visibility_state"),
 	showSettingsWindow: () => typedError<null, string>(__TAURI_INVOKE("show_settings_window")),

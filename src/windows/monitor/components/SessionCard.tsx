@@ -10,6 +10,7 @@ import {
   Divider,
   Typography,
 } from '@mui/material';
+import { formatDate, formatRelativeTime } from '@src/shared/time';
 import { useTranslation } from 'react-i18next';
 
 const chipColor: Record<SessionStatus, 'warning' | 'info' | 'default' | 'error'> = {
@@ -35,17 +36,6 @@ const hostAppI18nKey: Record<TerminalApp, string> = {
 
 // 暂不支持跳转的宿主终端（前端禁用按钮，避免无效 osascript 调用）。
 const UNSUPPORTED_HOST: TerminalApp[] = ['IntelliJ', 'Unknown'];
-
-function formatRelativeTime(updatedAt: number, t: (key: string, opts?: Record<string, unknown>) => string): string {
-  const diffSec = Math.max(0, Math.floor((Date.now() - updatedAt) / 1000));
-  if (diffSec < 60) {
-    return t('terminal:time.justNow');
-  }
-  if (diffSec < 3600) {
-    return t('terminal:time.minutesAgo', { minutes: Math.floor(diffSec / 60) });
-  }
-  return t('terminal:time.hoursAgo', { hours: Math.floor(diffSec / 3600) });
-}
 
 interface SessionCardProps {
   session: SessionInfo;
@@ -101,11 +91,11 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
           {session.cwd}
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          {formatRelativeTime(session.updatedAt, t)}
+          {formatRelativeTime(session.updatedAt, t)} | {formatDate(session.updatedAt, 'YYYY-MM-DD HH:mm:ss')}
         </Typography>
       </CardContent>
       <Divider />
-      <CardActions>
+      <CardActions sx={{ justifyContent: 'flex-end' }}>
         <Button
           size="small"
           disabled={unsupported}

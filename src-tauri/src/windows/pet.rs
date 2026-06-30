@@ -1,15 +1,24 @@
-// 桌宠窗口：透明悬浮、置顶、无装饰、可拖拽、按需关闭鼠标穿透。
+// 桌宠窗口：透明悬浮、置顶、无装饰、可拖拽。
 //
 //   transparent(true) + decorations(false) + always_on_top(true)
 //   + skip_taskbar(true) + resizable(false) + shadow(false)
-//   + set_ignore_cursor_events(true) 让点击穿透到下层窗口
-//   + 前端 mouseenter/leave 调 set_pet_click_through 切换穿透态
+//
+// 注：不做鼠标穿透——窗口的 128x128 矩形整体接收鼠标事件，牺牲矩形内
+// 透明边角区域（会挡住下层）换取前端 mouseenter/cursor/拖拽的简单可靠。
 //
 // 初始位置：主屏右下角内缩 24px（避免被 Dock / 任务栏遮挡）。
 // 尺寸：128x128 逻辑像素（足够展示 SVG 表情 + 状态徽章）。
 
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use std::thread;
+use std::time::Duration;
 
+use tauri::utils::config::WindowEffectsConfig;
+use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::window::{Effect, EffectState};
+
+use crate::shared::config::{read_config_raw, write_config_raw, ConfigState};
 use crate::shared::screen::{MonitorInfo, find_monitor_for_tray};
 
 /// 桌宠窗口尺寸（逻辑像素）。
@@ -18,9 +27,30 @@ const PET_SIZE: (f64, f64) = (128.0, 128.0);
 /// 右下角内缩（逻辑像素），避开 Dock。
 const PET_MARGIN: f64 = 24.0;
 
+/// 持久化桌宠位置的 config key（逻辑坐标 JSON：`{"x":..,"y":..}`）。
+const PET_POSITION_KEY: &str = "pet_position";
+
+/// Moved 防抖时长：拖动期间频繁触发，停顿后落盘一次。
+const PET_POSITION_DEBOUNCE_MS: u64 = 600;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct PetPositionSaved {
+    x: f64,
+    y: f64,
+}
+
 /// 计算桌宠初始位置（主屏右下角内缩 PET_MARGIN）。
 /// 找不到 tray 所在屏时用 available_monitors 的第一块屏兜底；都失败返回 (100, 100)。
 fn pet_position(app: &AppHandle) -> (f64, f64) {
+    // 优先用上次保存的位置；缺失或损坏时回退主屏右下角。
+    if let Some(state) = app.try_state::<ConfigState>() {
+        if let Ok(Some(raw)) = read_config_raw(&*state, PET_POSITION_KEY) {
+            if let Ok(saved) = serde_json::from_str::<PetPositionSaved>(&raw) {
+                return (saved.x.max(0.0), saved.y.max(0.0));
+            }
+        }
+    }
+
     let monitor = find_monitor_for_tray(app, "tray").or_else(|| {
         app.available_monitors()
             .ok()
@@ -48,6 +78,13 @@ pub fn ensure_pet_window(app: &AppHandle) -> tauri::Result<()> {
         .position(x, y)
         // 关键透明/置顶属性
         .transparent(true)
+        // macOS 原生毛玻璃（NSVisualEffectView，浅色 Sidebar 材质）+ 64px 圆角裁剪。
+        .effects(WindowEffectsConfig {
+            effects: vec![Effect::Sidebar],
+            state: Some(EffectState::Active),
+            radius: Some(64.0),
+            color: None,
+        })
         .decorations(false)
         .always_on_top(true)
         .skip_taskbar(true)
@@ -57,14 +94,41 @@ pub fn ensure_pet_window(app: &AppHandle) -> tauri::Result<()> {
         .visible(false) // 先建后显，避免首屏白闪
         .build()?;
 
-    // 鼠标穿透：默认开启，前端 mouseenter 时调 set_pet_click_through(false) 关闭。
-    let _ = win.set_ignore_cursor_events(true);
-
     let w = win.clone();
+    // Moved 防抖令牌：每次 Moved 置 true 取消上一个待保存任务；新任务 sleep 后 swap 检查。
+    let cancel: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
+    let app_for_move = app.clone();
     win.on_window_event(move |event| {
-        if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-            api.prevent_close();
-            let _ = w.hide();
+        match event {
+            tauri::WindowEvent::Moved(_) => {
+                cancel.store(true, Ordering::SeqCst);
+                let token = cancel.clone();
+                let app = app_for_move.clone();
+                thread::spawn(move || {
+                    thread::sleep(Duration::from_millis(PET_POSITION_DEBOUNCE_MS));
+                    // 若防抖窗口内又来 Moved，本任务放弃，留给后到的任务落盘。
+                    if token.swap(false, Ordering::SeqCst) {
+                        return;
+                    }
+                    let Some(w) = app.get_webview_window("pet") else { return };
+                    let Ok(scale) = w.scale_factor() else { return };
+                    let Ok(phys) = w.outer_position() else { return };
+                    let logical = phys.to_logical::<f64>(scale);
+                    let raw = serde_json::to_string(&PetPositionSaved {
+                        x: logical.x,
+                        y: logical.y,
+                    })
+                    .unwrap_or_default();
+                    if let Some(state) = app.try_state::<ConfigState>() {
+                        let _ = write_config_raw(&*state, PET_POSITION_KEY, &raw);
+                    }
+                });
+            }
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                api.prevent_close();
+                let _ = w.hide();
+            }
+            _ => {}
         }
     });
 
@@ -103,17 +167,6 @@ pub fn toggle_pet_window(app: AppHandle) -> Result<bool, String> {
         ensure_pet_window(&app).map_err(|e| e.to_string())?;
         Ok(true)
     }
-}
-
-/// 前端 mouseenter/leave 调用，控制桌宠窗口的鼠标穿透态。
-/// mouseenter → enabled=false（接收点击）；mouseleave → enabled=true（穿透到下层）。
-#[tauri::command]
-#[specta::specta]
-pub fn set_pet_click_through(app: AppHandle, enabled: bool) -> Result<(), String> {
-    if let Some(w) = app.get_webview_window("pet") {
-        let _ = w.set_ignore_cursor_events(!enabled);
-    }
-    Ok(())
 }
 
 /// 查询桌宠当前显隐状态。供前端启动时初始化 UI。

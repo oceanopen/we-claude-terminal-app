@@ -10,3 +10,11 @@ body,
   background: transparent !important;
   overflow: hidden;
 }
+
+/* 桌宠根容器：grab/grabbing 表达「可拖拽对象」语义（悬停抓手、按下抓取中）。 */
+.pet-surface {
+  cursor: grab;
+}
+.pet-surface:active {
+  cursor: grabbing;
+}
