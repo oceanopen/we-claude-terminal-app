@@ -4,7 +4,8 @@ import EmptyState from './EmptyState';
 import SessionCard from './SessionCard';
 
 interface SessionListProps {
-  sessions: SessionInfo[];
+  activeSessions: SessionInfo[];
+  freeSessions: SessionInfo[];
   onOpenTerminal: (pid: number) => void;
 }
 
@@ -26,7 +27,9 @@ function sortSessions(sessions: SessionInfo[]): SessionInfo[] {
   });
 }
 
-function SessionList({ sessions, onOpenTerminal }: SessionListProps) {
+function SessionList({ activeSessions, freeSessions, onOpenTerminal }: SessionListProps) {
+  // 两组状态互斥（Active=Busy/Waiting，Free=Idle），直接拼接无需去重。
+  const sessions = [...activeSessions, ...freeSessions];
   if (sessions.length === 0) {
     return <EmptyState />;
   }
