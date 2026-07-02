@@ -5010,7 +5010,7 @@ dependencies = [
 
 [[package]]
 name = "we-claude-terminal"
-version = "0.0.8"
+version = "0.0.9"
 dependencies = [
  "chrono",
  "dirs 5.0.1",
