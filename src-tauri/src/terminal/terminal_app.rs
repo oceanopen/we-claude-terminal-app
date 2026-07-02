@@ -67,9 +67,6 @@ mod tests {
     fn render_includes_tty() {
         let target = Target {
             tty: Some("/dev/ttys007"),
-            cwd: "/x",
-            home_cwd: None,
-            project_name: "x",
         };
         let script = render_script(&target);
         assert!(script.contains("\"/dev/ttys007\""));

@@ -41,17 +41,13 @@ pub fn navigate_to_session(pid: u32, app: AppHandle) -> Result<(), String> {
         return Ok(()); // emit 后视作"已通知前端"，命令本身不算失败。
     };
 
-    // 构造 Target：home_cwd 为 ~/basename 形式。
-    let home_cwd = home_relative_cwd(&session.cwd);
+    // 构造 Target：仅 tty 用于跳转匹配（iTerm2 / Terminal.app 均只靠 tty）。
     let target = Target {
         tty: if session.tty.is_empty() {
             None
         } else {
             Some(&session.tty)
         },
-        cwd: &session.cwd,
-        home_cwd: home_cwd.as_deref(),
-        project_name: &session.project_name,
     };
 
     if let Err(err) = dispatch(session.host_app, &target) {
@@ -64,17 +60,6 @@ pub fn navigate_to_session(pid: u32, app: AppHandle) -> Result<(), String> {
         let _ = app.emit(EVENT_SESSION_NAV_FAILED, &err);
     }
     Ok(())
-}
-
-/// 把 /Users/foo/proj 转为 ~/proj。路径无 home 前缀时返回 None。
-fn home_relative_cwd(cwd: &str) -> Option<String> {
-    let home = dirs::home_dir()?;
-    let home_str = home.to_string_lossy();
-    if cwd == home_str {
-        Some("~".to_string())
-    } else {
-        cwd.strip_prefix(&*home_str).map(|rest| format!("~{}", rest))
-    }
 }
 
 #[tauri::command]
@@ -127,26 +112,11 @@ pub fn show_monitor_window(app: tauri::AppHandle) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::path::Path;
 
     #[test]
-    fn home_relative_cwd_handles_typical_paths() {
-        // home_dir 在测试环境下指向当前用户 home。
-        let home = dirs::home_dir().unwrap().to_string_lossy().to_string();
-
-        assert_eq!(home_relative_cwd(&home), Some("~".to_string()));
-        assert_eq!(
-            home_relative_cwd(&format!("{}/proj", home)),
-            Some("~/proj".to_string())
-        );
-        // 非 home 前缀路径返回 None。
-        assert_eq!(home_relative_cwd("/etc"), None);
-    }
-
-    #[test]
     fn path_basename_fallback() {
-        // 与 home_relative_cwd 无直接关系，但验证 Path::file_name 逻辑（enrich 也用同样模式）。
+        // 验证 Path::file_name 逻辑（enrich 也用同样模式取 project_name）。
         let name = Path::new("/Users/foo/proj").file_name().and_then(|s| s.to_str());
         assert_eq!(name, Some("proj"));
     }

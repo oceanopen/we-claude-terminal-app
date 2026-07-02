@@ -71,6 +71,23 @@ fn lookup_host(claude_pid: u32) -> (TerminalApp, u32) {
     (TerminalApp::Unknown, 0)
 }
 
+/// 把 ps 返回的 tty 字符串归一化为 /dev/ 前缀形式。
+/// ps -o tty= 返回 "ttys002"，而 iTerm2/Terminal.app 的 AppleScript 返回 "/dev/ttys002"；
+/// 不一致会让 osascript 端的 `tty is targetTTY` 永远 false。
+/// "??" / 空串视为无 tty。
+fn normalize_tty(raw: Option<&str>) -> String {
+    let Some(s) = raw else { return String::new() };
+    let trimmed = s.trim();
+    if trimmed.is_empty() || trimmed == "??" {
+        return String::new();
+    }
+    if trimmed.starts_with("/dev/") {
+        trimmed.to_string()
+    } else {
+        format!("/dev/{}", trimmed)
+    }
+}
+
 /// 把 RawSessionFile.status 字符串映射为 SessionStatus。
 /// Claude Code 当前已观察到的值："busy" / "waiting" / "idle"。
 /// 未识别值兜底为 Idle（宁可误判 idle 也不误判 busy）。
@@ -96,8 +113,10 @@ pub fn enrich(raw: &RawSessionFile) -> SessionInfo {
     // TTY 查 claude 自己，而不是 host_pid：iTerm2/Terminal.app 是 GUI 进程没有控制终端，
     // ps -p <host_pid> -o tty= 会返回 "??"。claude 继承自 shell 的 tty 才是真实值。
     // gate 仍按 host_pid > 0：识别不到宿主时不查（后续也会被过滤，tty 无意义）。
+    // 归一化为 /dev/ 前缀：ps 输出 "ttys002"，iTerm2/Terminal.app AppleScript 返回 "/dev/ttys002"，
+    // 前缀不一致会导致 osascript 端 `tty of s is targetTTY` 永远 false。
     let tty = if host_pid > 0 {
-        ps_field(raw.pid, "tty=").unwrap_or_default()
+        normalize_tty(ps_field(raw.pid, "tty=").as_deref())
     } else {
         String::new()
     };
@@ -137,5 +156,22 @@ mod tests {
         assert_eq!(classify_terminal("idea"), Some(TerminalApp::IntelliJ));
         assert_eq!(classify_terminal("wezterm"), None);
         assert_eq!(classify_terminal("/Applications/iTerm.app/Contents/MacOS/iTerm2"), Some(TerminalApp::ITerm2));
+    }
+
+    #[test]
+    fn normalize_tty_adds_dev_prefix() {
+        assert_eq!(normalize_tty(Some("ttys002")), "/dev/ttys002");
+    }
+
+    #[test]
+    fn normalize_tty_keeps_dev_prefix() {
+        assert_eq!(normalize_tty(Some("/dev/ttys002")), "/dev/ttys002");
+    }
+
+    #[test]
+    fn normalize_tty_handles_invalid() {
+        assert_eq!(normalize_tty(Some("??")), "");
+        assert_eq!(normalize_tty(Some("")), "");
+        assert_eq!(normalize_tty(None), "");
     }
 }

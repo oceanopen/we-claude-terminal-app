@@ -1,7 +1,7 @@
 // terminal 域：跳转到宿主终端对应会话。
 //
 // 子模块按终端类型拆分：
-//   iterm2       —— iTerm2.app AppleScript（4 重匹配策略）
+//   iterm2       —— iTerm2.app AppleScript（tty 精确匹配）
 //   terminal_app —— Terminal.app AppleScript（tty 精确匹配）
 //
 // dispatch 按 host_app 选择对应实现；Unknown 直接返回 UnsupportedHostApp。
@@ -15,14 +15,10 @@ use specta::Type;
 
 use crate::shared::types::TerminalApp;
 
-/// 跳转目标。从 SessionInfo 提取。
-/// cwd / home_cwd / project_name 用于 iTerm2 文本兜底匹配；tty 为主策略。
+/// 跳转目标。仅靠 tty 精确匹配会话身份。
 #[derive(Clone, Debug)]
 pub struct Target<'a> {
     pub tty: Option<&'a str>,
-    pub cwd: &'a str,
-    pub home_cwd: Option<&'a str>,
-    pub project_name: &'a str,
 }
 
 /// 跳转失败原因。对应前端 navigation-failed toast 文案细分。
