@@ -9,10 +9,10 @@ interface SessionListProps {
   onOpenTerminal: (pid: number) => void;
 }
 
-// 排序优先级：Busy > Waiting > Idle > Dead。同状态内按 updatedAt 倒序（最近活动在前）。
+// 排序优先级：Waiting > Busy > Idle > Dead。同状态内按 updatedAt 倒序（最近活动在前）。
 const STATUS_PRIORITY: Record<SessionStatus, number> = {
-  Busy: 0,
-  Waiting: 1,
+  Waiting: 0,
+  Busy: 1,
   Idle: 2,
   Dead: 3,
 };

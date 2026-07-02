@@ -8,11 +8,11 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useCallback, useEffect, useState } from 'react';
 import PetSprite from './components/PetSprite';
 
-// 状态聚合优先级（取所有会话中"最忙"的那个作为桌宠展示态）。
+// 状态聚合优先级（取所有会话中"最需关注"的那个作为桌宠展示态：Waiting 优先于 Busy）。
 // 数字越小优先级越高；空列表时为 Dead（无活跃会话的休眠态）。
 const STATUS_PRIORITY: Record<SessionStatus, number> = {
-  Busy: 0,
-  Waiting: 1,
+  Waiting: 0,
+  Busy: 1,
   Idle: 2,
   Dead: 3,
 };
