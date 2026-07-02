@@ -34,7 +34,7 @@
   "bundle": {
     "active": true,
     "createUpdaterArtifacts": true,
-    "targets": ["app", "dmg", "msi", "nsis"],
+    "targets": ["app", "dmg", "nsis"],
     "publisher": "oceangao",
     "copyright": "Copyright (C) 2026 oceangao",
     "category": "Utility",
