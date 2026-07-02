@@ -1,6 +1,5 @@
 import type { SessionInfo, SessionStatus, TerminalApp } from '@src/shared/bindings';
 import {
-  Box,
   Button,
   Card,
   CardActions,
@@ -62,21 +61,6 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
       />
       <Divider />
       <CardContent>
-        <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Chip
-            size="small"
-            variant="outlined"
-            label={t(hostAppI18nKey[session.hostApp])}
-          />
-          {session.tty && (
-            <Typography
-              color="text.secondary"
-              sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
-            >
-              {session.tty}
-            </Typography>
-          )}
-        </Box>
         <Typography
           color="text.secondary"
           sx={{
@@ -101,7 +85,7 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
           disabled={unsupported}
           onClick={() => onOpenTerminal(session.pid)}
         >
-          {t('terminal:action.openTerminal')}
+          {t('terminal:action.openHost', { host: t(hostAppI18nKey[session.hostApp]) })}
         </Button>
       </CardActions>
     </Card>

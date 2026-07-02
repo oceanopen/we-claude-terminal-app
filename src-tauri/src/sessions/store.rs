@@ -9,7 +9,7 @@ use crate::sessions::discover;
 use crate::sessions::enrich;
 use crate::shared::events::EVENT_MONITOR_SESSIONS_CHANGED;
 use crate::shared::state::monitor::{SessionStore, write_sessions};
-use crate::shared::types::SessionInfo;
+use crate::shared::types::{SessionInfo, TerminalApp};
 
 /// 全量重扫会话目录并刷新前端。
 ///
@@ -21,7 +21,13 @@ use crate::shared::types::SessionInfo;
 /// 仅输出数量日志：调用方高频触发，详情日志会刷屏。
 pub fn rescan(app: &AppHandle) {
     let raws = discover::list_active();
-    let sessions: Vec<SessionInfo> = raws.iter().map(enrich::enrich).collect();
+    // 过滤 Unknown 宿主：终端被关闭后孤立的 claude 进程 parent chain 爬到 launchd
+    // 也匹配不到已知终端，跳转按钮本来就是禁用的，留在列表里只会误导用户。
+    let sessions: Vec<SessionInfo> = raws
+        .iter()
+        .map(enrich::enrich)
+        .filter(|s| s.host_app != TerminalApp::Unknown)
+        .collect();
 
     let count = sessions.len();
     // write_sessions 是替换式 move 写入，emit 需要先 clone 一份快照复用。

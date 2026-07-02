@@ -23,7 +23,7 @@
     "Unknown": "Unknown terminal"
   },
   "action": {
-    "openTerminal": "Open terminal"
+    "openHost": "Open {{host}}"
   },
   "toast": {
     "unsupportedHostApp": "Unrecognized host terminal. Please launch Claude Code in iTerm2 or Terminal.app",

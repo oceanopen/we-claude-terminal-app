@@ -23,7 +23,7 @@
     "Unknown": "未知终端"
   },
   "action": {
-    "openTerminal": "打开终端"
+    "openHost": "打开 {{host}}"
   },
   "toast": {
     "unsupportedHostApp": "未识别的宿主终端，请在 iTerm2 或 Terminal.app 中启动 Claude Code",

@@ -52,7 +52,17 @@ export default function AppThemeProvider({ children }: Props) {
   const resolvedMode = appearance === 'system' ? systemMode : appearance;
 
   const theme = useMemo(
-    () => createTheme({ palette: { mode: resolvedMode } }),
+    () =>
+      createTheme({
+        palette: { mode: resolvedMode },
+        components: {
+          // MuiButton 默认 text-transform: uppercase 会把 "iTerm2" 渲染成 "ITEM2"，
+          // 全局关掉，让按钮文案保持原样大小写。
+          MuiButton: {
+            styleOverrides: { root: { textTransform: 'none' } },
+          },
+        },
+      }),
     [resolvedMode],
   );
 

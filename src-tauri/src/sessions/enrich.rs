@@ -93,9 +93,11 @@ pub fn enrich(raw: &RawSessionFile) -> SessionInfo {
         .to_string();
 
     let (host_app, host_pid) = lookup_host(raw.pid);
-    // tty 仅在找到 host_pid 时查询，否则空字符串（Unknown 终端跳转按钮会禁用）。
+    // TTY 查 claude 自己，而不是 host_pid：iTerm2/Terminal.app 是 GUI 进程没有控制终端，
+    // ps -p <host_pid> -o tty= 会返回 "??"。claude 继承自 shell 的 tty 才是真实值。
+    // gate 仍按 host_pid > 0：识别不到宿主时不查（后续也会被过滤，tty 无意义）。
     let tty = if host_pid > 0 {
-        ps_field(host_pid, "tty=").unwrap_or_default()
+        ps_field(raw.pid, "tty=").unwrap_or_default()
     } else {
         String::new()
     };
