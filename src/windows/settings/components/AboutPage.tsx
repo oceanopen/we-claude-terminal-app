@@ -48,7 +48,7 @@ function AboutPage() {
     }
     setState({ kind: 'checking' });
     try {
-      const update = await check();
+      const update = await check({ timeout: 10_000 });
       if (update) {
         updateRef.current = update;
         setState({ kind: 'available', update });
