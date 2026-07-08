@@ -1,30 +1,32 @@
+import type { SvgIconComponent } from '@mui/icons-material';
 import type { SessionStatus } from '@src/shared/bindings';
-import { Box, Typography } from '@mui/material';
+import { Autorenew, Bedtime, Notifications, Schedule } from '@mui/icons-material';
+import { Box } from '@mui/material';
 
 interface PetSpriteProps {
   status: SessionStatus;
   count: number;
 }
 
-// 4 种 emoji 表情映射。
-// Idle 用乌龟（缓慢=空闲）、Dead 用冬眠熊（无会话休眠态），两个非活跃状态都用动物保持视觉统一。
-// 后续若需要动画可替换为 SVG / Lottie，props 接口不变。
-const EMOJI: Record<SessionStatus, string> = {
-  Busy: '🐱',
-  Waiting: '😺',
-  Idle: '🐢',
-  Dead: '🐻',
+// 4 种状态对应 MUI Icon（SVG）。
+// 用 SVG Icon 而非 emoji：emoji 是彩色字符，CSS color 对其无效，
+// 改用 MUI Icon 后 icon 颜色可跟随状态色，与边框/徽章保持视觉统一。
+const ICON: Record<SessionStatus, SvgIconComponent> = {
+  Busy: Autorenew, // 旋转刷新=工作中
+  Waiting: Notifications, // 铃铛=提醒用户输入
+  Idle: Schedule, // 时钟=空闲
+  Dead: Bedtime, // 月亮=休眠
 };
 
 const COLOR: Record<SessionStatus, string> = {
-  Busy: '#ff9800', // warning 橙
-  Waiting: '#03a9f4', // info 蓝
+  Busy: '#4caf50', // success 绿（工作中）
+  Waiting: '#ff9800', // warning 橙（提醒用户）
   Idle: '#9e9e9e', // 灰
   Dead: '#616161', // 深灰（无会话休眠非错误，去警示红；比 Idle 深一档区分）
 };
 
 function PetSprite({ status, count }: PetSpriteProps) {
-  const emoji = EMOJI[status];
+  const Icon = ICON[status];
   const color = COLOR[status];
 
   return (
@@ -37,15 +39,13 @@ function PetSprite({ status, count }: PetSpriteProps) {
         alignItems: 'center',
         justifyContent: 'center',
         borderRadius: '50%',
-        // 半透明背景圆 + 颜色边框，让 emoji 在任意桌面背景下都可见。
+        // 半透明背景圆 + 颜色边框，让 icon 在任意桌面背景下都可见。
         bgcolor: 'rgba(255,255,255,0.85)',
         border: `3px solid ${color}`,
         boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
       }}
     >
-      <Typography sx={{ fontSize: 56, lineHeight: 1, userSelect: 'none' }}>
-        {emoji}
-      </Typography>
+      <Icon sx={{ color, fontSize: 56 }} />
       {count > 0 && (
         <Box
           sx={{
