@@ -1,0 +1,12 @@
+/* 任务面板窗口：根节点透明，仅内部 MUI Paper 有可见像素。
+   主题相关样式由 AppThemeProvider 提供（MUI theme palette），此处只补透明相关。 */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent !important;
+  overflow: hidden;
+}

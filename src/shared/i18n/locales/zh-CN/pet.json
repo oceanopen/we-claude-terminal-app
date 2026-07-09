@@ -1,1 +1,10 @@
-{}
+{
+  "panel": {
+    "title": "活跃会话",
+    "count": "{{count}} 个活跃",
+    "empty": {
+      "title": "暂无活跃会话",
+      "desc": "正在运行的 Claude Code 会话将显示在此处"
+    }
+  }
+}

@@ -2,6 +2,9 @@
 //
 // 保证 Dead 会话立即从列表消失。emit 失败 / write 失败不阻塞主流程——
 // 下一轮 watcher / poller 会重新执行，对齐现有容错风格。
+//
+// 显隐联动不再在此触发：pet 前端收到 sessions-changed payload 后基于 count
+// 自行调 show_pet_task / hide_pet_task，后端不做自动联动。
 
 use tauri::{AppHandle, Emitter, Manager};
 

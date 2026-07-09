@@ -20,6 +20,19 @@ export const commands = {
 	togglePetWindow: () => typedError<boolean, string>(__TAURI_INVOKE("toggle_pet_window")),
 	/**  查询桌宠当前显隐状态。供前端启动时初始化 UI。 */
 	getPetVisibilityState: () => __TAURI_INVOKE<boolean>("get_pet_visibility_state"),
+	/**
+	 *  显示 pet_task 面板：仅当 pet 可见且存在活跃会话（Busy+Waiting）时 show + 定位，
+	 *  否则 hide。显隐主导权在 pet 前端（基于 sessions-changed payload 的 count），
+	 *  本命令作为前端驱动入口；pet 显隐命令也调用它做联动兜底。
+	 * 
+	 *  活跃会话口径与前端 isActiveSession / countActiveSessions 一致（SSOT: sessionStatus.ts）。
+	 */
+	showPetTask: () => typedError<null, string>(__TAURI_INVOKE("show_pet_task")),
+	/**
+	 *  隐藏 pet_task 面板。pet 隐藏时由后端 hide_pet_window 命令联动调用，
+	 *  避免孤立的悬浮列表；pet 前端 count 归零时也主动调用。
+	 */
+	hidePetTask: () => typedError<null, string>(__TAURI_INVOKE("hide_pet_task")),
 	showSettingsWindow: () => typedError<null, string>(__TAURI_INVOKE("show_settings_window")),
 	getConfig: (key: string) => typedError<string | null, string>(__TAURI_INVOKE("get_config", { key })),
 	setConfig: (key: string, value: string) => typedError<null, string>(__TAURI_INVOKE("set_config", { key, value })),

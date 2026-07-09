@@ -18,6 +18,7 @@ use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
 use crate::shared::config::{read_config_raw, write_config_raw, ConfigState};
 use crate::shared::screen::{MonitorInfo, find_monitor_for_tray};
+use crate::windows::pet_task;
 
 /// 桌宠窗口尺寸（逻辑像素）。
 const PET_SIZE: (f64, f64) = (128.0, 128.0);
@@ -130,7 +131,10 @@ pub fn ensure_pet_window(app: &AppHandle) -> tauri::Result<()> {
 #[tauri::command]
 #[specta::specta]
 pub fn show_pet_window(app: AppHandle) -> Result<(), String> {
-    ensure_pet_window(&app).map_err(|e| e.to_string())
+    ensure_pet_window(&app).map_err(|e| e.to_string())?;
+    // pet 显示后联动评估 pet_task 显隐（show_pet_task 内部按 count 裁决），
+    // 覆盖 pet 重新显示时前端 useEffect 因 count 未变不触发的边缘场景。
+    pet_task::show_pet_task(app)
 }
 
 #[tauri::command]
@@ -139,25 +143,33 @@ pub fn hide_pet_window(app: AppHandle) -> Result<(), String> {
     if let Some(w) = app.get_webview_window("pet") {
         let _ = w.hide();
     }
-    Ok(())
+    // pet 隐藏联动隐藏 pet_task，避免孤立的悬浮列表。
+    pet_task::hide_pet_task(app)
 }
 
 #[tauri::command]
 #[specta::specta]
 pub fn toggle_pet_window(app: AppHandle) -> Result<bool, String> {
-    if let Some(w) = app.get_webview_window("pet") {
+    let now_visible = if let Some(w) = app.get_webview_window("pet") {
         let visible = w.is_visible().unwrap_or(false);
         if visible {
             let _ = w.hide();
-            Ok(false)
+            false
         } else {
             let _ = w.show();
-            Ok(true)
+            true
         }
     } else {
         ensure_pet_window(&app).map_err(|e| e.to_string())?;
-        Ok(true)
+        true
+    };
+    // pet 显隐变化联动 pet_task：显示则按 count 裁决，隐藏则强制 hide。
+    if now_visible {
+        let _ = pet_task::show_pet_task(app.clone());
+    } else {
+        let _ = pet_task::hide_pet_task(app.clone());
     }
+    Ok(now_visible)
 }
 
 /// 查询桌宠当前显隐状态。供前端启动时初始化 UI。
@@ -174,4 +186,6 @@ pub fn startup_show(app: &AppHandle) {
     if let Err(e) = ensure_pet_window(app) {
         log::warn!("[pet] startup ensure failed: {}", e);
     }
+    // pet 显示后联动评估 pet_task 显隐（show_pet_task 内部按 count 裁决）。
+    let _ = pet_task::show_pet_task(app.clone());
 }

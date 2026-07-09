@@ -21,6 +21,8 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
             windows::pet::hide_pet_window,
             windows::pet::toggle_pet_window,
             windows::pet::get_pet_visibility_state,
+            windows::pet_task::show_pet_task,
+            windows::pet_task::hide_pet_task,
             windows::settings::show_settings_window,
             shared::config::get_config,
             shared::config::set_config,
@@ -64,11 +66,21 @@ pub fn run() {
             shared::state::monitor::init(app)?;
             windows::tray::setup(app)?;
 
+            // 先 rescan 填充 SessionStore 并广播首批快照，保证后续 pet_task / pet
+            // 窗口 React mount 后初次拉取 IPC 时 store 必有数据，根治启动期"0 个活跃"竞态。
             sessions::rescan(app.handle());
+
+            // 预构建 pet_task 窗口（隐藏）：webview 异步加载，React mount 时机虽不确定，
+            // 但 store 已满，初次 IPC 必拿到非空数据；后续 sessions-changed 事件持续驱动。
+            if let Err(e) = windows::pet_task::ensure(app.handle()) {
+                log::warn!("[pet-task] startup ensure failed: {}", e);
+            }
+
             sessions::watch::start(app.handle().clone());
             sessions::poll::start(app.handle().clone());
 
             // 桌宠窗口默认启动时显示（用户可通过托盘菜单"隐藏桌宠"关闭）。
+            // pet 显示后由前端基于 count 调 show_pet_task 联动面板显隐。
             windows::pet::startup_show(app.handle());
 
             specta_builder.mount_events(app);

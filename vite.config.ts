@@ -23,6 +23,7 @@ export default defineConfig({
       input: {
         monitor: resolve(__dirname, 'monitor.html'),
         pet: resolve(__dirname, 'pet.html'),
+        petTask: resolve(__dirname, 'pet-task.html'),
         settings: resolve(__dirname, 'settings.html'),
       },
     },

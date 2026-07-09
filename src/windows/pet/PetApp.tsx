@@ -33,29 +33,41 @@ function PetApp() {
   const [count, setCount] = useState(0);
   const [hovered, setHovered] = useState(false);
 
-  const refresh = useCallback(async () => {
-    try {
-      const sessions = await unwrap(commands.getMonitorSessions());
-      const agg = aggregateStatus(sessions);
-      setStatus(agg.status);
-      setCount(agg.count);
-    } catch (e) {
-      console.warn('[pet] refresh failed', e);
-    }
+  // 纯函数：从 sessions 快照计算 status + count。PetApp 与 PetTaskApp 共用
+  // sessions-changed payload 作为数据源，applySessions 保证两端对同一事件的响应原子化，
+  // 不再走 IPC 二次拉取（消除高频 rescan 下的版本错位）。
+  const applySessions = useCallback((sessions: SessionInfo[]) => {
+    const agg = aggregateStatus(sessions);
+    setStatus(agg.status);
+    setCount(agg.count);
   }, []);
 
-  // 拉初始数据 + 订阅 sessions-changed（与 MonitorApp 同模式，cleanup 用 .then().catch() 防竞态）。
+  // 初次 mount 主动拉一次（与 PetTaskApp 一致）；事件回调直接用 payload 调 applySessions。
+  // cleanup 用 .then().catch() 防竞态。
   useEffect(() => {
-    void refresh();
-    const unlisten = listen<SessionInfo[]>(EVENT_MONITOR_SESSIONS_CHANGED, () => {
-      void refresh();
+    unwrap(commands.getMonitorSessions())
+      .then(applySessions)
+      .catch((e) => {
+        console.warn('[pet] load failed', e);
+      });
+    const unlisten = listen<SessionInfo[]>(EVENT_MONITOR_SESSIONS_CHANGED, (e) => {
+      applySessions(e.payload);
     });
     return () => {
       unlisten
         .then(fn => fn())
         .catch(err => console.warn('[pet] unlisten failed:', err));
     };
-  }, [refresh]);
+  }, [applySessions]);
+
+  // count 变化时驱动 pet_task 显隐：count > 0 调 show_pet_task（后端按 pet 可见 && count 裁决），
+  // count == 0 调 hide_pet_task。pet_task 显隐主导权在此，后端 rescan 不再自动联动。
+  useEffect(() => {
+    const cmd = count > 0 ? commands.showPetTask() : commands.hidePetTask();
+    unwrap(cmd).catch((e) => {
+      console.warn('[pet] pet_task visibility failed', e);
+    });
+  }, [count]);
 
   // 鼠标悬停反馈：mouseenter 高亮、mouseleave 恢复（驱动 opacity 过渡）。
   // 鼠标按下时 startDragging 拖动桌宠（不再绑定 click，避免与拖拽冲突）。
