@@ -1,21 +1,22 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { defineConfig } from 'bumpp';
 
+// Cargo.toml / Cargo.lock 走精确正则替换
+function bumpCargoVersion(filePath: string, newVersion: string): void {
+  const content = readFileSync(filePath, 'utf-8');
+  const updated = content.replace(
+    /(name = "we-claude-terminal"\nversion = ")[^"]*(")/,
+    `$1${newVersion}$2`,
+  );
+  writeFileSync(filePath, updated);
+}
+
 export default defineConfig({
-  files: [
-    'package.json',
-    'src-tauri/Cargo.toml',
-    'src-tauri/tauri.conf.json',
-  ],
+  files: ['package.json', 'src-tauri/tauri.conf.json'],
   execute: (operation) => {
     const { newVersion } = operation.state;
-    const lockPath = 'src-tauri/Cargo.lock';
-    const lockContent = readFileSync(lockPath, 'utf-8');
-    const updated = lockContent.replace(
-      /(name = "we-claude-terminal"\nversion = ")[^"]*(")/,
-      `$1${newVersion}$2`,
-    );
-    writeFileSync(lockPath, updated);
-    operation.state.updatedFiles.push(lockPath);
+    bumpCargoVersion('src-tauri/Cargo.toml', newVersion);
+    bumpCargoVersion('src-tauri/Cargo.lock', newVersion);
+    operation.state.updatedFiles.push('src-tauri/Cargo.toml', 'src-tauri/Cargo.lock');
   },
 });
