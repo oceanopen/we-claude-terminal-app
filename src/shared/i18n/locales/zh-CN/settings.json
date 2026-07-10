@@ -1,14 +1,17 @@
 {
   "menu": {
     "settings": "系统设置",
+    "monitorConfig": "终端监听配置",
     "about": "关于"
   },
   "page": {
-    "title": "系统设置"
+    "title": "系统设置",
+    "monitorConfigTitle": "终端监听配置"
   },
   "row": {
     "language": "语言",
-    "appearance": "外观"
+    "appearance": "外观",
+    "pollInterval": "兜底轮询周期"
   },
   "option": {
     "followSystem": "跟随系统",
@@ -16,6 +19,12 @@
     "dark": "深色",
     "chinese": "中文",
     "english": "English"
+  },
+  "unit": {
+    "seconds": "秒"
+  },
+  "help": {
+    "pollInterval": "即时性由文件监听负责，此处仅驱动失效会话清理与文件监听漏报兜底。"
   },
   "button": {
     "reset": "重置",

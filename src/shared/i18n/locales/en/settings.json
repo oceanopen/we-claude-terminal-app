@@ -1,14 +1,17 @@
 {
   "menu": {
     "settings": "Settings",
+    "monitorConfig": "Monitor Config",
     "about": "About"
   },
   "page": {
-    "title": "Settings"
+    "title": "Settings",
+    "monitorConfigTitle": "Monitor Config"
   },
   "row": {
     "language": "Language",
-    "appearance": "Appearance"
+    "appearance": "Appearance",
+    "pollInterval": "Fallback poll interval"
   },
   "option": {
     "followSystem": "Follow system",
@@ -16,6 +19,12 @@
     "dark": "Dark",
     "chinese": "中文",
     "english": "English"
+  },
+  "unit": {
+    "seconds": "s"
+  },
+  "help": {
+    "pollInterval": "Instant updates come from the file watcher; this only drives stale-session cleanup and acts as a backstop when the watcher misses events."
   },
   "button": {
     "reset": "Reset",

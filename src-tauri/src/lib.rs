@@ -95,8 +95,17 @@ pub fn run() {
                 let Ok(value) = serde_json::from_str::<serde_json::Value>(event.payload()) else {
                     return;
                 };
-                if value.get("key").and_then(|v| v.as_str()) == Some(shared::config::LANGUAGE_KEY) {
+                let key = value.get("key").and_then(|v| v.as_str());
+                if key == Some(shared::config::LANGUAGE_KEY) {
                     windows::tray::refresh_menu_texts(&handle);
+                } else if key == Some(shared::config::POLL_INTERVAL_SECS_KEY) {
+                    if let Some(secs) = value
+                        .get("value")
+                        .and_then(|v| v.as_str())
+                        .and_then(|s| s.parse::<u64>().ok())
+                    {
+                        sessions::poll::set_interval(&handle, secs);
+                    }
                 }
             });
 

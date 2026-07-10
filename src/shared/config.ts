@@ -38,6 +38,13 @@ export type ResolvedLanguage = Exclude<Language, 'system'>;
 export const LANGUAGE_KEY = 'language';
 export const DEFAULT_LANGUAGE: Language = 'system';
 
+// sessions 兜底轮询周期（秒）。即时性由 fs watcher 负责，此处仅驱动 Dead 老化与漏报兜底。
+// min/max/clamp 与后端 config.rs 镜像，改动任一处需同步另一处。
+export const POLL_INTERVAL_SECS_KEY = 'poll_interval_secs';
+export const DEFAULT_POLL_INTERVAL_SECS = 60;
+export const MIN_POLL_INTERVAL_SECS = 5;
+export const MAX_POLL_INTERVAL_SECS = 120;
+
 // commands.xxx() 返回 tauri-specta 的 typedError 包装。unwrap 展开为 throw 风格，
 // 保持 getConfig/setConfig 的对外 API 不变（错误时 throw）。
 export async function getConfig(key: string): Promise<string | null> {

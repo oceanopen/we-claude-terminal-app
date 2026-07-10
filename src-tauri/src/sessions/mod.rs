@@ -13,7 +13,7 @@
 //   enrich   —— 进程反查（hostApp / hostPid / tty），输出 SessionInfo
 //   store    —— 全量 rescan + 写 SessionStore + emit sessions-changed
 //   watch    —— notify 文件监听，事件去抖后调 store::rescan
-//   poll     —— 5s 兜底轮询，驱动 Dead 老化
+//   poll     —— 兜底轮询（周期可配置），驱动 Dead 老化
 
 pub mod discover;
 pub mod enrich;

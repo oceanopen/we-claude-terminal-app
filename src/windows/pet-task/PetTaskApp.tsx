@@ -62,7 +62,7 @@ function PetTaskApp() {
       });
   }, []);
 
-  // 订阅会话变更（fs watcher 1s 去抖 + 5s 兜底轮询）：payload 全量快照直接替换，
+  // 订阅会话变更（fs watcher 1s 去抖 + 兜底轮询）：payload 全量快照直接替换，
   // 实现 count 与状态文案的实时刷新。
   useEffect(() => {
     const unlisten = listen<SessionInfo[]>(EVENT_MONITOR_SESSIONS_CHANGED, (e) => {

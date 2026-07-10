@@ -10,6 +10,13 @@ pub const LANGUAGE_KEY: &str = "language";
 /// 缺失视为 `YesNo::Yes`，向后兼容现有用户。
 pub const PET_VISIBLE_KEY: &str = "pet_visible";
 
+/// sessions 兜底轮询周期（秒）。即时性由 fs watcher 负责，此处仅驱动 Dead 老化与漏报兜底。
+/// 默认值 / min / max 与前端 src/shared/config.ts 镜像，改动任一处需同步另一处。
+pub const POLL_INTERVAL_SECS_KEY: &str = "poll_interval_secs";
+pub const DEFAULT_POLL_INTERVAL_SECS: u64 = 60;
+pub const MIN_POLL_INTERVAL_SECS: u64 = 5;
+pub const MAX_POLL_INTERVAL_SECS: u64 = 120;
+
 pub struct ConfigState(pub Mutex<Connection>);
 
 pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
