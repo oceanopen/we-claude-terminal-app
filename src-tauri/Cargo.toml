@@ -1,6 +1,6 @@
 [package]
 name = "we-claude-terminal"
-version = "0.0.12"
+version = "0.0.13"
 description = "We Claude Terminal Desktop App"
 authors = ["oceangao"]
 license = ""
@@ -47,7 +47,7 @@ serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 # Pin：specta + tauri-specta 必须锁定到同一 rc 系列；rc 之间 API 不稳定，relax 到范围依赖会导致编译失败。
 specta = "=2.0.0-rc.25"
-specta-typescript = "0.0.12"
+specta-typescript = "0.0.13"
 tauri-specta = { version = "=2.0.0-rc.25", features = ["derive", "typescript"] }
 log = "0.4"
 tauri = { version = "2.11.2", features = ["tray-icon", "macos-private-api", "image-png", "specta"] }
