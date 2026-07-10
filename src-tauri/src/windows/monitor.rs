@@ -23,6 +23,15 @@ pub fn get_monitor_sessions(
     Ok(map.values().cloned().collect())
 }
 
+/// 手动刷新会话列表：触发全量重扫并广播 sessions-changed，
+/// 订阅该事件的前端窗口（pet_task / monitor）自动收到新快照。
+#[tauri::command]
+#[specta::specta]
+pub fn refresh_sessions(app: AppHandle) -> Result<(), String> {
+    crate::sessions::rescan(&app);
+    Ok(())
+}
+
 /// 跳转到 pid 对应的宿主终端会话。
 /// 成功返回 Ok(())；失败 emit `monitor:session-navigation-failed` 事件，
 /// 前端据 NavErr.kind 渲染差异化 toast。

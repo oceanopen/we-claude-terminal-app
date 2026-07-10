@@ -1,6 +1,5 @@
 {
-  "title": "Terminal Monitor",
-  "activeCount": "{{active}} active / {{free}} free",
+  "summary": "Total {{total}} sessions / {{active}} active",
   "empty": {
     "title": "No active sessions",
     "desc": "Running Claude Code sessions will appear here"

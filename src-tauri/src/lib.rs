@@ -16,6 +16,7 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
         .commands(collect_commands![
             windows::monitor::show_monitor_window,
             windows::monitor::get_monitor_sessions,
+            windows::monitor::refresh_sessions,
             windows::monitor::navigate_to_session,
             windows::pet::show_pet_window,
             windows::pet::hide_pet_window,

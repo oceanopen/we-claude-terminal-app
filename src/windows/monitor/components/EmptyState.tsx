@@ -20,10 +20,10 @@ function EmptyState() {
     >
       <DvrOutlinedIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
       <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-        {t('terminal:empty.title')}
+        {t('monitor:empty.title')}
       </Typography>
       <Typography variant="body2" color="text.secondary" align="center">
-        {t('terminal:empty.desc')}
+        {t('monitor:empty.desc')}
       </Typography>
     </Box>
   );

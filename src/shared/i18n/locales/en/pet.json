@@ -1,7 +1,6 @@
 {
   "task": {
-    "title": "Active Sessions",
-    "count": "{{count}} active",
+    "summary": "Total {{total}} sessions / {{active}} active",
     "empty": {
       "title": "No active sessions",
       "desc": "Running Claude Code sessions will appear here"

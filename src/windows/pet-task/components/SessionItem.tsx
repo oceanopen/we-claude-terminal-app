@@ -10,12 +10,12 @@ const STATUS_COLOR: Record<SessionStatus, string> = {
   Dead: '#616161',
 };
 
-// 状态文案复用 terminal 命名空间（运行中/等待输入/空闲/已失效）。
+// 状态文案复用 monitor 命名空间（运行中/等待输入/空闲/已失效）。
 const STATUS_I18N_KEY: Record<SessionStatus, string> = {
-  Busy: 'terminal:status.busy',
-  Waiting: 'terminal:status.waiting',
-  Idle: 'terminal:status.idle',
-  Dead: 'terminal:status.dead',
+  Busy: 'monitor:status.busy',
+  Waiting: 'monitor:status.waiting',
+  Idle: 'monitor:status.idle',
+  Dead: 'monitor:status.dead',
 };
 
 // 暂不支持跳转的宿主终端（与 SessionCard 保持一致，禁用点击）。

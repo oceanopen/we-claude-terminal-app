@@ -10,6 +10,11 @@ export const commands = {
 	showMonitorWindow: () => typedError<null, string>(__TAURI_INVOKE("show_monitor_window")),
 	getMonitorSessions: () => typedError<SessionInfo[], string>(__TAURI_INVOKE("get_monitor_sessions")),
 	/**
+	 *  手动刷新会话列表：触发全量重扫并广播 sessions-changed，
+	 *  订阅该事件的前端窗口（pet_task / monitor）自动收到新快照。
+	 */
+	refreshSessions: () => typedError<null, string>(__TAURI_INVOKE("refresh_sessions")),
+	/**
 	 *  跳转到 pid 对应的宿主终端会话。
 	 *  成功返回 Ok(())；失败 emit `monitor:session-navigation-failed` 事件，
 	 *  前端据 NavErr.kind 渲染差异化 toast。

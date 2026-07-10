@@ -1,5 +1,6 @@
 import type { NavErr, SessionInfo, SessionStatus } from '@src/shared/bindings';
-import { Box, List, Paper, Snackbar, Typography } from '@mui/material';
+import { Refresh as RefreshIcon } from '@mui/icons-material';
+import { Box, IconButton, List, Paper, Snackbar, Typography } from '@mui/material';
 import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
 import {
@@ -35,13 +36,13 @@ function sortSessions(sessions: SessionInfo[]): SessionInfo[] {
 function navErrToToastKey(err: NavErr): { key: string; opts?: Record<string, unknown> } {
   switch (err.kind) {
     case 'unsupportedHostApp':
-      return { key: 'terminal:toast.unsupportedHostApp' };
+      return { key: 'monitor:toast.unsupportedHostApp' };
     case 'osaScriptFailed':
-      return { key: 'terminal:toast.osaScriptFailed', opts: { stderr: err.stderr } };
+      return { key: 'monitor:toast.osaScriptFailed', opts: { stderr: err.stderr } };
     case 'sessionNotFound':
-      return { key: 'terminal:toast.sessionNotFound' };
+      return { key: 'monitor:toast.sessionNotFound' };
     case 'io':
-      return { key: 'terminal:toast.io', opts: { message: err.message } };
+      return { key: 'monitor:toast.io', opts: { message: err.message } };
   }
 }
 
@@ -50,6 +51,7 @@ function PetTaskApp() {
   const { t } = useTranslation();
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // 初次拉取：失败静默（列表为空时自然展示空状态，不阻塞面板渲染）。
   useEffect(() => {
@@ -96,6 +98,16 @@ function PetTaskApp() {
     await commands.navigateToSession(pid);
   }, []);
 
+  // 手动刷新：触发后端 rescan，emit sessions-changed 后订阅自动更新列表与汇总。
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await unwrap(commands.refreshSessions());
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
   // 仅展示活跃会话（Busy+Waiting），数量与桌宠徽章一致。
   const activeSessions = sortSessions(sessions.filter(isActiveSession));
 
@@ -111,13 +123,33 @@ function PetTaskApp() {
         borderRadius: 2,
       }}
     >
-      <Box sx={{ px: 1.5, py: 1, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
+      <Box
+        sx={{
+          px: 1.5,
+          py: 1,
+          borderBottom: 1,
+          borderColor: 'divider',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+        }}
+      >
         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-          {t('pet:task.title')}
+          {t('pet:task.summary', { total: sessions.length, active: activeSessions.length })}
         </Typography>
-        <Typography variant="caption" color="text.secondary">
-          {t('pet:task.count', { count: activeSessions.length })}
-        </Typography>
+        <Box sx={{ flex: 1 }} />
+        <IconButton size="small" onClick={handleRefresh} disabled={refreshing} aria-label="refresh">
+          <RefreshIcon
+            sx={{
+              'animation': refreshing ? 'spin 0.8s linear infinite' : undefined,
+              '@keyframes spin': {
+                from: { transform: 'rotate(0deg)' },
+                to: { transform: 'rotate(360deg)' },
+              },
+            }}
+          />
+        </IconButton>
       </Box>
       {activeSessions.length === 0
         ? (

@@ -20,17 +20,17 @@ const chipColor: Record<SessionStatus, 'warning' | 'info' | 'default' | 'error'>
 };
 
 const statusI18nKey: Record<SessionStatus, string> = {
-  Busy: 'terminal:status.busy',
-  Waiting: 'terminal:status.waiting',
-  Idle: 'terminal:status.idle',
-  Dead: 'terminal:status.dead',
+  Busy: 'monitor:status.busy',
+  Waiting: 'monitor:status.waiting',
+  Idle: 'monitor:status.idle',
+  Dead: 'monitor:status.dead',
 };
 
 const hostAppI18nKey: Record<TerminalApp, string> = {
-  ITerm2: 'terminal:hostApp.ITerm2',
-  Terminal: 'terminal:hostApp.Terminal',
-  IntelliJ: 'terminal:hostApp.IntelliJ',
-  Unknown: 'terminal:hostApp.Unknown',
+  ITerm2: 'monitor:hostApp.ITerm2',
+  Terminal: 'monitor:hostApp.Terminal',
+  IntelliJ: 'monitor:hostApp.IntelliJ',
+  Unknown: 'monitor:hostApp.Unknown',
 };
 
 // 暂不支持跳转的宿主终端（前端禁用按钮，避免无效 osascript 调用）。
@@ -85,7 +85,7 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
           disabled={unsupported}
           onClick={() => onOpenTerminal(session.pid)}
         >
-          {t('terminal:action.openHost', { host: t(hostAppI18nKey[session.hostApp]) })}
+          {t('monitor:action.openHost', { host: t(hostAppI18nKey[session.hostApp]) })}
         </Button>
       </CardActions>
     </Card>

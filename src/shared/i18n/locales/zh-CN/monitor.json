@@ -1,6 +1,5 @@
 {
-  "title": "终端监听",
-  "activeCount": "{{active}} 个活跃 / {{free}} 个空闲",
+  "summary": "共 {{total}} 个会话  /  {{active}} 个活跃",
   "empty": {
     "title": "暂无活跃会话",
     "desc": "正在运行的 Claude Code 会话将显示在此处"
