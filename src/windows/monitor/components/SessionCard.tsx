@@ -1,4 +1,5 @@
 import type { SessionInfo, SessionStatus, TerminalApp } from '@src/shared/bindings';
+import { SiIntellijidea, SiIterm2 } from '@icons-pack/react-simple-icons';
 import { Terminal as TerminalIcon } from '@mui/icons-material';
 import {
   Box,
@@ -10,8 +11,12 @@ import {
   Divider,
   Typography,
 } from '@mui/material';
+import vscodeIconSvg from '@src/assets/vscode.svg?raw';
+import { commands } from '@src/shared/bindings';
+import { unwrap } from '@src/shared/commands';
 import { STATUS_COLOR } from '@src/shared/sessionStatus';
 import { formatDate, formatRelativeTime } from '@src/shared/time';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const statusI18nKey: Record<SessionStatus, string> = {
@@ -31,6 +36,17 @@ const hostAppI18nKey: Record<TerminalApp, string> = {
 // 暂不支持跳转的宿主终端（前端禁用按钮，避免无效 osascript 调用）。
 const UNSUPPORTED_HOST: TerminalApp[] = ['IntelliJ', 'Unknown'];
 
+// VSCode 官方单色品牌图标（src/assets/vscode.svg 通过 ?raw 注入，保留 currentColor 主题色跟随）。
+function VsCodeIcon() {
+  return (
+    <span
+      style={{ display: 'inline-flex', width: '1.25rem', height: '1.25rem' }}
+      // eslint-disable-next-line react/dom-no-dangerously-set-innerhtml -- 注入项目内静态 SVG 字符串，非外部输入，无 XSS 风险
+      dangerouslySetInnerHTML={{ __html: vscodeIconSvg }}
+    />
+  );
+}
+
 interface SessionCardProps {
   session: SessionInfo;
   onOpenTerminal: (pid: number) => void;
@@ -39,6 +55,14 @@ interface SessionCardProps {
 function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
   const { t } = useTranslation();
   const unsupported = UNSUPPORTED_HOST.includes(session.hostApp);
+
+  // 编辑器打开：code/idea CLI 命令不存在时后端返回 Err，前端静默 warn（编辑器未装的常见场景，
+  // 不值得用 toast 打断；用户从无响应自行判断）。
+  const handleOpenInEditor = useCallback((editor: 'vscode' | 'idea') => {
+    unwrap(commands.openInEditor(editor, session.cwd)).catch((e) => {
+      console.warn(`[monitor] openInEditor(${editor}) failed`, e);
+    });
+  }, [session.cwd]);
 
   return (
     <Card variant="outlined">
@@ -81,9 +105,23 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
       <CardActions sx={{ justifyContent: 'flex-end' }}>
         <Button
           size="small"
+          onClick={() => handleOpenInEditor('vscode')}
+          startIcon={<VsCodeIcon />}
+        >
+          {t('monitor:editor.vscode')}
+        </Button>
+        <Button
+          size="small"
+          onClick={() => handleOpenInEditor('idea')}
+          startIcon={<SiIntellijidea size="1.15rem" color="currentColor" />}
+        >
+          {t('monitor:editor.idea')}
+        </Button>
+        <Button
+          size="small"
           disabled={unsupported}
           onClick={() => onOpenTerminal(session.pid)}
-          startIcon={<TerminalIcon fontSize="small" />}
+          startIcon={session.hostApp === 'ITerm2' ? <SiIterm2 size="1.25rem" color="currentColor" /> : <TerminalIcon style={{ fontSize: '1.5rem' }} />}
         >
           {t(hostAppI18nKey[session.hostApp])}
         </Button>

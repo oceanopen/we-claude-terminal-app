@@ -71,6 +71,24 @@ pub fn navigate_to_session(pid: u32, app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+/// 用指定编辑器 CLI 打开项目目录。editor 仅允许 "vscode" / "idea" 两个枚举值，
+/// 映射到 code / idea 命令；spawn 不阻塞（编辑器是长期运行的 GUI 进程）。
+/// 命令不存在 / 启动失败返回 Err(String)，前端自行 warn 或提示。
+#[tauri::command]
+#[specta::specta]
+pub fn open_in_editor(editor: String, cwd: String) -> Result<(), String> {
+    let cmd = match editor.as_str() {
+        "vscode" => "code",
+        "idea" => "idea",
+        other => return Err(format!("unsupported editor: {other}")),
+    };
+    std::process::Command::new(cmd)
+        .arg(&cwd)
+        .spawn()
+        .map_err(|e| format!("failed to launch {cmd}: {e}"))?;
+    Ok(())
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn show_monitor_window(app: tauri::AppHandle) -> Result<(), String> {

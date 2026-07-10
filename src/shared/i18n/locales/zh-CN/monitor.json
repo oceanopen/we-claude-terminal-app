@@ -21,6 +21,10 @@
     "IntelliJ": "IntelliJ",
     "Unknown": "未知终端"
   },
+  "editor": {
+    "vscode": "VSCode",
+    "idea": "IntelliJ IDEA"
+  },
   "toast": {
     "unsupportedHostApp": "未识别的宿主终端，请在 iTerm2 或 Terminal.app 中启动 Claude Code",
     "osaScriptFailed": "跳转终端失败：{{stderr}}",

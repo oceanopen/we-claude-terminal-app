@@ -20,6 +20,12 @@ export const commands = {
 	 *  前端据 NavErr.kind 渲染差异化 toast。
 	 */
 	navigateToSession: (pid: number) => typedError<null, string>(__TAURI_INVOKE("navigate_to_session", { pid })),
+	/**
+	 *  用指定编辑器 CLI 打开项目目录。editor 仅允许 "vscode" / "idea" 两个枚举值，
+	 *  映射到 code / idea 命令；spawn 不阻塞（编辑器是长期运行的 GUI 进程）。
+	 *  命令不存在 / 启动失败返回 Err(String)，前端自行 warn 或提示。
+	 */
+	openInEditor: (editor: string, cwd: string) => typedError<null, string>(__TAURI_INVOKE("open_in_editor", { editor, cwd })),
 	showPetWindow: () => typedError<null, string>(__TAURI_INVOKE("show_pet_window")),
 	hidePetWindow: () => typedError<null, string>(__TAURI_INVOKE("hide_pet_window")),
 	togglePetWindow: () => typedError<boolean, string>(__TAURI_INVOKE("toggle_pet_window")),
