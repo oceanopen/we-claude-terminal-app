@@ -6,6 +6,10 @@ use crate::shared::types::ConfigChangedPayload;
 
 pub const LANGUAGE_KEY: &str = "language";
 
+/// 桌宠窗口显隐状态。值用 `YesNo` enum（见 types.rs，"Y"/"N"），
+/// 缺失视为 `YesNo::Yes`，向后兼容现有用户。
+pub const PET_VISIBLE_KEY: &str = "pet_visible";
+
 pub struct ConfigState(pub Mutex<Connection>);
 
 pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {

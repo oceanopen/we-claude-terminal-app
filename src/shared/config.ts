@@ -1,9 +1,30 @@
+import type { YesNo } from './bindings';
 import { commands } from './bindings';
 import { unwrap } from './commands';
 
 // 本文件是所有配置项 key + 默认值的唯一可信源 (SSOT)。
 // 后端 src-tauri/src/shared/config.rs 中 LANGUAGE_KEY 有对应常量副本（用于托盘菜单语言判定），
 // 修改任一 *KEY / DEFAULT_* 时必须同步后端，否则首次启动会出现前后端兜底不一致。
+
+// Y/N 布尔风格配置值。类型 YesNo 由后端 types.rs 的 enum 经 gen:bindings 自动生成，
+// 此处只保留值常量（specta 不导出 const），用 satisfies 关联后端类型确保取值合法：
+// 后端 #[serde(rename = "Y"/"N")] 改动后，此处值若不一致会编译报错。
+export const YES_NO = {
+  YES: 'Y',
+  NO: 'N',
+} as const satisfies Record<string, YesNo>;
+
+export function isYes(value: string | null): boolean {
+  return value === YES_NO.YES;
+}
+
+export function toYesNo(value: boolean): YesNo {
+  return value ? YES_NO.YES : YES_NO.NO;
+}
+
+export function parseYesNo(value: string | null, fallback: YesNo): YesNo {
+  return value === YES_NO.YES || value === YES_NO.NO ? value : fallback;
+}
 
 export type Appearance = 'system' | 'light' | 'dark';
 

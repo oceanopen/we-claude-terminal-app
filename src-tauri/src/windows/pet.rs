@@ -16,7 +16,8 @@ use std::time::Duration;
 
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
-use crate::shared::config::{read_config_raw, write_config_raw, ConfigState};
+use crate::shared::config::{read_config_raw, write_config_raw, ConfigState, PET_VISIBLE_KEY};
+use crate::shared::types::YesNo;
 use crate::shared::screen::{MonitorInfo, find_monitor_for_tray};
 use crate::windows::pet_task;
 
@@ -61,6 +62,17 @@ fn pet_position(app: &AppHandle) -> (f64, f64) {
     let x = m.wa_x + m.wa_width - PET_SIZE.0 - PET_MARGIN;
     let y = m.wa_y + m.wa_height - PET_SIZE.1 - PET_MARGIN;
     (x.max(0.0), y.max(0.0))
+}
+
+/// 读取持久化的桌宠显隐偏好。缺失或非 "N" 均视为 true（向后兼容现有用户）。
+fn pet_visible_pref(app: &AppHandle) -> bool {
+    let Some(state) = app.try_state::<ConfigState>() else {
+        return true;
+    };
+    match read_config_raw(&*state, PET_VISIBLE_KEY) {
+        Ok(Some(v)) if v == YesNo::No.as_str() => false,
+        _ => true,
+    }
 }
 
 /// 创建或显示桌宠窗口。已存在则直接 show。
@@ -169,6 +181,11 @@ pub fn toggle_pet_window(app: AppHandle) -> Result<bool, String> {
     } else {
         let _ = pet_task::hide_pet_task(app.clone());
     }
+    // 落盘显隐偏好，启动时据此恢复，避免重启后丢失用户的隐藏选择。
+    if let Some(state) = app.try_state::<ConfigState>() {
+        let val = if now_visible { YesNo::Yes } else { YesNo::No };
+        let _ = write_config_raw(&*state, PET_VISIBLE_KEY, val.as_str());
+    }
     Ok(now_visible)
 }
 
@@ -181,8 +198,13 @@ pub fn get_pet_visibility_state(app: AppHandle) -> bool {
         .unwrap_or(false)
 }
 
-/// 内部工具：app 启动时调用，确保桌宠窗口存在且可见。
+/// 内部工具：app 启动时调用。读 pet_visible 偏好决定是否显示桌宠：
+/// 用户上次选择隐藏（pet_visible = "false"）时跳过窗口创建与 pet_task 显示，
+/// 维持隐藏态；否则确保桌宠可见并联动 pet_task。
 pub fn startup_show(app: &AppHandle) {
+    if !pet_visible_pref(app) {
+        return;
+    }
     if let Err(e) = ensure_pet_window(app) {
         log::warn!("[pet] startup ensure failed: {}", e);
     }

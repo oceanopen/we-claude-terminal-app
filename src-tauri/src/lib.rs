@@ -10,7 +10,7 @@ use tauri_specta::{collect_commands, Builder};
 // run()（注册 invoke handler）与 bin/export_bindings.rs（生成 TS 绑定）共用此函数，
 // 保证命令清单单一来源，避免两份注册表漂移。
 pub fn build_specta_builder() -> Builder<tauri::Wry> {
-    use crate::shared::types::{ConfigChangedPayload, SessionInfo, SessionStatus, TerminalApp};
+    use crate::shared::types::{ConfigChangedPayload, SessionInfo, SessionStatus, TerminalApp, YesNo};
     use crate::terminal::NavErr;
     Builder::<tauri::Wry>::new()
         .commands(collect_commands![
@@ -32,6 +32,7 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
         .typ::<ConfigChangedPayload>()
         .typ::<SessionStatus>()
         .typ::<TerminalApp>()
+        .typ::<YesNo>()
         .typ::<SessionInfo>()
         .typ::<NavErr>()
 }
@@ -79,9 +80,12 @@ pub fn run() {
             sessions::watch::start(app.handle().clone());
             sessions::poll::start(app.handle().clone());
 
-            // 桌宠窗口默认启动时显示（用户可通过托盘菜单"隐藏桌宠"关闭）。
+            // 桌宠显隐读 pet_visible 偏好：用户上次隐藏则保持隐藏，否则启动显示。
             // pet 显示后由前端基于 count 调 show_pet_task 联动面板显隐。
             windows::pet::startup_show(app.handle());
+            // 托盘菜单在 setup 时基于窗口可见性初始化文案，此时 pet 窗口尚未创建，
+            // 故恒为"显示桌宠"；startup_show 确定真实显隐后刷新一次以纠正文案。
+            windows::tray::refresh_menu_texts(app.handle());
 
             specta_builder.mount_events(app);
 

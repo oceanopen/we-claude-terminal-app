@@ -53,6 +53,25 @@ pub enum TerminalApp {
     Unknown,
 }
 
+/// Y/N 布尔风格配置值。serde rename 到单字母，序列化与 specta 导出均为 "Y"/"N"。
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize, Type)]
+pub enum YesNo {
+    #[serde(rename = "Y")]
+    Yes,
+    #[serde(rename = "N")]
+    No,
+}
+
+impl YesNo {
+    /// 对应的存储字符串（config 层以裸字符串存储，非 JSON，故不走 serde 序列化）。
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            YesNo::Yes => "Y",
+            YesNo::No => "N",
+        }
+    }
+}
+
 /// 终端会话快照。MonitorApp 渲染 SessionCard 列表的数据源；
 /// PetApp 聚合所有会话取"最忙"状态作为桌宠展示态。
 #[derive(Clone, Serialize, Deserialize, Type)]

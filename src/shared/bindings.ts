@@ -114,6 +114,9 @@ export type TerminalApp = "ITerm2" | "Terminal" | "IntelliJ" |
 /**  未识别的宿主终端（如 VSCode 内嵌、Wezterm、Alacritty 等）。跳转按钮将禁用。 */
 "Unknown";
 
+/**  Y/N 布尔风格配置值。serde rename 到单字母，序列化与 specta 导出均为 "Y"/"N"。 */
+export type YesNo = "Y" | "N";
+
 /* Tauri Specta runtime */
 async function typedError<T, E>(result: Promise<T>): Promise<{ status: "ok"; data: T } | { status: "error"; error: E }> {
     try {
