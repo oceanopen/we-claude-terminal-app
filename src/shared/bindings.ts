@@ -26,6 +26,11 @@ export const commands = {
 	 *  命令不存在 / 启动失败返回 Err(String)，前端自行 warn 或提示。
 	 */
 	openInEditor: (editor: string, cwd: string) => typedError<null, string>(__TAURI_INVOKE("open_in_editor", { editor, cwd })),
+	/**
+	 *  判断 cwd 是否 Java 项目（Maven pom.xml 或 Gradle build.gradle/build.gradle.kts）。
+	 *  前端据此禁用 VSCode/IDEA 中不合适的那一个，保留两个按钮便于未来扩展。
+	 */
+	isJavaProject: (cwd: string) => __TAURI_INVOKE<boolean>("is_java_project", { cwd }),
 	showPetWindow: () => typedError<null, string>(__TAURI_INVOKE("show_pet_window")),
 	hidePetWindow: () => typedError<null, string>(__TAURI_INVOKE("hide_pet_window")),
 	togglePetWindow: () => typedError<boolean, string>(__TAURI_INVOKE("toggle_pet_window")),

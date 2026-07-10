@@ -19,6 +19,7 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
             windows::monitor::refresh_sessions,
             windows::monitor::navigate_to_session,
             windows::monitor::open_in_editor,
+            windows::monitor::is_java_project,
             windows::pet::show_pet_window,
             windows::pet::hide_pet_window,
             windows::pet::toggle_pet_window,

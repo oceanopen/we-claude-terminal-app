@@ -16,7 +16,7 @@ import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
 import { STATUS_COLOR } from '@src/shared/sessionStatus';
 import { formatDate, formatRelativeTime } from '@src/shared/time';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const statusI18nKey: Record<SessionStatus, string> = {
@@ -55,6 +55,15 @@ interface SessionCardProps {
 function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
   const { t } = useTranslation();
   const unsupported = UNSUPPORTED_HOST.includes(session.hostApp);
+  // Java 项目判断（pom.xml / build.gradle / build.gradle.kts）：
+  // 决定 VSCode/IDEA 哪个禁用——Java 项目优先 IDEA，其他优先 VSCode。
+  // 命令返回裸 Promise<boolean>（非 typedError），错误时 fallback false（按非 Java 处理）。
+  const [isJava, setIsJava] = useState(false);
+  useEffect(() => {
+    commands.isJavaProject(session.cwd)
+      .then(setIsJava)
+      .catch(() => setIsJava(false));
+  }, [session.cwd]);
 
   // 编辑器打开：code/idea CLI 命令不存在时后端返回 Err，前端静默 warn（编辑器未装的常见场景，
   // 不值得用 toast 打断；用户从无响应自行判断）。
@@ -102,21 +111,25 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
         </Typography>
       </CardContent>
       <Divider />
-      <CardActions sx={{ justifyContent: 'flex-end' }}>
-        <Button
-          size="small"
-          onClick={() => handleOpenInEditor('vscode')}
-          startIcon={<VsCodeIcon />}
-        >
-          {t('monitor:editor.vscode')}
-        </Button>
-        <Button
-          size="small"
-          onClick={() => handleOpenInEditor('idea')}
-          startIcon={<SiIntellijidea size="1.15rem" color="currentColor" />}
-        >
-          {t('monitor:editor.idea')}
-        </Button>
+      <CardActions sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            size="small"
+            disabled={isJava}
+            onClick={() => handleOpenInEditor('vscode')}
+            startIcon={<VsCodeIcon />}
+          >
+            {t('monitor:editor.vscode')}
+          </Button>
+          <Button
+            size="small"
+            disabled={!isJava}
+            onClick={() => handleOpenInEditor('idea')}
+            startIcon={<SiIntellijidea size="1.15rem" color="currentColor" />}
+          >
+            {t('monitor:editor.idea')}
+          </Button>
+        </Box>
         <Button
           size="small"
           disabled={unsupported}

@@ -84,9 +84,26 @@ pub fn open_in_editor(editor: String, cwd: String) -> Result<(), String> {
     };
     std::process::Command::new(cmd)
         .arg(&cwd)
+        // GUI 编辑器（IDEA / VSCode）启动会把自身日志写到继承的 stdout/stderr，
+        // 污染 we-claude-terminal 的终端（IDEA 尤其嘈杂：Kotlin/Maven 插件 WARN、
+        // Gradle daemon 失败堆栈等）。重定向到 null 让子进程静默。
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
         .spawn()
         .map_err(|e| format!("failed to launch {cmd}: {e}"))?;
     Ok(())
+}
+
+/// 判断 cwd 是否 Java 项目（Maven pom.xml 或 Gradle build.gradle/build.gradle.kts）。
+/// 前端据此禁用 VSCode/IDEA 中不合适的那一个，保留两个按钮便于未来扩展。
+#[tauri::command]
+#[specta::specta]
+pub fn is_java_project(cwd: String) -> bool {
+    let path = std::path::Path::new(&cwd);
+    path.join("pom.xml").exists()
+        || path.join("build.gradle").exists()
+        || path.join("build.gradle.kts").exists()
 }
 
 #[tauri::command]
