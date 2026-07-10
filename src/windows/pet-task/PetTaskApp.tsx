@@ -1,6 +1,6 @@
 import type { NavErr, SessionInfo, SessionStatus } from '@src/shared/bindings';
 import { Autorenew as AutorenewIcon } from '@mui/icons-material';
-import { Box, IconButton, List, Paper, Snackbar, Typography } from '@mui/material';
+import { Box, Button, IconButton, List, Paper, Snackbar, Typography } from '@mui/material';
 import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
 import {
@@ -9,7 +9,7 @@ import {
 } from '@src/shared/events';
 import { isActiveSession } from '@src/shared/sessionStatus';
 import { listen } from '@tauri-apps/api/event';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PanelEmptyState from './components/PanelEmptyState';
 import SessionItem from './components/SessionItem';
@@ -53,6 +53,7 @@ function PetTaskApp() {
   const [toast, setToast] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   // 初次拉取：失败静默（列表为空时自然展示空状态，不阻塞面板渲染）。
   useEffect(() => {
@@ -116,17 +117,48 @@ function PetTaskApp() {
     setHovered(false);
   }, []);
 
+  // 动态高度：ResizeObserver 监听 Paper 实际内容高度变化（会话增减 / 空态切换），
+  // rAF 合并同帧多次回调，调 fit_pet_task 让后端 set_size + 重新定位（保持与 pet 中心对齐）。
+  // observe 后异步触发首回调，等价于 mount 即 fit，覆盖 show 时用的默认高度。
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) {
+      return;
+    }
+    let raf = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const height = root.offsetHeight;
+        unwrap(commands.fitPetTask(height)).catch((e) => {
+          console.warn('[pet-task] fitPetTask failed', e);
+        });
+      });
+    });
+    observer.observe(root);
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
+  }, []);
+
+  const handleShowMore = useCallback(() => {
+    unwrap(commands.showMonitorWindow()).catch((e) => {
+      console.warn('[pet-task] show monitor failed', e);
+    });
+  }, []);
+
   // 仅展示活跃会话（Busy+Waiting），数量与桌宠徽章一致。
   const activeSessions = sortSessions(sessions.filter(isActiveSession));
 
   return (
     <Paper
+      ref={rootRef}
       elevation={3}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       sx={{
         width: 280,
-        maxHeight: 340,
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -174,6 +206,21 @@ function PetTaskApp() {
               ))}
             </List>
           )}
+      {activeSessions.length > 5 && (
+        <Box
+          sx={{
+            flexShrink: 0,
+            borderTop: 1,
+            borderColor: 'divider',
+            px: 1,
+            py: 0.5,
+          }}
+        >
+          <Button fullWidth size="small" onClick={handleShowMore}>
+            {t('pet:task.more')}
+          </Button>
+        </Box>
+      )}
       <Snackbar
         open={toast !== null}
         message={toast ?? ''}

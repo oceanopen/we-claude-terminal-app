@@ -38,6 +38,12 @@ export const commands = {
 	 *  避免孤立的悬浮列表；pet 前端 count 归零时也主动调用。
 	 */
 	hidePetTask: () => typedError<null, string>(__TAURI_INVOKE("hide_pet_task")),
+	/**
+	 *  前端测得实际内容高度后回调，调整窗口高度并重新定位以保持与 pet 中心水平对齐。
+	 *  由 PetTaskApp 的 ResizeObserver（rAF 节流）触发；窗口已可见，不需 show。
+	 *  高度变化时 Y 按 panel 中心 = pet 中心重算，保证增减会话不破坏水平对齐。
+	 */
+	fitPetTask: (height: number | null) => typedError<null, string>(__TAURI_INVOKE("fit_pet_task", { height })),
 	showSettingsWindow: () => typedError<null, string>(__TAURI_INVOKE("show_settings_window")),
 	getConfig: (key: string) => typedError<string | null, string>(__TAURI_INVOKE("get_config", { key })),
 	setConfig: (key: string, value: string) => typedError<null, string>(__TAURI_INVOKE("set_config", { key, value })),

@@ -4,6 +4,7 @@
     "empty": {
       "title": "No active sessions",
       "desc": "Running Claude Code sessions will appear here"
-    }
+    },
+    "more": "Show more"
   }
 }

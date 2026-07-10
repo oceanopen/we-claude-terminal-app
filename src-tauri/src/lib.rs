@@ -24,6 +24,7 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
             windows::pet::get_pet_visibility_state,
             windows::pet_task::show_pet_task,
             windows::pet_task::hide_pet_task,
+            windows::pet_task::fit_pet_task,
             windows::settings::show_settings_window,
             shared::config::get_config,
             shared::config::set_config,
