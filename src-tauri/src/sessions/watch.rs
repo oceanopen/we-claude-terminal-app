@@ -1,7 +1,5 @@
 // 文件监听：notify + notify-debouncer-mini 监听 ~/.claude/sessions/ 变化。
 //
-// 与原 monitor.rs::start_watcher 同模式（独立 OS 线程 + mpsc + 1s 去抖），
-// 仅监听目录从 ~/.claude/projects/ 切到 ~/.claude/sessions/。
 // 任一环节失败 silently warn 后线程退出，poll 兜底接管。
 
 use std::path::PathBuf;
