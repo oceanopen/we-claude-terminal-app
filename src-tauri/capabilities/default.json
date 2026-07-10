@@ -5,6 +5,7 @@
   "windows": [
     "monitor",
     "pet",
+    "pet-task",
     "settings"
   ],
   "permissions": [
