@@ -206,21 +206,19 @@ function PetTaskApp() {
               ))}
             </List>
           )}
-      {activeSessions.length > 5 && (
-        <Box
-          sx={{
-            flexShrink: 0,
-            borderTop: 1,
-            borderColor: 'divider',
-            px: 1,
-            py: 0.5,
-          }}
-        >
-          <Button fullWidth size="small" onClick={handleShowMore}>
-            {t('pet:task.more')}
-          </Button>
-        </Box>
-      )}
+      <Box
+        sx={{
+          flexShrink: 0,
+          borderTop: 1,
+          borderColor: 'divider',
+          px: 1,
+          py: 0.5,
+        }}
+      >
+        <Button fullWidth size="small" onClick={handleShowMore} sx={{ fontSize: 11 }}>
+          {t('pet:task.more')}
+        </Button>
+      </Box>
       <Snackbar
         open={toast !== null}
         message={toast ?? ''}
