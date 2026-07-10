@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-// 面板空状态：紧凑居中，文案对应 pet:panel.empty.*。
+// 面板空状态：紧凑居中，文案对应 pet:task.empty.*。
 function PanelEmptyState() {
   const { t } = useTranslation();
 
@@ -19,10 +19,10 @@ function PanelEmptyState() {
       }}
     >
       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-        {t('pet:panel.empty.title')}
+        {t('pet:task.empty.title')}
       </Typography>
       <Typography variant="caption" color="text.secondary" align="center">
-        {t('pet:panel.empty.desc')}
+        {t('pet:task.empty.desc')}
       </Typography>
     </Box>
   );

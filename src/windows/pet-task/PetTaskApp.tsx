@@ -113,10 +113,10 @@ function PetTaskApp() {
     >
       <Box sx={{ px: 1.5, py: 1, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-          {t('pet:panel.title')}
+          {t('pet:task.title')}
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          {t('pet:panel.count', { count: activeSessions.length })}
+          {t('pet:task.count', { count: activeSessions.length })}
         </Typography>
       </Box>
       {activeSessions.length === 0

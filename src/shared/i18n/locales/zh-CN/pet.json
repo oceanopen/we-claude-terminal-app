@@ -1,5 +1,5 @@
 {
-  "panel": {
+  "task": {
     "title": "活跃会话",
     "count": "{{count}} 个活跃",
     "empty": {
