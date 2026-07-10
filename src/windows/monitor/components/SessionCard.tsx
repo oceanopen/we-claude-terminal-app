@@ -1,4 +1,5 @@
 import type { SessionInfo, SessionStatus, TerminalApp } from '@src/shared/bindings';
+import { Terminal as TerminalIcon } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -82,8 +83,9 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
           size="small"
           disabled={unsupported}
           onClick={() => onOpenTerminal(session.pid)}
+          startIcon={<TerminalIcon fontSize="small" />}
         >
-          {t('monitor:action.openHost', { host: t(hostAppI18nKey[session.hostApp]) })}
+          {t(hostAppI18nKey[session.hostApp])}
         </Button>
       </CardActions>
     </Card>
