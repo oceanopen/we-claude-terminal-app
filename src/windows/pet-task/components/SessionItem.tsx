@@ -1,14 +1,7 @@
 import type { SessionInfo, SessionStatus, TerminalApp } from '@src/shared/bindings';
 import { Box, ListItemButton, Typography } from '@mui/material';
+import { STATUS_COLOR } from '@src/shared/sessionStatus';
 import { useTranslation } from 'react-i18next';
-
-// 状态色与 PetSprite 对齐，保证列表态与桌宠图标视觉一致。
-const STATUS_COLOR: Record<SessionStatus, string> = {
-  Busy: '#4caf50',
-  Waiting: '#ff9800',
-  Idle: '#9e9e9e',
-  Dead: '#616161',
-};
 
 // 状态文案复用 monitor 命名空间（运行中/等待输入/空闲/已失效）。
 const STATUS_I18N_KEY: Record<SessionStatus, string> = {

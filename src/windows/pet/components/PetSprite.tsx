@@ -2,6 +2,7 @@ import type { SvgIconComponent } from '@mui/icons-material';
 import type { SessionStatus } from '@src/shared/bindings';
 import { Autorenew, Bedtime, Notifications, Schedule } from '@mui/icons-material';
 import { Box } from '@mui/material';
+import { STATUS_COLOR } from '@src/shared/sessionStatus';
 
 interface PetSpriteProps {
   status: SessionStatus;
@@ -18,16 +19,9 @@ const ICON: Record<SessionStatus, SvgIconComponent> = {
   Dead: Bedtime, // 月亮=休眠
 };
 
-const COLOR: Record<SessionStatus, string> = {
-  Busy: '#4caf50', // success 绿（工作中）
-  Waiting: '#ff9800', // warning 橙（提醒用户）
-  Idle: '#9e9e9e', // 灰
-  Dead: '#616161', // 深灰（无会话休眠非错误，去警示红；比 Idle 深一档区分）
-};
-
 function PetSprite({ status, count }: PetSpriteProps) {
   const Icon = ICON[status];
-  const color = COLOR[status];
+  const color = STATUS_COLOR[status];
 
   return (
     <Box
