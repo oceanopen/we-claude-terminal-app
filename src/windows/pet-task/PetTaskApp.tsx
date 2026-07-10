@@ -52,6 +52,7 @@ function PetTaskApp() {
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   // 初次拉取：失败静默（列表为空时自然展示空状态，不阻塞面板渲染）。
   useEffect(() => {
@@ -108,12 +109,21 @@ function PetTaskApp() {
     }
   }, []);
 
+  const handleMouseEnter = useCallback(() => {
+    setHovered(true);
+  }, []);
+  const handleMouseLeave = useCallback(() => {
+    setHovered(false);
+  }, []);
+
   // 仅展示活跃会话（Busy+Waiting），数量与桌宠徽章一致。
   const activeSessions = sortSessions(sessions.filter(isActiveSession));
 
   return (
     <Paper
       elevation={3}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       sx={{
         width: 280,
         maxHeight: 340,
@@ -121,6 +131,8 @@ function PetTaskApp() {
         flexDirection: 'column',
         overflow: 'hidden',
         borderRadius: 2,
+        opacity: hovered ? 1 : 0.3,
+        transition: 'opacity 0.2s',
       }}
     >
       <Box
