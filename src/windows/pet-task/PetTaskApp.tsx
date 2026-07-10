@@ -1,5 +1,5 @@
 import type { NavErr, SessionInfo, SessionStatus } from '@src/shared/bindings';
-import { Refresh as RefreshIcon } from '@mui/icons-material';
+import { Autorenew as AutorenewIcon } from '@mui/icons-material';
 import { Box, IconButton, List, Paper, Snackbar, Typography } from '@mui/material';
 import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
@@ -140,7 +140,7 @@ function PetTaskApp() {
         </Typography>
         <Box sx={{ flex: 1 }} />
         <IconButton size="small" onClick={handleRefresh} disabled={refreshing} aria-label="refresh">
-          <RefreshIcon
+          <AutorenewIcon
             sx={{
               'animation': refreshing ? 'spin 0.8s linear infinite' : undefined,
               '@keyframes spin': {

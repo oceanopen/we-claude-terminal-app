@@ -1,5 +1,5 @@
 import type { NavErr, SessionInfo } from '@src/shared/bindings';
-import { Refresh as RefreshIcon } from '@mui/icons-material';
+import { Autorenew as AutorenewIcon } from '@mui/icons-material';
 import {
   Alert,
   AlertTitle,
@@ -127,7 +127,7 @@ function MonitorApp() {
         </Typography>
         <Box sx={{ flex: 1 }} />
         <IconButton size="small" onClick={handleRefresh} disabled={refreshing} aria-label="refresh">
-          <RefreshIcon
+          <AutorenewIcon
             sx={{
               'animation': refreshing ? 'spin 0.8s linear infinite' : undefined,
               '@keyframes spin': {
