@@ -38,6 +38,11 @@ export type ResolvedLanguage = Exclude<Language, 'system'>;
 export const LANGUAGE_KEY = 'language';
 export const DEFAULT_LANGUAGE: Language = 'system';
 
+// 桌宠拖拽开关。值用 YesNo，缺失视为 NO（默认关闭：点击桌宠打开监控页）。
+// 与后端 config.rs 的 PET_DRAGGABLE_KEY 对齐，修改任一处需同步另一处。
+export const PET_DRAGGABLE_KEY = 'pet_draggable';
+export const DEFAULT_PET_DRAGGABLE = YES_NO.NO;
+
 // sessions 兜底轮询周期（秒）。即时性由 fs watcher 负责，此处仅驱动 Dead 老化与漏报兜底。
 // min/max/clamp 与后端 config.rs 镜像，改动任一处需同步另一处。
 export const POLL_INTERVAL_SECS_KEY = 'poll_interval_secs';

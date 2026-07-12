@@ -1,7 +1,17 @@
-import type { SessionInfo, SessionStatus } from '@src/shared/bindings';
+import type { ConfigChangedPayload, SessionInfo, SessionStatus } from '@src/shared/bindings';
 import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
-import { EVENT_MONITOR_SESSIONS_CHANGED } from '@src/shared/events';
+import {
+  DEFAULT_PET_DRAGGABLE,
+  getConfig,
+  isYes,
+  parseYesNo,
+  PET_DRAGGABLE_KEY,
+} from '@src/shared/config';
+import {
+  EVENT_CONFIG_CHANGED,
+  EVENT_MONITOR_SESSIONS_CHANGED,
+} from '@src/shared/events';
 import { countActiveSessions } from '@src/shared/sessionStatus';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -32,6 +42,8 @@ function PetApp() {
   const [status, setStatus] = useState<SessionStatus>('Dead');
   const [count, setCount] = useState(0);
   const [hovered, setHovered] = useState(false);
+  // 桌宠拖拽开关：开启时可拖拽、点击静默；关闭时不可拖拽、点击打开终端监控页。
+  const [draggable, setDraggable] = useState(false);
 
   // 纯函数：从 sessions 快照计算 status + count。PetApp 与 PetTaskApp 共用
   // sessions-changed payload 作为数据源，applySessions 保证两端对同一事件的响应原子化，
@@ -69,21 +81,56 @@ function PetApp() {
     });
   }, [count]);
 
+  // 拖拽开关：mount 读配置初始化（默认关闭）；监听 config-changed 实时响应托盘菜单切换。
+  // 与 AppThemeProvider 的配置实时响应模式一致。
+  useEffect(() => {
+    getConfig(PET_DRAGGABLE_KEY)
+      .then(v => setDraggable(isYes(parseYesNo(v, DEFAULT_PET_DRAGGABLE))))
+      .catch((e) => {
+        console.warn('[pet] load draggable failed', e);
+      });
+    const unlisten = listen<ConfigChangedPayload>(EVENT_CONFIG_CHANGED, (e) => {
+      if (e.payload.key === PET_DRAGGABLE_KEY) {
+        setDraggable(isYes(parseYesNo(e.payload.value, DEFAULT_PET_DRAGGABLE)));
+      }
+    });
+    return () => {
+      unlisten
+        .then(fn => fn())
+        .catch(err => console.warn('[pet] draggable unlisten failed:', err));
+    };
+  }, []);
+
   // 鼠标悬停反馈：mouseenter 高亮、mouseleave 恢复（驱动 opacity 过渡）。
-  // 鼠标按下时 startDragging 拖动桌宠（不再绑定 click，避免与拖拽冲突）。
   const handleMouseEnter = useCallback(() => {
     setHovered(true);
   }, []);
   const handleMouseLeave = useCallback(() => {
     setHovered(false);
   }, []);
+  // 开启拖拽：鼠标按下进入原生窗口拖拽（startDragging 会吞掉后续 click，故无需特殊处理）。
+  // 关闭拖拽：mouseDown 空转，交由 handleClick 打开终端监控页。
   const handleMouseDown = useCallback(async () => {
+    if (!draggable) {
+      return;
+    }
     try {
       await getCurrentWindow().startDragging();
     } catch (e) {
       console.warn('[pet] startDragging failed:', e);
     }
-  }, []);
+  }, [draggable]);
+  // 关闭拖拽模式下点击桌宠打开终端监控页；开启模式下 startDragging 已吞掉 click，兜底再判一次。
+  const handleClick = useCallback(async () => {
+    if (draggable) {
+      return;
+    }
+    try {
+      await unwrap(commands.showMonitorWindow());
+    } catch (e) {
+      console.warn('[pet] open monitor failed', e);
+    }
+  }, [draggable]);
 
   return (
     <div
@@ -95,12 +142,15 @@ function PetApp() {
         alignItems: 'center',
         justifyContent: 'center',
         userSelect: 'none',
+        // 拖拽态用 grab 提示可拖动，点击态用 pointer 提示可点击打开监控页。
+        cursor: draggable ? 'grab' : 'pointer',
         opacity: hovered ? 1 : 0.3,
         transition: 'opacity 0.2s',
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onMouseDown={handleMouseDown}
+      onClick={handleClick}
     >
       <PetSprite status={status} count={count} />
     </div>

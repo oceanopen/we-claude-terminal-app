@@ -10,6 +10,10 @@ pub const LANGUAGE_KEY: &str = "language";
 /// 缺失视为 `YesNo::Yes`，向后兼容现有用户。
 pub const PET_VISIBLE_KEY: &str = "pet_visible";
 
+/// 桌宠拖拽开关。值用 `YesNo` enum（"Y"/"N"），缺失视为 `YesNo::No`（默认关闭）：
+/// 关闭时点击桌宠打开终端监控页，开启时桌宠可拖拽且点击静默。
+pub const PET_DRAGGABLE_KEY: &str = "pet_draggable";
+
 /// sessions 兜底轮询周期（秒）。即时性由 fs watcher 负责，此处仅驱动 Dead 老化与漏报兜底。
 /// 默认值 / min / max 与前端 src/shared/config.ts 镜像，改动任一处需同步另一处。
 pub const POLL_INTERVAL_SECS_KEY: &str = "poll_interval_secs";
