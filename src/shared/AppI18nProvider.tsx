@@ -1,15 +1,9 @@
-import type { ConfigChangedPayload } from './bindings';
 import type { Language, ResolvedLanguage } from './config';
-import { listen } from '@tauri-apps/api/event';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { I18nextProvider } from 'react-i18next';
-import {
-  DEFAULT_LANGUAGE,
-  getConfig,
-  LANGUAGE_KEY,
-} from './config';
-import { EVENT_CONFIG_CHANGED } from './events';
+import { DEFAULT_LANGUAGE, LANGUAGE_KEY } from './config';
 import i18n from './i18n';
+import { useConfigValue } from './useConfigValue';
 import { useSystemLanguage } from './useSystemLanguage';
 
 interface Props {
@@ -18,6 +12,11 @@ interface Props {
 
 function isLanguage(v: string | null): v is Language {
   return v === 'system' || v === 'zh-CN' || v === 'en';
+}
+
+// 模块级 decode：稳定引用，避免 useConfigValue 每次渲染重复订阅。
+function decodeLanguage(v: string | null): Language {
+  return isLanguage(v) ? v : DEFAULT_LANGUAGE;
 }
 
 function applyLanguage(resolved: ResolvedLanguage) {
@@ -30,37 +29,10 @@ function applyLanguage(resolved: ResolvedLanguage) {
 }
 
 export default function AppI18nProvider({ children }: Props) {
-  const [language, setLanguage] = useState<Language>(DEFAULT_LANGUAGE);
+  const language = useConfigValue(LANGUAGE_KEY, decodeLanguage, DEFAULT_LANGUAGE);
   const systemLanguage = useSystemLanguage();
 
-  useEffect(() => {
-    getConfig(LANGUAGE_KEY).then((v) => {
-      if (isLanguage(v)) {
-        setLanguage(v);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    const unlistenPromise = listen<ConfigChangedPayload>(
-      EVENT_CONFIG_CHANGED,
-      (e) => {
-        if (e.payload.key === LANGUAGE_KEY && isLanguage(e.payload.value)) {
-          setLanguage(e.payload.value);
-        }
-      },
-    );
-    return () => {
-      unlistenPromise
-        .then(fn => fn())
-        .catch((err: unknown) => {
-          console.warn('[config-changed] unlisten failed (possible Tauri event race):', err);
-        });
-    };
-  }, []);
-
-  const resolved: ResolvedLanguage
-    = language === 'system' ? systemLanguage : language;
+  const resolved: ResolvedLanguage = language === 'system' ? systemLanguage : language;
 
   useEffect(() => {
     applyLanguage(resolved);

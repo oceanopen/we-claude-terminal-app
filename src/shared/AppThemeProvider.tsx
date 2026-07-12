@@ -1,53 +1,26 @@
-import type { ConfigChangedPayload } from './bindings';
 import type { Appearance } from './config';
 import { createTheme, CssBaseline, ThemeProvider } from '@mui/material';
-import { listen } from '@tauri-apps/api/event';
-import { useEffect, useMemo, useState } from 'react';
-import {
-
-  APPEARANCE_KEY,
-  DEFAULT_APPEARANCE,
-  getConfig,
-} from './config';
-import { EVENT_CONFIG_CHANGED } from './events';
+import { useMemo } from 'react';
+import { APPEARANCE_KEY, DEFAULT_APPEARANCE } from './config';
+import { useConfigValue } from './useConfigValue';
 import { useSystemThemeMode } from './useSystemTheme';
 
 interface Props {
   children: React.ReactNode;
 }
 
+function isAppearance(v: string | null): v is Appearance {
+  return v === 'system' || v === 'light' || v === 'dark';
+}
+
+// 模块级 decode：稳定引用，避免 useConfigValue 每次渲染重复订阅。
+function decodeAppearance(v: string | null): Appearance {
+  return isAppearance(v) ? v : DEFAULT_APPEARANCE;
+}
+
 export default function AppThemeProvider({ children }: Props) {
-  const [appearance, setAppearance] = useState<Appearance>(DEFAULT_APPEARANCE);
+  const appearance = useConfigValue(APPEARANCE_KEY, decodeAppearance, DEFAULT_APPEARANCE);
   const systemMode = useSystemThemeMode();
-
-  useEffect(() => {
-    getConfig(APPEARANCE_KEY).then((v) => {
-      if (v === 'system' || v === 'light' || v === 'dark') {
-        setAppearance(v);
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    const unlistenPromise = listen<ConfigChangedPayload>(
-      EVENT_CONFIG_CHANGED,
-      (e) => {
-        if (e.payload.key === APPEARANCE_KEY) {
-          const v = e.payload.value;
-          if (v === 'system' || v === 'light' || v === 'dark') {
-            setAppearance(v);
-          }
-        }
-      },
-    );
-    return () => {
-      unlistenPromise
-        .then(fn => fn())
-        .catch((err: unknown) => {
-          console.warn('[config-changed] unlisten failed (possible Tauri event race):', err);
-        });
-    };
-  }, []);
 
   const resolvedMode = appearance === 'system' ? systemMode : appearance;
 

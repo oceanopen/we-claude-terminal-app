@@ -1,18 +1,15 @@
-import type { ConfigChangedPayload, SessionInfo, SessionStatus } from '@src/shared/bindings';
+import type { SessionInfo, SessionStatus } from '@src/shared/bindings';
 import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
 import {
   DEFAULT_PET_DRAGGABLE,
-  getConfig,
   isYes,
   parseYesNo,
   PET_DRAGGABLE_KEY,
 } from '@src/shared/config';
-import {
-  EVENT_CONFIG_CHANGED,
-  EVENT_MONITOR_SESSIONS_CHANGED,
-} from '@src/shared/events';
+import { EVENT_MONITOR_SESSIONS_CHANGED } from '@src/shared/events';
 import { countActiveSessions } from '@src/shared/sessionStatus';
+import { useConfigValue } from '@src/shared/useConfigValue';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useCallback, useEffect, useState } from 'react';
@@ -38,12 +35,17 @@ function aggregateStatus(sessions: SessionInfo[]): { status: SessionStatus; coun
   return { status: top.status, count: countActiveSessions(sessions) };
 }
 
+// 模块级 decode：稳定引用，避免 useConfigValue 每次渲染重复订阅。
+function decodeDraggable(v: string | null): boolean {
+  return isYes(parseYesNo(v, DEFAULT_PET_DRAGGABLE));
+}
+
 function PetApp() {
   const [status, setStatus] = useState<SessionStatus>('Dead');
   const [count, setCount] = useState(0);
   const [hovered, setHovered] = useState(false);
   // 桌宠拖拽开关：开启时可拖拽、点击静默；关闭时不可拖拽、点击打开终端监控页。
-  const [draggable, setDraggable] = useState(false);
+  const draggable = useConfigValue(PET_DRAGGABLE_KEY, decodeDraggable, false);
 
   // 纯函数：从 sessions 快照计算 status + count。PetApp 与 PetTaskApp 共用
   // sessions-changed payload 作为数据源，applySessions 保证两端对同一事件的响应原子化，
@@ -80,26 +82,6 @@ function PetApp() {
       console.warn('[pet] pet_task visibility failed', e);
     });
   }, [count]);
-
-  // 拖拽开关：mount 读配置初始化（默认关闭）；监听 config-changed 实时响应托盘菜单切换。
-  // 与 AppThemeProvider 的配置实时响应模式一致。
-  useEffect(() => {
-    getConfig(PET_DRAGGABLE_KEY)
-      .then(v => setDraggable(isYes(parseYesNo(v, DEFAULT_PET_DRAGGABLE))))
-      .catch((e) => {
-        console.warn('[pet] load draggable failed', e);
-      });
-    const unlisten = listen<ConfigChangedPayload>(EVENT_CONFIG_CHANGED, (e) => {
-      if (e.payload.key === PET_DRAGGABLE_KEY) {
-        setDraggable(isYes(parseYesNo(e.payload.value, DEFAULT_PET_DRAGGABLE)));
-      }
-    });
-    return () => {
-      unlisten
-        .then(fn => fn())
-        .catch(err => console.warn('[pet] draggable unlisten failed:', err));
-    };
-  }, []);
 
   // 鼠标悬停反馈：mouseenter 高亮、mouseleave 恢复（驱动 opacity 过渡）。
   const handleMouseEnter = useCallback(() => {
