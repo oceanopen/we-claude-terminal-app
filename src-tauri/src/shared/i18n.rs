@@ -25,7 +25,7 @@ pub fn resolve(raw: Option<&str>) -> ResolvedLanguage {
 /// 加 key 时同步 refresh_menu_texts 与 setup 的菜单构建。
 pub fn menu_text(lang: ResolvedLanguage, key: &str) -> &'static str {
     match (lang, key) {
-        (ResolvedLanguage::ZhCn, "monitor") => "终端监听",
+        (ResolvedLanguage::ZhCn, "panel") => "控制台",
         (ResolvedLanguage::ZhCn, "settings") => "系统设置",
         (ResolvedLanguage::ZhCn, "pet-show") => "显示桌宠",
         (ResolvedLanguage::ZhCn, "pet-hide") => "隐藏桌宠",
@@ -33,7 +33,7 @@ pub fn menu_text(lang: ResolvedLanguage, key: &str) -> &'static str {
         (ResolvedLanguage::ZhCn, "drag-off") => "关闭拖拽",
         (ResolvedLanguage::ZhCn, "restart") => "重启",
         (ResolvedLanguage::ZhCn, "quit") => "退出",
-        (ResolvedLanguage::En, "monitor") => "Terminal Monitor",
+        (ResolvedLanguage::En, "panel") => "Console",
         (ResolvedLanguage::En, "settings") => "Settings",
         (ResolvedLanguage::En, "pet-show") => "Show Pet",
         (ResolvedLanguage::En, "pet-hide") => "Hide Pet",

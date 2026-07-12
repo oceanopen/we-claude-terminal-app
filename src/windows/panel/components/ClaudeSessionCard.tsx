@@ -1,4 +1,4 @@
-import type { SessionInfo, SessionStatus, TerminalApp } from '@src/shared/bindings';
+import type { ClaudeSessionInfo, ClaudeSessionStatus, TerminalApp } from '@src/shared/bindings';
 import { SiIntellijidea, SiIterm2 } from '@icons-pack/react-simple-icons';
 import { Terminal as TerminalIcon } from '@mui/icons-material';
 import {
@@ -19,18 +19,18 @@ import { formatDate, formatRelativeTime } from '@src/shared/time';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-const statusI18nKey: Record<SessionStatus, string> = {
-  Busy: 'monitor:status.busy',
-  Waiting: 'monitor:status.waiting',
-  Idle: 'monitor:status.idle',
-  Dead: 'monitor:status.dead',
+const statusI18nKey: Record<ClaudeSessionStatus, string> = {
+  Busy: 'claudeSessions:status.busy',
+  Waiting: 'claudeSessions:status.waiting',
+  Idle: 'claudeSessions:status.idle',
+  Dead: 'claudeSessions:status.dead',
 };
 
 const hostAppI18nKey: Record<TerminalApp, string> = {
-  ITerm2: 'monitor:hostApp.ITerm2',
-  Terminal: 'monitor:hostApp.Terminal',
-  IntelliJ: 'monitor:hostApp.IntelliJ',
-  Unknown: 'monitor:hostApp.Unknown',
+  ITerm2: 'claudeSessions:hostApp.ITerm2',
+  Terminal: 'claudeSessions:hostApp.Terminal',
+  IntelliJ: 'claudeSessions:hostApp.IntelliJ',
+  Unknown: 'claudeSessions:hostApp.Unknown',
 };
 
 // 暂不支持跳转的宿主终端（前端禁用按钮，避免无效 osascript 调用）。
@@ -47,12 +47,12 @@ function VsCodeIcon() {
   );
 }
 
-interface SessionCardProps {
-  session: SessionInfo;
+interface ClaudeSessionCardProps {
+  session: ClaudeSessionInfo;
   onOpenTerminal: (pid: number) => void;
 }
 
-function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
+function ClaudeSessionCard({ session, onOpenTerminal }: ClaudeSessionCardProps) {
   const { t } = useTranslation();
   const unsupported = UNSUPPORTED_HOST.includes(session.hostApp);
   // Java 项目判断（pom.xml / build.gradle / build.gradle.kts）：
@@ -69,7 +69,7 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
   // 不值得用 toast 打断；用户从无响应自行判断）。
   const handleOpenInEditor = useCallback((editor: 'vscode' | 'idea') => {
     unwrap(commands.openInEditor(editor, session.cwd)).catch((e) => {
-      console.warn(`[monitor] openInEditor(${editor}) failed`, e);
+      console.warn(`[claude-sessions] openInEditor(${editor}) failed`, e);
     });
   }, [session.cwd]);
 
@@ -119,7 +119,7 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
             onClick={() => handleOpenInEditor('vscode')}
             startIcon={<VsCodeIcon />}
           >
-            {t('monitor:editor.vscode')}
+            {t('claudeSessions:editor.vscode')}
           </Button>
           <Button
             size="small"
@@ -127,7 +127,7 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
             onClick={() => handleOpenInEditor('idea')}
             startIcon={<SiIntellijidea size="1.15rem" color="currentColor" />}
           >
-            {t('monitor:editor.idea')}
+            {t('claudeSessions:editor.idea')}
           </Button>
         </Box>
         <Button
@@ -143,4 +143,4 @@ function SessionCard({ session, onOpenTerminal }: SessionCardProps) {
   );
 }
 
-export default SessionCard;
+export default ClaudeSessionCard;

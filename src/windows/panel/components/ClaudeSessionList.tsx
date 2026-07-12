@@ -1,23 +1,23 @@
-import type { SessionInfo, SessionStatus } from '@src/shared/bindings';
+import type { ClaudeSessionInfo, ClaudeSessionStatus } from '@src/shared/bindings';
 import { Box } from '@mui/material';
+import ClaudeSessionCard from './ClaudeSessionCard';
 import EmptyState from './EmptyState';
-import SessionCard from './SessionCard';
 
-interface SessionListProps {
-  activeSessions: SessionInfo[];
-  freeSessions: SessionInfo[];
+interface ClaudeSessionListProps {
+  activeSessions: ClaudeSessionInfo[];
+  freeSessions: ClaudeSessionInfo[];
   onOpenTerminal: (pid: number) => void;
 }
 
 // 排序优先级：Waiting > Busy > Idle > Dead。同状态内按 updatedAt 倒序（最近活动在前）。
-const STATUS_PRIORITY: Record<SessionStatus, number> = {
+const STATUS_PRIORITY: Record<ClaudeSessionStatus, number> = {
   Waiting: 0,
   Busy: 1,
   Idle: 2,
   Dead: 3,
 };
 
-function sortSessions(sessions: SessionInfo[]): SessionInfo[] {
+function sortClaudeSessions(sessions: ClaudeSessionInfo[]): ClaudeSessionInfo[] {
   return [...sessions].sort((a, b) => {
     const pri = STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status];
     if (pri !== 0) {
@@ -27,13 +27,13 @@ function sortSessions(sessions: SessionInfo[]): SessionInfo[] {
   });
 }
 
-function SessionList({ activeSessions, freeSessions, onOpenTerminal }: SessionListProps) {
+function ClaudeSessionList({ activeSessions, freeSessions, onOpenTerminal }: ClaudeSessionListProps) {
   // 两组状态互斥（Active=Busy/Waiting，Free=Idle），直接拼接无需去重。
   const sessions = [...activeSessions, ...freeSessions];
   if (sessions.length === 0) {
     return <EmptyState />;
   }
-  const ordered = sortSessions(sessions);
+  const ordered = sortClaudeSessions(sessions);
   return (
     <Box
       sx={{
@@ -48,10 +48,10 @@ function SessionList({ activeSessions, freeSessions, onOpenTerminal }: SessionLi
       }}
     >
       {ordered.map(s => (
-        <SessionCard key={s.pid} session={s} onOpenTerminal={onOpenTerminal} />
+        <ClaudeSessionCard key={s.pid} session={s} onOpenTerminal={onOpenTerminal} />
       ))}
     </Box>
   );
 }
 
-export default SessionList;
+export default ClaudeSessionList;

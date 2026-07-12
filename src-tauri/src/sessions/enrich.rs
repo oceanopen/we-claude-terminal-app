@@ -1,4 +1,4 @@
-// 进程富集：RawSessionFile → SessionInfo。
+// 进程富集：RawSessionFile → ClaudeSessionInfo。
 //
 // 通过链式 `ps -p <pid> -o ppid=,comm=` 向上找父进程链，
 // 直到匹配到已知终端 comm（iTerm / Terminal / idea / ...），记录 hostPid/hostApp；
@@ -10,7 +10,7 @@
 use std::path::Path;
 
 use crate::sessions::raw::RawSessionFile;
-use crate::shared::types::{SessionInfo, SessionStatus, TerminalApp};
+use crate::shared::types::{ClaudeSessionInfo, ClaudeSessionStatus, TerminalApp};
 
 /// 调用 `ps -p <pid> -o <field>=`，返回 stdout trim 后的字符串。
 /// 失败返回 None。field 形如 "ppid=" / "comm=" / "tty="。
@@ -88,21 +88,21 @@ fn normalize_tty(raw: Option<&str>) -> String {
     }
 }
 
-/// 把 RawSessionFile.status 字符串映射为 SessionStatus。
+/// 把 RawSessionFile.status 字符串映射为 ClaudeSessionStatus。
 /// Claude Code 当前已观察到的值："busy" / "waiting" / "idle"。
 /// 未识别值兜底为 Idle（宁可误判 idle 也不误判 busy）。
-pub fn map_status(raw: &str) -> SessionStatus {
+pub fn map_status(raw: &str) -> ClaudeSessionStatus {
     match raw {
-        "busy" => SessionStatus::Busy,
-        "waiting" => SessionStatus::Waiting,
-        "idle" => SessionStatus::Idle,
-        _ => SessionStatus::Idle,
+        "busy" => ClaudeSessionStatus::Busy,
+        "waiting" => ClaudeSessionStatus::Waiting,
+        "idle" => ClaudeSessionStatus::Idle,
+        _ => ClaudeSessionStatus::Idle,
     }
 }
 
-/// 把 RawSessionFile 富集为完整 SessionInfo。
+/// 把 RawSessionFile 富集为完整 ClaudeSessionInfo。
 /// projectName = basename(cwd)，cwd 异常（如根路径）时 projectName 为空字符串。
-pub fn enrich(raw: &RawSessionFile) -> SessionInfo {
+pub fn enrich(raw: &RawSessionFile) -> ClaudeSessionInfo {
     let project_name = Path::new(&raw.cwd)
         .file_name()
         .and_then(|s| s.to_str())
@@ -121,7 +121,7 @@ pub fn enrich(raw: &RawSessionFile) -> SessionInfo {
         String::new()
     };
 
-    SessionInfo {
+    ClaudeSessionInfo {
         pid: raw.pid,
         session_id: raw.session_id.clone(),
         cwd: raw.cwd.clone(),
@@ -141,11 +141,11 @@ mod tests {
 
     #[test]
     fn status_mapping() {
-        assert_eq!(map_status("busy"), SessionStatus::Busy);
-        assert_eq!(map_status("waiting"), SessionStatus::Waiting);
-        assert_eq!(map_status("idle"), SessionStatus::Idle);
-        assert_eq!(map_status("unknown"), SessionStatus::Idle);
-        assert_eq!(map_status(""), SessionStatus::Idle);
+        assert_eq!(map_status("busy"), ClaudeSessionStatus::Busy);
+        assert_eq!(map_status("waiting"), ClaudeSessionStatus::Waiting);
+        assert_eq!(map_status("idle"), ClaudeSessionStatus::Idle);
+        assert_eq!(map_status("unknown"), ClaudeSessionStatus::Idle);
+        assert_eq!(map_status(""), ClaudeSessionStatus::Idle);
     }
 
     #[test]

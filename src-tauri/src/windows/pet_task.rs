@@ -3,7 +3,7 @@
 //   transparent(true) + decorations(false) + always_on_top(true)
 //   + skip_taskbar(true) + resizable(false) + shadow(false)
 //
-// 显隐主导权在 pet 前端：PetApp 收到 sessions-changed payload 算出 count，
+// 显隐主导权在 pet 前端：PetApp 收到 claude-sessions:changed payload 算出 count，
 // count > 0 调 show_pet_task，count == 0 调 hide_pet_task。
 // show_pet_task 内部按 (pet 可见 && active count > 0) 最终裁决，覆盖 pet
 // 显隐命令联动兜底场景（pet 重新显示时前端 useEffect 因 count 未变不触发）。
@@ -14,8 +14,8 @@
 use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
 
 use crate::shared::screen::MonitorInfo;
-use crate::shared::state::monitor::SessionStore;
-use crate::shared::types::SessionStatus;
+use crate::shared::state::claude_sessions::ClaudeSessionStore;
+use crate::shared::types::ClaudeSessionStatus;
 
 /// 任务面板窗口 label（前端 get_webview_window 与 HTML 文件名均与此对齐）。
 const PET_TASK_LABEL: &str = "pet-task";
@@ -104,10 +104,10 @@ pub fn ensure(app: &AppHandle) -> tauri::Result<()> {
 }
 
 /// 显示 pet_task 面板：仅当 pet 可见且存在活跃会话（Busy+Waiting）时 show + 定位，
-/// 否则 hide。显隐主导权在 pet 前端（基于 sessions-changed payload 的 count），
+/// 否则 hide。显隐主导权在 pet 前端（基于 claude-sessions:changed payload 的 count），
 /// 本命令作为前端驱动入口；pet 显隐命令也调用它做联动兜底。
 ///
-/// 活跃会话口径与前端 isActiveSession / countActiveSessions 一致（SSOT: sessionStatus.ts）。
+/// 活跃会话口径与前端 isActiveClaudeSession / countActiveClaudeSessions 一致（SSOT: sessionStatus.ts）。
 #[tauri::command]
 #[specta::specta]
 pub fn show_pet_task(app: AppHandle) -> Result<(), String> {
@@ -116,11 +116,11 @@ pub fn show_pet_task(app: AppHandle) -> Result<(), String> {
         .and_then(|w| w.is_visible().ok())
         .unwrap_or(false);
 
-    let active_count = match app.try_state::<SessionStore>() {
+    let active_count = match app.try_state::<ClaudeSessionStore>() {
         Some(store) => {
             let Ok(map) = store.0.lock() else { return Ok(()); };
             map.values()
-                .filter(|s| matches!(s.status, SessionStatus::Busy | SessionStatus::Waiting))
+                .filter(|s| matches!(s.status, ClaudeSessionStatus::Busy | ClaudeSessionStatus::Waiting))
                 .count()
         }
         None => return Ok(()),

@@ -3,8 +3,8 @@ use tauri::{AppHandle, Monitor, Position, Rect};
 /// 默认/回退窗口尺寸（逻辑像素）。
 pub const DEFAULT_SIZE: (f64, f64) = (800.0, 600.0);
 
-/// monitor 窗口占目标屏的比例。
-pub const MONITOR_RATIO: f64 = 0.8;
+/// panel 窗口（控制台）占目标屏的比例。
+pub const PANEL_RATIO: f64 = 0.8;
 
 /// settings 窗口占目标屏的比例。
 pub const SETTINGS_RATIO: f64 = 0.5;

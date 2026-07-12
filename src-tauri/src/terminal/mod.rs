@@ -29,7 +29,7 @@ pub enum NavErr {
     UnsupportedHostApp,
     /// osascript 执行失败（exit code 非零）。
     OsaScriptFailed { stderr: String },
-    /// SessionStore 找不到对应 pid 的会话（可能刚过期）。
+    /// ClaudeSessionStore 找不到对应 pid 的会话（可能刚过期）。
     SessionNotFound,
     /// 其他 IO 错误。
     Io { message: String },

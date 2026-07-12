@@ -1,4 +1,4 @@
-import type { NavErr, SessionInfo } from '@src/shared/bindings';
+import type { ClaudeSessionInfo, NavErr } from '@src/shared/bindings';
 import { Autorenew as AutorenewIcon } from '@mui/icons-material';
 import {
   Alert,
@@ -13,41 +13,43 @@ import {
 import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
 import {
-  EVENT_MONITOR_SESSIONS_CHANGED,
-  EVENT_SESSION_NAV_FAILED,
+  EVENT_CLAUDE_SESSION_NAV_FAILED,
+  EVENT_CLAUDE_SESSIONS_CHANGED,
 } from '@src/shared/events';
-import { isActiveSession, isFreeSession } from '@src/shared/sessionStatus';
+import { isActiveClaudeSession, isFreeClaudeSession } from '@src/shared/sessionStatus';
 import { listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import SessionList from './components/SessionList';
+import ClaudeSessionList from './components/ClaudeSessionList';
 
 type LoadStatus = 'loading' | 'ready' | 'error';
 
 function navErrToToastKey(err: NavErr): { key: string; opts?: Record<string, unknown> } {
   switch (err.kind) {
     case 'unsupportedHostApp':
-      return { key: 'monitor:toast.unsupportedHostApp' };
+      return { key: 'claudeSessions:toast.unsupportedHostApp' };
     case 'osaScriptFailed':
-      return { key: 'monitor:toast.osaScriptFailed', opts: { stderr: err.stderr } };
+      return { key: 'claudeSessions:toast.osaScriptFailed', opts: { stderr: err.stderr } };
     case 'sessionNotFound':
-      return { key: 'monitor:toast.sessionNotFound' };
+      return { key: 'claudeSessions:toast.sessionNotFound' };
     case 'io':
-      return { key: 'monitor:toast.io', opts: { message: err.message } };
+      return { key: 'claudeSessions:toast.io', opts: { message: err.message } };
   }
 }
 
-function MonitorApp() {
+// panel 窗口「Claude 会话监听」菜单对应的页面：会话加载/事件订阅/汇总栏/刷新/toast。
+// 由 PanelApp 右侧内容区渲染，根容器 height:100% 适配父级 flex 容器。
+function ClaudeSessionsPage() {
   const { t } = useTranslation();
   const [status, setStatus] = useState<LoadStatus>('loading');
-  const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [sessions, setSessions] = useState<ClaudeSessionInfo[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setStatus('loading');
     try {
-      const data = await unwrap(commands.getMonitorSessions());
+      const data = await unwrap(commands.getClaudeSessions());
       setSessions(data);
       setStatus('ready');
     } catch {
@@ -56,12 +58,12 @@ function MonitorApp() {
   }, []);
 
   const handleOpenTerminal = useCallback(async (pid: number) => {
-    // navigate_to_session 成功路径返回 Ok(())；失败时后端 emit session-navigation-failed，
+    // navigate_to_claude_session 成功路径返回 Ok(())；失败时后端 emit nav-failed，
     // 由下面的 listen 统一处理 toast（不在这里 catch），命令调用本身静默。
-    await commands.navigateToSession(pid);
+    await commands.navigateToClaudeSession(pid);
   }, []);
 
-  // 手动刷新：触发后端 rescan，emit sessions-changed 后订阅自动更新列表与汇总。
+  // 手动刷新：触发后端 rescan，emit claude-sessions:changed 后订阅自动更新列表与汇总。
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -76,8 +78,8 @@ function MonitorApp() {
   }, [load]);
 
   useEffect(() => {
-    const unlistenPromise = listen<SessionInfo[]>(
-      EVENT_MONITOR_SESSIONS_CHANGED,
+    const unlistenPromise = listen<ClaudeSessionInfo[]>(
+      EVENT_CLAUDE_SESSIONS_CHANGED,
       (e) => {
         setSessions(e.payload);
       },
@@ -86,13 +88,13 @@ function MonitorApp() {
       unlistenPromise
         .then(fn => fn())
         .catch((err: unknown) => {
-          console.warn('[monitor:sessions-changed] unlisten failed (possible Tauri event race):', err);
+          console.warn('[claude-sessions:changed] unlisten failed (possible Tauri event race):', err);
         });
     };
   }, []);
 
   useEffect(() => {
-    const unlistenPromise = listen<NavErr>(EVENT_SESSION_NAV_FAILED, (e) => {
+    const unlistenPromise = listen<NavErr>(EVENT_CLAUDE_SESSION_NAV_FAILED, (e) => {
       const { key, opts } = navErrToToastKey(e.payload);
       setToast(t(key, opts));
     });
@@ -100,18 +102,18 @@ function MonitorApp() {
       unlistenPromise
         .then(fn => fn())
         .catch((err: unknown) => {
-          console.warn('[monitor:session-navigation-failed] unlisten failed:', err);
+          console.warn('[claude-sessions:nav-failed] unlisten failed:', err);
         });
     };
   }, [t]);
 
-  // 监听窗口展示活跃会话（Busy+Waiting）+ 空闲会话（Idle）。
-  // sessions 仍保留全量（事件订阅原始 payload），activeSessions/freeSessions 作为派生值传入 SessionList。
-  const activeSessions = sessions.filter(isActiveSession);
-  const freeSessions = sessions.filter(isFreeSession);
+  // 页面展示活跃会话（Busy+Waiting）+ 空闲会话（Idle）。
+  // sessions 仍保留全量（事件订阅原始 payload），activeSessions/freeSessions 作为派生值传入 ClaudeSessionList。
+  const activeSessions = sessions.filter(isActiveClaudeSession);
+  const freeSessions = sessions.filter(isFreeClaudeSession);
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box
         sx={{
           p: 2,
@@ -123,7 +125,7 @@ function MonitorApp() {
         }}
       >
         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {t('monitor:summary', { total: sessions.length, active: activeSessions.length })}
+          {t('claudeSessions:summary', { total: sessions.length, active: activeSessions.length })}
         </Typography>
         <Box sx={{ flex: 1 }} />
         <IconButton size="small" onClick={handleRefresh} disabled={refreshing} aria-label="refresh">
@@ -157,17 +159,17 @@ function MonitorApp() {
               severity="error"
               action={(
                 <Button color="inherit" size="small" onClick={load}>
-                  {t('monitor:error.retry')}
+                  {t('claudeSessions:error.retry')}
                 </Button>
               )}
             >
-              <AlertTitle>{t('monitor:error.title')}</AlertTitle>
-              {t('monitor:error.desc')}
+              <AlertTitle>{t('claudeSessions:error.title')}</AlertTitle>
+              {t('claudeSessions:error.desc')}
             </Alert>
           </Box>
         )}
         {status === 'ready' && (
-          <SessionList
+          <ClaudeSessionList
             activeSessions={activeSessions}
             freeSessions={freeSessions}
             onOpenTerminal={handleOpenTerminal}
@@ -185,4 +187,4 @@ function MonitorApp() {
   );
 }
 
-export default MonitorApp;
+export default ClaudeSessionsPage;

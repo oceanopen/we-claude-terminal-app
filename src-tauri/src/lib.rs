@@ -10,16 +10,16 @@ use tauri_specta::{collect_commands, Builder};
 // run()（注册 invoke handler）与 bin/export_bindings.rs（生成 TS 绑定）共用此函数，
 // 保证命令清单单一来源，避免两份注册表漂移。
 pub fn build_specta_builder() -> Builder<tauri::Wry> {
-    use crate::shared::types::{ConfigChangedPayload, SessionInfo, SessionStatus, TerminalApp, YesNo};
+    use crate::shared::types::{ConfigChangedPayload, ClaudeSessionInfo, ClaudeSessionStatus, TerminalApp, YesNo};
     use crate::terminal::NavErr;
     Builder::<tauri::Wry>::new()
         .commands(collect_commands![
-            windows::monitor::show_monitor_window,
-            windows::monitor::get_monitor_sessions,
-            windows::monitor::refresh_sessions,
-            windows::monitor::navigate_to_session,
-            windows::monitor::open_in_editor,
-            windows::monitor::is_java_project,
+            windows::panel::show_panel_window,
+            windows::panel::get_claude_sessions,
+            windows::panel::refresh_sessions,
+            windows::panel::navigate_to_claude_session,
+            windows::panel::open_in_editor,
+            windows::panel::is_java_project,
             windows::pet::show_pet_window,
             windows::pet::hide_pet_window,
             windows::pet::toggle_pet_window,
@@ -34,10 +34,10 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
         // 以下类型不出现在任何 command 签名中（仅作为事件载荷或前端数据模型），
         // 用 typ 显式注册，让 specta 把它们导出到 bindings.ts 供前端复用。
         .typ::<ConfigChangedPayload>()
-        .typ::<SessionStatus>()
+        .typ::<ClaudeSessionStatus>()
         .typ::<TerminalApp>()
         .typ::<YesNo>()
-        .typ::<SessionInfo>()
+        .typ::<ClaudeSessionInfo>()
         .typ::<NavErr>()
 }
 
@@ -68,15 +68,15 @@ pub fn run() {
             }
 
             shared::config::init(app)?;
-            shared::state::monitor::init(app)?;
+            shared::state::claude_sessions::init(app)?;
             windows::tray::setup(app)?;
 
-            // 先 rescan 填充 SessionStore 并广播首批快照，保证后续 pet_task / pet
+            // 先 rescan 填充 ClaudeSessionStore 并广播首批快照，保证后续 pet_task / pet
             // 窗口 React mount 后初次拉取 IPC 时 store 必有数据，根治启动期"0 个活跃"竞态。
             sessions::rescan(app.handle());
 
             // 预构建 pet_task 窗口（隐藏）：webview 异步加载，React mount 时机虽不确定，
-            // 但 store 已满，初次 IPC 必拿到非空数据；后续 sessions-changed 事件持续驱动。
+            // 但 store 已满，初次 IPC 必拿到非空数据；后续 claude-sessions:changed 事件持续驱动。
             if let Err(e) = windows::pet_task::ensure(app.handle()) {
                 log::warn!("[pet-task] startup ensure failed: {}", e);
             }

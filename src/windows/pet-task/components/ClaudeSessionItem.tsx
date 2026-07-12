@@ -1,25 +1,25 @@
-import type { SessionInfo, SessionStatus, TerminalApp } from '@src/shared/bindings';
+import type { ClaudeSessionInfo, ClaudeSessionStatus, TerminalApp } from '@src/shared/bindings';
 import { Box, ListItemButton, Typography } from '@mui/material';
 import { STATUS_COLOR } from '@src/shared/sessionStatus';
 import { useTranslation } from 'react-i18next';
 
-// 状态文案复用 monitor 命名空间（运行中/等待输入/空闲/已失效）。
-const STATUS_I18N_KEY: Record<SessionStatus, string> = {
-  Busy: 'monitor:status.busy',
-  Waiting: 'monitor:status.waiting',
-  Idle: 'monitor:status.idle',
-  Dead: 'monitor:status.dead',
+// 状态文案复用 claudeSessions 命名空间（运行中/等待输入/空闲/已失效）。
+const STATUS_I18N_KEY: Record<ClaudeSessionStatus, string> = {
+  Busy: 'claudeSessions:status.busy',
+  Waiting: 'claudeSessions:status.waiting',
+  Idle: 'claudeSessions:status.idle',
+  Dead: 'claudeSessions:status.dead',
 };
 
-// 暂不支持跳转的宿主终端（与 SessionCard 保持一致，禁用点击）。
+// 暂不支持跳转的宿主终端（与 ClaudeSessionCard 保持一致，禁用点击）。
 const UNSUPPORTED_HOST: TerminalApp[] = ['IntelliJ', 'Unknown'];
 
-interface SessionItemProps {
-  session: SessionInfo;
+interface ClaudeSessionItemProps {
+  session: ClaudeSessionInfo;
   onClick: (pid: number) => void;
 }
 
-function SessionItem({ session, onClick }: SessionItemProps) {
+function ClaudeSessionItem({ session, onClick }: ClaudeSessionItemProps) {
   const { t } = useTranslation();
   const unsupported = UNSUPPORTED_HOST.includes(session.hostApp);
   const color = STATUS_COLOR[session.status];
@@ -61,4 +61,4 @@ function SessionItem({ session, onClick }: SessionItemProps) {
   );
 }
 
-export default SessionItem;
+export default ClaudeSessionItem;

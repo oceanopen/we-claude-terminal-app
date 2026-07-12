@@ -7,19 +7,19 @@ import { invoke as __TAURI_INVOKE } from "@tauri-apps/api/core";
 
 /** Commands */
 export const commands = {
-	showMonitorWindow: () => typedError<null, string>(__TAURI_INVOKE("show_monitor_window")),
-	getMonitorSessions: () => typedError<SessionInfo[], string>(__TAURI_INVOKE("get_monitor_sessions")),
+	showPanelWindow: () => typedError<null, string>(__TAURI_INVOKE("show_panel_window")),
+	getClaudeSessions: () => typedError<ClaudeSessionInfo[], string>(__TAURI_INVOKE("get_claude_sessions")),
 	/**
-	 *  手动刷新会话列表：触发全量重扫并广播 sessions-changed，
-	 *  订阅该事件的前端窗口（pet_task / monitor）自动收到新快照。
+	 *  手动刷新会话列表：触发全量重扫并广播 claude-sessions:changed，
+	 *  订阅该事件的前端窗口（pet_task / panel）自动收到新快照。
 	 */
 	refreshSessions: () => typedError<null, string>(__TAURI_INVOKE("refresh_sessions")),
 	/**
 	 *  跳转到 pid 对应的宿主终端会话。
-	 *  成功返回 Ok(())；失败 emit `monitor:session-navigation-failed` 事件，
+	 *  成功返回 Ok(())；失败 emit `claude-sessions:nav-failed` 事件，
 	 *  前端据 NavErr.kind 渲染差异化 toast。
 	 */
-	navigateToSession: (pid: number) => typedError<null, string>(__TAURI_INVOKE("navigate_to_session", { pid })),
+	navigateToClaudeSession: (pid: number) => typedError<null, string>(__TAURI_INVOKE("navigate_to_claude_session", { pid })),
 	/**
 	 *  用指定编辑器 CLI 打开项目目录。editor 仅允许 "vscode" / "idea" 两个枚举值，
 	 *  映射到 code / idea 命令；spawn 不阻塞（编辑器是长期运行的 GUI 进程）。
@@ -38,10 +38,10 @@ export const commands = {
 	getPetVisibilityState: () => __TAURI_INVOKE<boolean>("get_pet_visibility_state"),
 	/**
 	 *  显示 pet_task 面板：仅当 pet 可见且存在活跃会话（Busy+Waiting）时 show + 定位，
-	 *  否则 hide。显隐主导权在 pet 前端（基于 sessions-changed payload 的 count），
+	 *  否则 hide。显隐主导权在 pet 前端（基于 claude-sessions:changed payload 的 count），
 	 *  本命令作为前端驱动入口；pet 显隐命令也调用它做联动兜底。
 	 * 
-	 *  活跃会话口径与前端 isActiveSession / countActiveSessions 一致（SSOT: sessionStatus.ts）。
+	 *  活跃会话口径与前端 isActiveClaudeSession / countActiveClaudeSessions 一致（SSOT: sessionStatus.ts）。
 	 */
 	showPetTask: () => typedError<null, string>(__TAURI_INVOKE("show_pet_task")),
 	/**
@@ -62,32 +62,10 @@ export const commands = {
 
 /* Types */
 /**
- *  set_config 命令成功后通过 `config-changed` 事件广播给所有窗口的载荷。
- *  订阅方（AppThemeProvider / AppI18nProvider）据此响应配置变化。
- */
-export type ConfigChangedPayload = {
-	/**  变更的配置 key（与 src/shared/config.ts 中的 *_KEY 常量对齐）。 */
-	key: string,
-	/**  新值（配置统一以字符串形式存储，订阅方按 key 自行 decode）。 */
-	value: string,
-};
-
-/**  跳转失败原因。对应前端 navigation-failed toast 文案细分。 */
-export type NavErr = 
-/**  宿主终端未识别（如 VSCode 内嵌 / Wezterm 等）。 */
-{ kind: "unsupportedHostApp" } | 
-/**  osascript 执行失败（exit code 非零）。 */
-{ kind: "osaScriptFailed"; stderr: string } | 
-/**  SessionStore 找不到对应 pid 的会话（可能刚过期）。 */
-{ kind: "sessionNotFound" } | 
-/**  其他 IO 错误。 */
-{ kind: "io"; message: string };
-
-/**
- *  终端会话快照。MonitorApp 渲染 SessionCard 列表的数据源；
+ *  终端会话快照。ClaudeSessionsPage 渲染 ClaudeSessionCard 列表的数据源；
  *  PetApp 聚合所有会话取"最忙"状态作为桌宠展示态。
  */
-export type SessionInfo = {
+export type ClaudeSessionInfo = {
 	/**  Claude Code 进程 pid（也是 `~/.claude/sessions/<pid>.json` 的文件名）。 */
 	pid: number,
 	/**  Claude Code 会话 ID（uuid）。从 json 的 `sessionId` 字段读取。 */
@@ -97,7 +75,7 @@ export type SessionInfo = {
 	/**  projectName = basename(cwd)，用于 UI 展示与 AppleScript 模糊匹配。 */
 	projectName: string,
 	/**  会话状态（Busy/Waiting/Idle/Dead）。 */
-	status: SessionStatus,
+	status: ClaudeSessionStatus,
 	/**  会话启动时间（毫秒时间戳）。对应 json 的 `startedAt`。 */
 	startedAt: number,
 	/**  最后一次状态更新时间（毫秒时间戳）。对应 json 的 `updatedAt`。 */
@@ -116,9 +94,9 @@ export type SessionInfo = {
 /**
  *  终端会话状态。直接映射 `~/.claude/sessions/<pid>.json` 里的 `status` 字段
  *  （busy/waiting/idle）外加本地推断的 Dead（进程已退出但 json 残留）。
- *  前端 SessionCard 据此切换状态 Chip 配色与文案。
+ *  前端 ClaudeSessionCard 据此切换状态 Chip 配色与文案。
  */
-export type SessionStatus = 
+export type ClaudeSessionStatus = 
 /**  运行中：Claude 正在执行工具/生成回复。 */
 "Busy" | 
 /**  等待输入：Claude 已完成回复，等用户输入。 */
@@ -127,6 +105,28 @@ export type SessionStatus =
 "Idle" | 
 /**  已失效：进程已退出，json 残留。discover 阶段会过滤掉，理论上不会出现在前端。 */
 "Dead";
+
+/**
+ *  set_config 命令成功后通过 `config-changed` 事件广播给所有窗口的载荷。
+ *  订阅方（AppThemeProvider / AppI18nProvider）据此响应配置变化。
+ */
+export type ConfigChangedPayload = {
+	/**  变更的配置 key（与 src/shared/config.ts 中的 *_KEY 常量对齐）。 */
+	key: string,
+	/**  新值（配置统一以字符串形式存储，订阅方按 key 自行 decode）。 */
+	value: string,
+};
+
+/**  跳转失败原因。对应前端 navigation-failed toast 文案细分。 */
+export type NavErr = 
+/**  宿主终端未识别（如 VSCode 内嵌 / Wezterm 等）。 */
+{ kind: "unsupportedHostApp" } | 
+/**  osascript 执行失败（exit code 非零）。 */
+{ kind: "osaScriptFailed"; stderr: string } | 
+/**  ClaudeSessionStore 找不到对应 pid 的会话（可能刚过期）。 */
+{ kind: "sessionNotFound" } | 
+/**  其他 IO 错误。 */
+{ kind: "io"; message: string };
 
 /**
  *  宿主终端应用。通过 `ps -p <ppid>` 链式反查 Claude 进程的祖先进程名得出。

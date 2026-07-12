@@ -1,18 +1,18 @@
 import type { SvgIconComponent } from '@mui/icons-material';
-import type { SessionStatus } from '@src/shared/bindings';
+import type { ClaudeSessionStatus } from '@src/shared/bindings';
 import { Autorenew, Bedtime, Notifications, Schedule } from '@mui/icons-material';
 import { Box } from '@mui/material';
 import { STATUS_COLOR } from '@src/shared/sessionStatus';
 
 interface PetSpriteProps {
-  status: SessionStatus;
+  status: ClaudeSessionStatus;
   count: number;
 }
 
 // 4 种状态对应 MUI Icon（SVG）。
 // 用 SVG Icon 而非 emoji：emoji 是彩色字符，CSS color 对其无效，
 // 改用 MUI Icon 后 icon 颜色可跟随状态色，与边框/徽章保持视觉统一。
-const ICON: Record<SessionStatus, SvgIconComponent> = {
+const ICON: Record<ClaudeSessionStatus, SvgIconComponent> = {
   Busy: Autorenew, // 旋转刷新=工作中
   Waiting: Notifications, // 铃铛=提醒用户输入
   Idle: Schedule, // 时钟=空闲

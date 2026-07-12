@@ -3,6 +3,6 @@
 
 export const EVENT_CONFIG_CHANGED = 'config-changed';
 
-export const EVENT_MONITOR_SESSIONS_CHANGED = 'monitor:sessions-changed';
+export const EVENT_CLAUDE_SESSIONS_CHANGED = 'claude-sessions:changed';
 
-export const EVENT_SESSION_NAV_FAILED = 'monitor:session-navigation-failed';
+export const EVENT_CLAUDE_SESSION_NAV_FAILED = 'claude-sessions:nav-failed';

@@ -15,7 +15,7 @@ use crate::windows::pet::get_pet_visibility_state;
 
 /// 已构建的托盘菜单项引用，用于后续动态更新文案。
 struct TrayMenuItems {
-    monitor: MenuItem<tauri::Wry>,
+    panel: MenuItem<tauri::Wry>,
     settings: MenuItem<tauri::Wry>,
     pet: MenuItem<tauri::Wry>,
     drag: MenuItem<tauri::Wry>,
@@ -84,10 +84,10 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     let lang = current_language(app.handle());
 
-    let monitor_item = MenuItem::with_id(
+    let panel_item = MenuItem::with_id(
         app,
-        "monitor",
-        menu_text(lang, "monitor"),
+        "panel",
+        menu_text(lang, "panel"),
         true,
         None::<&str>,
     )?;
@@ -125,7 +125,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let menu = Menu::with_items(
         app,
         &[
-            &monitor_item,
+            &panel_item,
             &PredefinedMenuItem::separator(app)?,
             &pet_item,
             &drag_item,
@@ -142,7 +142,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_tray_icon_event(|tray, event| {
-            // 左键单击打开终端监听窗口；右键由系统默认弹出菜单（无需处理）。
+            // 左键单击打开控制台窗口；右键由系统默认弹出菜单（无需处理）。
             // 注意：本回调首参是 &TrayIcon（非 &AppHandle），需经 app_handle() 取得句柄。
             if let TrayIconEvent::Click {
                 button: MouseButton::Left,
@@ -151,15 +151,15 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
             } = event
             {
                 let app = tray.app_handle();
-                if let Err(e) = crate::windows::monitor::show_monitor_window(app.clone()) {
-                    log::warn!("failed to open monitor window: {e}");
+                if let Err(e) = crate::windows::panel::show_panel_window(app.clone()) {
+                    log::warn!("failed to open panel window: {e}");
                 }
             }
         })
         .on_menu_event(|app, event| match event.id().as_ref() {
-            "monitor" => {
-                if let Err(e) = crate::windows::monitor::show_monitor_window(app.clone()) {
-                    log::warn!("failed to open monitor window: {e}");
+            "panel" => {
+                if let Err(e) = crate::windows::panel::show_panel_window(app.clone()) {
+                    log::warn!("failed to open panel window: {e}");
                 }
             }
             "pet" => {
@@ -205,7 +205,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .build(app)?;
 
     app.manage(Mutex::new(TrayMenuItems {
-        monitor: monitor_item,
+        panel: panel_item,
         settings: settings_item,
         pet: pet_item,
         drag: drag_item,
@@ -224,7 +224,7 @@ pub fn refresh_menu_texts(app: &AppHandle) {
         return;
     };
     let lang = current_language(app);
-    let _ = items.monitor.set_text(menu_text(lang, "monitor"));
+    let _ = items.panel.set_text(menu_text(lang, "panel"));
     let _ = items.settings.set_text(menu_text(lang, "settings"));
     let _ = items.pet.set_text(menu_text(lang, pet_menu_key(app)));
     // drag 文案随开关状态切换；enabled 随桌宠显隐（隐藏时禁用，避免无桌宠时操作）。

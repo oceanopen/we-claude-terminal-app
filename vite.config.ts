@@ -21,7 +21,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        monitor: resolve(__dirname, 'monitor.html'),
+        panel: resolve(__dirname, 'panel.html'),
         pet: resolve(__dirname, 'pet.html'),
         petTask: resolve(__dirname, 'pet-task.html'),
         settings: resolve(__dirname, 'settings.html'),

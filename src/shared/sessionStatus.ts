@@ -1,8 +1,8 @@
-import type { SessionInfo, SessionStatus } from './bindings';
+import type { ClaudeSessionInfo, ClaudeSessionStatus } from './bindings';
 
 // 状态色规范 SSOT
 // Dead 用深灰而非警示红：无会话休眠非错误，比 Idle 深一档区分。
-export const STATUS_COLOR: Record<SessionStatus, string> = {
+export const STATUS_COLOR: Record<ClaudeSessionStatus, string> = {
   Busy: '#4caf50', // success 绿（工作中）
   Waiting: '#ff9800', // warning 橙（提醒用户）
   Idle: '#9e9e9e', // 灰（空闲）
@@ -11,24 +11,24 @@ export const STATUS_COLOR: Record<SessionStatus, string> = {
 
 // 活跃会话判定口径 SSOT，用于桌宠徽章计数（Busy+Waiting）。
 // 白名单而非 `!== 'Idle'` 黑名单：未来新增状态不会被误计为活跃。
-export const ACTIVE_STATUSES: ReadonlySet<SessionStatus> = new Set(['Busy', 'Waiting']);
+export const ACTIVE_STATUSES: ReadonlySet<ClaudeSessionStatus> = new Set(['Busy', 'Waiting']);
 
-export function isActiveSession(s: SessionInfo): boolean {
+export function isActiveClaudeSession(s: ClaudeSessionInfo): boolean {
   return ACTIVE_STATUSES.has(s.status);
 }
 
-export function countActiveSessions(sessions: SessionInfo[]): number {
-  return sessions.filter(isActiveSession).length;
+export function countActiveClaudeSessions(sessions: ClaudeSessionInfo[]): number {
+  return sessions.filter(isActiveClaudeSession).length;
 }
 
-// 空闲会话判定口径 SSOT，用于 monitor 窗口列表展示与计数（Idle）。
+// 空闲会话判定口径 SSOT，用于 claudeSessions 页面列表展示与计数（Idle）。
 // 与 ACTIVE_STATUSES 分离：列表含 Idle 不应让桌宠徽章也 +1，两者口径独立避免连锁漂移。
-export const FREE_STATUSES: ReadonlySet<SessionStatus> = new Set(['Idle']);
+export const FREE_STATUSES: ReadonlySet<ClaudeSessionStatus> = new Set(['Idle']);
 
-export function isFreeSession(s: SessionInfo): boolean {
+export function isFreeClaudeSession(s: ClaudeSessionInfo): boolean {
   return FREE_STATUSES.has(s.status);
 }
 
-export function countFreeSessions(sessions: SessionInfo[]): number {
-  return sessions.filter(isFreeSession).length;
+export function countFreeClaudeSessions(sessions: ClaudeSessionInfo[]): number {
+  return sessions.filter(isFreeClaudeSession).length;
 }
