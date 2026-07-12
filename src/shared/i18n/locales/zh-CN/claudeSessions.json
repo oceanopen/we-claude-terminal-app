@@ -12,6 +12,7 @@
   "status": {
     "busy": "运行中",
     "waiting": "等待输入",
+    "gitPending": "空闲待提交",
     "idle": "空闲",
     "dead": "已失效"
   },

@@ -1,4 +1,4 @@
-import type { ClaudeSessionInfo, ClaudeSessionStatus, NavErr } from '@src/shared/bindings';
+import type { ClaudeSessionInfo, NavErr } from '@src/shared/bindings';
 import { Autorenew as AutorenewIcon } from '@mui/icons-material';
 import { Box, IconButton, List, Paper, Snackbar, Typography } from '@mui/material';
 import { commands } from '@src/shared/bindings';
@@ -7,30 +7,15 @@ import {
   EVENT_CLAUDE_SESSION_NAV_FAILED,
   EVENT_CLAUDE_SESSIONS_CHANGED,
 } from '@src/shared/events';
-import { isActiveClaudeSession } from '@src/shared/sessionStatus';
+import { isAttentionClaudeSession, sortClaudeSessions } from '@src/shared/sessionStatus';
 import { listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ClaudeSessionItem from './components/ClaudeSessionItem';
 import PetClaudeSessionsTaskEmptyState from './components/PetClaudeSessionsTaskEmptyState';
 
-// 排序优先级与 ClaudeSessionList 对齐：Waiting 优先于 Busy，同状态按 updatedAt 倒序。
-const STATUS_PRIORITY: Record<ClaudeSessionStatus, number> = {
-  Waiting: 0,
-  Busy: 1,
-  Idle: 2,
-  Dead: 3,
-};
-
-function sortClaudeSessions(sessions: ClaudeSessionInfo[]): ClaudeSessionInfo[] {
-  return [...sessions].sort((a, b) => {
-    const pri = STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status];
-    if (pri !== 0) {
-      return pri;
-    }
-    return b.updatedAt - a.updatedAt;
-  });
-}
+// 排序优先级 SSOT（Waiting > Busy > GitPending > Idle > Dead）与 sortClaudeSessions
+// 均收敛在 sessionStatus.ts，与 ClaudeSessionList / PetClaudeSessionsSummaryApp 共用。
 
 // 与 ClaudeSessionsPage 共用的 NavErr → toast i18n key 映射（保持两端错误文案一致）。
 function navErrToToastKey(err: NavErr): { key: string; opts?: Record<string, unknown> } {
@@ -142,8 +127,9 @@ function PetClaudeSessionsTaskApp() {
     };
   }, []);
 
-  // 仅展示活跃会话（Busy+Waiting），数量与桌宠徽章一致。
-  const activeSessions = sortClaudeSessions(sessions.filter(isActiveClaudeSession));
+  // 展示待关注会话（Busy+Waiting+GitPending）：运行中、等输入、或空闲但有未提交改动。
+  // 数量与桌宠徽章一致（ATTENTION 口径），驱动本面板显隐。
+  const attentionSessions = sortClaudeSessions(sessions.filter(isAttentionClaudeSession));
 
   return (
     <Paper
@@ -174,7 +160,7 @@ function PetClaudeSessionsTaskApp() {
         }}
       >
         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-          {t('petClaudeSessionsTask:task.summary', { total: sessions.length, active: activeSessions.length })}
+          {t('petClaudeSessionsTask:task.summary', { total: sessions.length, attention: attentionSessions.length })}
         </Typography>
         <Box sx={{ flex: 1 }} />
         <IconButton size="small" onClick={handleRefresh} disabled={refreshing} aria-label="refresh">
@@ -189,13 +175,13 @@ function PetClaudeSessionsTaskApp() {
           />
         </IconButton>
       </Box>
-      {activeSessions.length === 0
+      {attentionSessions.length === 0
         ? (
             <PetClaudeSessionsTaskEmptyState />
           )
         : (
             <List sx={{ flex: 1, overflow: 'auto', p: 0.5 }}>
-              {activeSessions.map(s => (
+              {attentionSessions.map(s => (
                 <ClaudeSessionItem key={s.pid} session={s} onClick={handleOpenTerminal} />
               ))}
             </List>

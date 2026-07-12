@@ -73,7 +73,8 @@ pub fn run() {
 
             // 先 rescan 填充 ClaudeSessionStore 并广播首批快照，保证后续 pet_claude_sessions_task / pet
             // 窗口 React mount 后初次拉取 IPC 时 store 必有数据，根治启动期"0 个活跃"竞态。
-            sessions::rescan(app.handle());
+            // force_git=true：启动首次对空闲会话跑一次 git，得到准确的 GitPending 初值。
+            sessions::rescan(app.handle(), true);
 
             // 预构建 pet_claude_sessions_task 窗口（隐藏）：webview 异步加载，React mount 时机虽不确定，
             // 但 store 已满，初次 IPC 必拿到非空数据；后续 claude-sessions:changed 事件持续驱动。

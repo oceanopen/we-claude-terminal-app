@@ -103,11 +103,12 @@ pub fn ensure(app: &AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
-/// 显示 pet_claude_sessions_task 面板：仅当 pet 可见且存在活跃会话（Busy+Waiting）时 show + 定位，
+/// 显示 pet_claude_sessions_task 面板：仅当 pet 可见且存在待关注会话（Busy+Waiting+GitPending）时 show + 定位，
 /// 否则 hide。显隐主导权在 pet 前端（基于 claude-sessions:changed payload 的 count），
 /// 本命令作为前端驱动入口；pet 显隐命令也调用它做联动兜底。
 ///
-/// 活跃会话口径与前端 isActiveClaudeSession / countActiveClaudeSessions 一致（SSOT: sessionStatus.ts）。
+/// 待关注会话口径与前端 isAttentionClaudeSession / countAttentionClaudeSessions 一致（SSOT: sessionStatus.ts）。
+/// 含 GitPending：用户 commit 后空闲会话仍需展示"待提交"，与"仅活跃"语义升级为"待关注"。
 #[tauri::command]
 #[specta::specta]
 pub fn show_pet_claude_sessions_task_window(app: AppHandle) -> Result<(), String> {
@@ -116,17 +117,17 @@ pub fn show_pet_claude_sessions_task_window(app: AppHandle) -> Result<(), String
         .and_then(|w| w.is_visible().ok())
         .unwrap_or(false);
 
-    let active_count = match app.try_state::<ClaudeSessionStore>() {
+    let attention_count = match app.try_state::<ClaudeSessionStore>() {
         Some(store) => {
             let Ok(map) = store.0.lock() else { return Ok(()); };
             map.values()
-                .filter(|s| matches!(s.status, ClaudeSessionStatus::Busy | ClaudeSessionStatus::Waiting))
+                .filter(|s| matches!(s.status, ClaudeSessionStatus::Busy | ClaudeSessionStatus::Waiting | ClaudeSessionStatus::GitPending))
                 .count()
         }
         None => return Ok(()),
     };
 
-    if !pet_visible || active_count == 0 {
+    if !pet_visible || attention_count == 0 {
         if let Some(w) = app.get_webview_window(PET_CLAUDE_SESSIONS_TASK_LABEL) {
             let _ = w.hide();
         }

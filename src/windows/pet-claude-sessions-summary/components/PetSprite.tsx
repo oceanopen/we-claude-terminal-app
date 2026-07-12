@@ -1,26 +1,30 @@
-import type { SvgIconComponent } from '@mui/icons-material';
 import type { ClaudeSessionStatus } from '@src/shared/bindings';
+import type { ReactElement } from 'react';
+import { Branch } from '@icon-park/react';
 import { Autorenew, Bedtime, Notifications, Schedule } from '@mui/icons-material';
 import { Box } from '@mui/material';
 import { STATUS_COLOR } from '@src/shared/sessionStatus';
+import '@icon-park/react/styles/index.css';
 
 interface PetSpriteProps {
   status: ClaudeSessionStatus;
   count: number;
 }
 
-// 4 种状态对应 MUI Icon（SVG）。
-// 用 SVG Icon 而非 emoji：emoji 是彩色字符，CSS color 对其无效，
-// 改用 MUI Icon 后 icon 颜色可跟随状态色，与边框/徽章保持视觉统一。
-const ICON: Record<ClaudeSessionStatus, SvgIconComponent> = {
-  Busy: Autorenew, // 旋转刷新=工作中
-  Waiting: Notifications, // 铃铛=提醒用户输入
-  Idle: Schedule, // 时钟=空闲
-  Dead: Bedtime, // 月亮=休眠
+// 各状态对应的图标渲染函数。MUI 图标（Autorenew/Notifications/Schedule/Bedtime）走 sx；
+// GitPending 用 IconPark 的 Branch（git 分支图标，outline 线性风格），它走 size/fill/theme，
+// 故用渲染函数记录统一处理不同图标 API，避免 JSX 内分支。
+// 颜色统一跟随 STATUS_COLOR：GitPending 也是 info 蓝（与边框/徽章一致）。
+// IconPark 图标默认主题 outline，按需 deep import（@icon-park/react/es/icons/Branch）最小化打包。
+const renderIcon: Record<ClaudeSessionStatus, (color: string) => ReactElement> = {
+  Busy: color => <Autorenew sx={{ color, fontSize: 56 }} />,
+  Waiting: color => <Notifications sx={{ color, fontSize: 56 }} />,
+  GitPending: color => <Branch theme="outline" size={42} fill={color} />,
+  Idle: color => <Schedule sx={{ color, fontSize: 56 }} />,
+  Dead: color => <Bedtime sx={{ color, fontSize: 56 }} />,
 };
 
 function PetSprite({ status, count }: PetSpriteProps) {
-  const Icon = ICON[status];
   const color = STATUS_COLOR[status];
 
   return (
@@ -39,7 +43,7 @@ function PetSprite({ status, count }: PetSpriteProps) {
         boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
       }}
     >
-      <Icon sx={{ color, fontSize: 56 }} />
+      {renderIcon[status](color)}
       {count > 0 && (
         <Box
           sx={{

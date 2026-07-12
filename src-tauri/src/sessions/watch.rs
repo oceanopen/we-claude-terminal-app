@@ -54,7 +54,9 @@ pub fn start(app: AppHandle) {
         log::info!("[sessions] watcher started on {}", dir.display());
 
         while rx.recv().is_ok() {
-            store::rescan(&app);
+            // force_git=false：fs 事件高频（1s 去抖），空闲会话复用上次缓存的 GitPending 判定，
+            // 避免每次 fs 抖动都跑 git。新鲜度由 poll(60s) 兜底。
+            store::rescan(&app, false);
         }
     });
 }

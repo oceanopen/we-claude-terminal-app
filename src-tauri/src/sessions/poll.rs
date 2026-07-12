@@ -45,7 +45,9 @@ pub fn start(app: AppHandle) {
     std::thread::spawn(move || loop {
         let secs = interval.load(Ordering::Relaxed);
         std::thread::sleep(Duration::from_secs(secs));
-        store::rescan(&app);
+        // force_git=true：兜底轮询强制重算空闲会话的 git 状态，
+        // 驱动 GitPending 过期（用户在终端 commit 后徽章在此周期内回退）。
+        store::rescan(&app, true);
     });
 }
 

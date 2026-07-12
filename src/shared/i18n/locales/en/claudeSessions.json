@@ -12,6 +12,7 @@
   "status": {
     "busy": "Busy",
     "waiting": "Waiting",
+    "gitPending": "Git Pending",
     "idle": "Idle",
     "dead": "Dead"
   },

@@ -1,4 +1,4 @@
-import type { ClaudeSessionInfo, ClaudeSessionStatus, TerminalApp } from '@src/shared/bindings';
+import type { ClaudeSessionInfo, TerminalApp } from '@src/shared/bindings';
 import { SiIntellijidea, SiIterm2 } from '@icons-pack/react-simple-icons';
 import { Terminal as TerminalIcon } from '@mui/icons-material';
 import {
@@ -14,17 +14,10 @@ import {
 import vscodeIconSvg from '@src/assets/vscode.svg?raw';
 import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
-import { STATUS_COLOR } from '@src/shared/sessionStatus';
+import { STATUS_COLOR, STATUS_I18N_KEY } from '@src/shared/sessionStatus';
 import { formatDate, formatRelativeTime } from '@src/shared/time';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
-const statusI18nKey: Record<ClaudeSessionStatus, string> = {
-  Busy: 'claudeSessions:status.busy',
-  Waiting: 'claudeSessions:status.waiting',
-  Idle: 'claudeSessions:status.idle',
-  Dead: 'claudeSessions:status.dead',
-};
 
 const hostAppI18nKey: Record<TerminalApp, string> = {
   ITerm2: 'claudeSessions:hostApp.ITerm2',
@@ -86,7 +79,7 @@ function ClaudeSessionCard({ session, onOpenTerminal }: ClaudeSessionCardProps) 
               variant="caption"
               sx={{ color: STATUS_COLOR[session.status], fontWeight: 700, fontSize: '0.7rem' }}
             >
-              {t(statusI18nKey[session.status])}
+              {t(STATUS_I18N_KEY[session.status])}
             </Typography>
           </Box>
         )}

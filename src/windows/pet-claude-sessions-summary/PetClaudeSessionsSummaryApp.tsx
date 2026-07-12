@@ -8,22 +8,16 @@ import {
   PET_CLAUDE_SESSIONS_SUMMARY_DRAGGABLE_KEY,
 } from '@src/shared/config';
 import { EVENT_CLAUDE_SESSIONS_CHANGED } from '@src/shared/events';
-import { countActiveClaudeSessions } from '@src/shared/sessionStatus';
+import { countAttentionClaudeSessions, STATUS_PRIORITY } from '@src/shared/sessionStatus';
 import { useConfigValue } from '@src/shared/useConfigValue';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useCallback, useEffect, useState } from 'react';
 import PetSprite from './components/PetSprite';
 
-// 状态聚合优先级（取所有会话中"最需关注"的那个作为桌宠展示态：Waiting 优先于 Busy）。
-// 数字越小优先级越高；空列表时为 Dead（无活跃会话的休眠态）。
-const STATUS_PRIORITY: Record<ClaudeSessionStatus, number> = {
-  Waiting: 0,
-  Busy: 1,
-  Idle: 2,
-  Dead: 3,
-};
-
+// 状态聚合：取所有会话中"最需关注"的那个作为桌宠展示态（优先级 SSOT: sessionStatus.ts，
+// Waiting > Busy > GitPending > Idle > Dead）。GitPending 排在 Idle 前：有未提交改动的空闲
+// 会话比纯空闲更值得提醒。空列表时为 Dead（无活跃会话的休眠态）。
 function aggregateStatus(sessions: ClaudeSessionInfo[]): { status: ClaudeSessionStatus; count: number } {
   if (sessions.length === 0) {
     return { status: 'Dead', count: 0 };
@@ -31,8 +25,10 @@ function aggregateStatus(sessions: ClaudeSessionInfo[]): { status: ClaudeSession
   const top = [...sessions].sort(
     (a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status],
   )[0];
-  // 数量口径：仅统计非空闲会话（Busy+Waiting）。top.status 仍看全部会话，保证全部空闲时显示 Idle 表情。
-  return { status: top.status, count: countActiveClaudeSessions(sessions) };
+  // 数量口径：待关注会话（Busy+Waiting+GitPending），驱动徽章数字与 pet_task 显隐。
+  // 含 GitPending：用户 commit 后空闲会话仍需提示。top.status 仍看全部会话，
+  // 保证全部空闲时显示 Idle 表情、有 GitPending 时显示 Commit。
+  return { status: top.status, count: countAttentionClaudeSessions(sessions) };
 }
 
 // 模块级 decode：稳定引用，避免 useConfigValue 每次渲染重复订阅。

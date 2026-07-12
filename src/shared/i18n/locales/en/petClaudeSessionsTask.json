@@ -1,9 +1,9 @@
 {
   "task": {
-    "summary": "Total {{total}} sessions / {{active}} active",
+    "summary": "Total {{total}} sessions / {{attention}} pending",
     "empty": {
-      "title": "No active sessions",
-      "desc": "Running Claude Code sessions will appear here"
+      "title": "No pending sessions",
+      "desc": "Running sessions or those with uncommitted changes will appear here"
     }
   }
 }

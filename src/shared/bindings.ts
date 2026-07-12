@@ -12,6 +12,7 @@ export const commands = {
 	/**
 	 *  手动刷新会话列表：触发全量重扫并广播 claude-sessions:changed，
 	 *  订阅该事件的前端（panel 的 ClaudeSessionsPage 页、pet_claude_sessions_summary、pet_claude_sessions_task）自动收到新快照。
+	 *  force_git=true：手动刷新强制重算空闲会话的 GitPending，立即反映最新 git 状态。
 	 */
 	refreshSessions: () => typedError<null, string>(__TAURI_INVOKE("refresh_sessions")),
 	/**
@@ -37,11 +38,12 @@ export const commands = {
 	/**  查询桌宠当前显隐状态。供前端启动时初始化 UI。 */
 	getPetClaudeSessionsSummaryVisibilityState: () => __TAURI_INVOKE<boolean>("get_pet_claude_sessions_summary_visibility_state"),
 	/**
-	 *  显示 pet_claude_sessions_task 面板：仅当 pet 可见且存在活跃会话（Busy+Waiting）时 show + 定位，
+	 *  显示 pet_claude_sessions_task 面板：仅当 pet 可见且存在待关注会话（Busy+Waiting+GitPending）时 show + 定位，
 	 *  否则 hide。显隐主导权在 pet 前端（基于 claude-sessions:changed payload 的 count），
 	 *  本命令作为前端驱动入口；pet 显隐命令也调用它做联动兜底。
 	 * 
-	 *  活跃会话口径与前端 isActiveClaudeSession / countActiveClaudeSessions 一致（SSOT: sessionStatus.ts）。
+	 *  待关注会话口径与前端 isAttentionClaudeSession / countAttentionClaudeSessions 一致（SSOT: sessionStatus.ts）。
+	 *  含 GitPending：用户 commit 后空闲会话仍需展示"待提交"，与"仅活跃"语义升级为"待关注"。
 	 */
 	showPetClaudeSessionsTaskWindow: () => typedError<null, string>(__TAURI_INVOKE("show_pet_claude_sessions_task_window")),
 	/**
@@ -74,7 +76,7 @@ export type ClaudeSessionInfo = {
 	cwd: string,
 	/**  projectName = basename(cwd)，用于 UI 展示与 AppleScript 模糊匹配。 */
 	projectName: string,
-	/**  会话状态（Busy/Waiting/Idle/Dead）。 */
+	/**  会话状态（Busy/Waiting/Idle/GitPending/Dead）。 */
 	status: ClaudeSessionStatus,
 	/**  会话启动时间（毫秒时间戳）。对应 json 的 `startedAt`。 */
 	startedAt: number,
@@ -93,8 +95,8 @@ export type ClaudeSessionInfo = {
 
 /**
  *  终端会话状态。直接映射 `~/.claude/sessions/<pid>.json` 里的 `status` 字段
- *  （busy/waiting/idle）外加本地推断的 Dead（进程已退出但 json 残留）。
- *  前端 ClaudeSessionCard 据此切换状态 Chip 配色与文案。
+ *  （busy/waiting/idle）外加两个本地推断状态：GitPending（空闲且有未提交改动）与
+ *  Dead（进程已退出但 json 残留）。前端 ClaudeSessionCard 据此切换状态 Chip 配色与文案。
  */
 export type ClaudeSessionStatus = 
 /**  运行中：Claude 正在执行工具/生成回复。 */
@@ -103,6 +105,13 @@ export type ClaudeSessionStatus =
 "Waiting" | 
 /**  空闲：会话长时间无活动，但仍存活。 */
 "Idle" | 
+/**
+ *  本地派生：会话空闲（base=Idle）且其 cwd 存在未提交 git 改动（含 untracked）。
+ *  由 `store::rescan` 在 enrich 后二次判定，不来自 Claude json。
+ *  有界过期：fs watcher 触发的 rescan（force_git=false）复用上次缓存值，
+ *  poll（60s）/手动刷新（force_git=true）强制重算，避免 watcher 高频跑 git。
+ */
+"GitPending" | 
 /**  已失效：进程已退出，json 残留。discover 阶段会过滤掉，理论上不会出现在前端。 */
 "Dead";
 

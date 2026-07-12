@@ -10,8 +10,16 @@ use crate::shared::types::ClaudeSessionInfo;
 #[derive(Default)]
 pub struct ClaudeSessionStore(pub Mutex<HashMap<String, ClaudeSessionInfo>>);
 
+/// rescan 互斥锁。store::rescan 有三个并发触发源（watcher / poll / 命令线程），
+/// 任一进入后持锁串行执行"读旧快照 → 跑 git → 写回"，避免并发跑 git 串行堆积
+/// （多个 idle 会话 × 100ms 量级 git 调用）。poison 走 expect panic 兜底，与
+/// write_claude_sessions 风格一致。
+#[derive(Default)]
+pub struct RescanLock(pub Mutex<()>);
+
 pub fn init(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     app.manage(ClaudeSessionStore::default());
+    app.manage(RescanLock::default());
     Ok(())
 }
 

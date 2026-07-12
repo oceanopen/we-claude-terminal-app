@@ -28,8 +28,8 @@ pub struct ConfigChangedPayload {
 // ============================================================
 
 /// 终端会话状态。直接映射 `~/.claude/sessions/<pid>.json` 里的 `status` 字段
-/// （busy/waiting/idle）外加本地推断的 Dead（进程已退出但 json 残留）。
-/// 前端 ClaudeSessionCard 据此切换状态 Chip 配色与文案。
+/// （busy/waiting/idle）外加两个本地推断状态：GitPending（空闲且有未提交改动）与
+/// Dead（进程已退出但 json 残留）。前端 ClaudeSessionCard 据此切换状态 Chip 配色与文案。
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Serialize, Deserialize, Type)]
 pub enum ClaudeSessionStatus {
     /// 运行中：Claude 正在执行工具/生成回复。
@@ -38,6 +38,11 @@ pub enum ClaudeSessionStatus {
     Waiting,
     /// 空闲：会话长时间无活动，但仍存活。
     Idle,
+    /// 本地派生：会话空闲（base=Idle）且其 cwd 存在未提交 git 改动（含 untracked）。
+    /// 由 `store::rescan` 在 enrich 后二次判定，不来自 Claude json。
+    /// 有界过期：fs watcher 触发的 rescan（force_git=false）复用上次缓存值，
+    /// poll（60s）/手动刷新（force_git=true）强制重算，避免 watcher 高频跑 git。
+    GitPending,
     /// 已失效：进程已退出，json 残留。discover 阶段会过滤掉，理论上不会出现在前端。
     Dead,
 }
@@ -85,7 +90,7 @@ pub struct ClaudeSessionInfo {
     pub cwd: String,
     /// projectName = basename(cwd)，用于 UI 展示与 AppleScript 模糊匹配。
     pub project_name: String,
-    /// 会话状态（Busy/Waiting/Idle/Dead）。
+    /// 会话状态（Busy/Waiting/Idle/GitPending/Dead）。
     pub status: ClaudeSessionStatus,
     /// 会话启动时间（毫秒时间戳）。对应 json 的 `startedAt`。
     #[specta(type = Number)]
