@@ -92,6 +92,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         app,
         &[
             &monitor_item,
+            &PredefinedMenuItem::separator(app)?,
             &pet_item,
             &PredefinedMenuItem::separator(app)?,
             &settings_item,
