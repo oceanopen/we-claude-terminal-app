@@ -1,7 +1,7 @@
 use std::sync::Mutex;
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
-    tray::TrayIconBuilder,
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter, Manager,
 };
 
@@ -140,7 +140,22 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .icon(icon)
         .tooltip(tooltip)
         .menu(&menu)
-        .show_menu_on_left_click(true)
+        .show_menu_on_left_click(false)
+        .on_tray_icon_event(|tray, event| {
+            // 左键单击打开终端监听窗口；右键由系统默认弹出菜单（无需处理）。
+            // 注意：本回调首参是 &TrayIcon（非 &AppHandle），需经 app_handle() 取得句柄。
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                let app = tray.app_handle();
+                if let Err(e) = crate::windows::monitor::show_monitor_window(app.clone()) {
+                    log::warn!("failed to open monitor window: {e}");
+                }
+            }
+        })
         .on_menu_event(|app, event| match event.id().as_ref() {
             "monitor" => {
                 if let Err(e) = crate::windows::monitor::show_monitor_window(app.clone()) {
