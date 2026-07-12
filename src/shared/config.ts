@@ -39,8 +39,8 @@ export const LANGUAGE_KEY = 'language';
 export const DEFAULT_LANGUAGE: Language = 'system';
 
 // 桌宠拖拽开关。值用 YesNo，缺失视为 NO（默认关闭：点击桌宠打开监控页）。
-// 与后端 config.rs 的 PET_DRAGGABLE_KEY 对齐，修改任一处需同步另一处。
-export const PET_DRAGGABLE_KEY = 'pet_draggable';
+// 与后端 config.rs 的 PET_CLAUDE_SESSIONS_SUMMARY_DRAGGABLE_KEY 对齐，修改任一处需同步另一处。
+export const PET_CLAUDE_SESSIONS_SUMMARY_DRAGGABLE_KEY = 'pet_claude_sessions_summary_draggable';
 export const DEFAULT_PET_DRAGGABLE = YES_NO.NO;
 
 // sessions 兜底轮询周期（秒）。即时性由 fs watcher 负责，此处仅驱动 Dead 老化与漏报兜底。

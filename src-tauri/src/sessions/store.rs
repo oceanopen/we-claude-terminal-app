@@ -4,7 +4,7 @@
 // 下一轮 watcher / poller 会重新执行，对齐现有容错风格。
 //
 // 显隐联动不再在此触发：pet 前端收到 claude-sessions:changed payload 后基于 count
-// 自行调 show_pet_task / hide_pet_task，后端不做自动联动。
+// 自行调 show_pet_claude_sessions_task_window / hide_pet_claude_sessions_task_window，后端不做自动联动。
 
 use tauri::{AppHandle, Emitter, Manager};
 

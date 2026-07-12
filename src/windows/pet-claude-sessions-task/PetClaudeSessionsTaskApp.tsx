@@ -12,7 +12,7 @@ import { listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ClaudeSessionItem from './components/ClaudeSessionItem';
-import PanelEmptyState from './components/PanelEmptyState';
+import PetClaudeSessionsTaskEmptyState from './components/PetClaudeSessionsTaskEmptyState';
 
 // 排序优先级与 ClaudeSessionList 对齐：Waiting 优先于 Busy，同状态按 updatedAt 倒序。
 const STATUS_PRIORITY: Record<ClaudeSessionStatus, number> = {
@@ -46,8 +46,8 @@ function navErrToToastKey(err: NavErr): { key: string; opts?: Record<string, unk
   }
 }
 
-// 纯渲染组件：会话列表 + nav 失败 toast。窗口显隐由 pet 前端基于 count 驱动（show_pet_task / hide_pet_task）。
-function PetTaskApp() {
+// 纯渲染组件：会话列表 + nav 失败 toast。窗口显隐由 pet 前端基于 count 驱动（show_pet_claude_sessions_task_window / hide_pet_claude_sessions_task_window）。
+function PetClaudeSessionsTaskApp() {
   const { t } = useTranslation();
   const [sessions, setSessions] = useState<ClaudeSessionInfo[]>([]);
   const [toast, setToast] = useState<string | null>(null);
@@ -60,7 +60,7 @@ function PetTaskApp() {
     unwrap(commands.getClaudeSessions())
       .then(setSessions)
       .catch((e) => {
-        console.warn('[pet-task] load failed', e);
+        console.warn('[pet-claude-sessions-task] load failed', e);
       });
   }, []);
 
@@ -74,7 +74,7 @@ function PetTaskApp() {
       unlisten
         .then(fn => fn())
         .catch((err: unknown) => {
-          console.warn('[pet-task:claude-sessions:changed] unlisten failed:', err);
+          console.warn('[pet-claude-sessions-task:claude-sessions:changed] unlisten failed:', err);
         });
     };
   }, []);
@@ -89,13 +89,13 @@ function PetTaskApp() {
       unlisten
         .then(fn => fn())
         .catch((err: unknown) => {
-          console.warn('[pet-task:nav-failed] unlisten failed:', err);
+          console.warn('[pet-claude-sessions-task:nav-failed] unlisten failed:', err);
         });
     };
   }, [t]);
 
   // 点击列表项：navigateToClaudeSession 失败走 claude-sessions:nav-failed 事件，此处不 catch。
-  // 窗口显隐由 pet 前端基于 count 驱动（调 show_pet_task / hide_pet_task），前端点击后不主动 hide。
+  // 窗口显隐由 pet 前端基于 count 驱动（调 show_pet_claude_sessions_task_window / hide_pet_claude_sessions_task_window），前端点击后不主动 hide。
   const handleOpenTerminal = useCallback(async (pid: number) => {
     await commands.navigateToClaudeSession(pid);
   }, []);
@@ -118,7 +118,7 @@ function PetTaskApp() {
   }, []);
 
   // 动态高度：ResizeObserver 监听 Paper 实际内容高度变化（会话增减 / 空态切换），
-  // rAF 合并同帧多次回调，调 fit_pet_task 让后端 set_size + 重新定位（保持与 pet 中心对齐）。
+  // rAF 合并同帧多次回调，调 fit_pet_claude_sessions_task 让后端 set_size + 重新定位（保持与 pet 中心对齐）。
   // observe 后异步触发首回调，等价于 mount 即 fit，覆盖 show 时用的默认高度。
   useEffect(() => {
     const root = rootRef.current;
@@ -130,8 +130,8 @@ function PetTaskApp() {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         const height = root.offsetHeight;
-        unwrap(commands.fitPetTask(height)).catch((e) => {
-          console.warn('[pet-task] fitPetTask failed', e);
+        unwrap(commands.fitPetClaudeSessionsTask(height)).catch((e) => {
+          console.warn('[pet-claude-sessions-task] fitPetClaudeSessionsTask failed', e);
         });
       });
     });
@@ -174,7 +174,7 @@ function PetTaskApp() {
         }}
       >
         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-          {t('pet:task.summary', { total: sessions.length, active: activeSessions.length })}
+          {t('petClaudeSessionsTask:task.summary', { total: sessions.length, active: activeSessions.length })}
         </Typography>
         <Box sx={{ flex: 1 }} />
         <IconButton size="small" onClick={handleRefresh} disabled={refreshing} aria-label="refresh">
@@ -191,7 +191,7 @@ function PetTaskApp() {
       </Box>
       {activeSessions.length === 0
         ? (
-            <PanelEmptyState />
+            <PetClaudeSessionsTaskEmptyState />
           )
         : (
             <List sx={{ flex: 1, overflow: 'auto', p: 0.5 }}>
@@ -211,4 +211,4 @@ function PetTaskApp() {
   );
 }
 
-export default PetTaskApp;
+export default PetClaudeSessionsTaskApp;

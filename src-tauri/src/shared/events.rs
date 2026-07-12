@@ -10,5 +10,5 @@ pub const EVENT_CONFIG_CHANGED: &str = "config-changed";
 pub const EVENT_CLAUDE_SESSIONS_CHANGED: &str = "claude-sessions:changed";
 
 /// 终端跳转失败时广播（payload = `SessionNavFailed`）。
-/// navigate_to_claude_session 命令失败时 emit；ClaudeSessionsPage / PetTaskApp 据此弹 toast。
+/// navigate_to_claude_session 命令失败时 emit；ClaudeSessionsPage / PetClaudeSessionsTaskApp 据此弹 toast。
 pub const EVENT_CLAUDE_SESSION_NAV_FAILED: &str = "claude-sessions:nav-failed";

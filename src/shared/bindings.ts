@@ -11,7 +11,7 @@ export const commands = {
 	getClaudeSessions: () => typedError<ClaudeSessionInfo[], string>(__TAURI_INVOKE("get_claude_sessions")),
 	/**
 	 *  手动刷新会话列表：触发全量重扫并广播 claude-sessions:changed，
-	 *  订阅该事件的前端窗口（pet_task / panel）自动收到新快照。
+	 *  订阅该事件的前端窗口（pet_claude_sessions_task / panel）自动收到新快照。
 	 */
 	refreshSessions: () => typedError<null, string>(__TAURI_INVOKE("refresh_sessions")),
 	/**
@@ -31,30 +31,30 @@ export const commands = {
 	 *  前端据此禁用 VSCode/IDEA 中不合适的那一个，保留两个按钮便于未来扩展。
 	 */
 	isJavaProject: (cwd: string) => __TAURI_INVOKE<boolean>("is_java_project", { cwd }),
-	showPetWindow: () => typedError<null, string>(__TAURI_INVOKE("show_pet_window")),
-	hidePetWindow: () => typedError<null, string>(__TAURI_INVOKE("hide_pet_window")),
-	togglePetWindow: () => typedError<boolean, string>(__TAURI_INVOKE("toggle_pet_window")),
+	showPetClaudeSessionsSummaryWindow: () => typedError<null, string>(__TAURI_INVOKE("show_pet_claude_sessions_summary_window")),
+	hidePetClaudeSessionsSummaryWindow: () => typedError<null, string>(__TAURI_INVOKE("hide_pet_claude_sessions_summary_window")),
+	togglePetClaudeSessionsSummaryWindow: () => typedError<boolean, string>(__TAURI_INVOKE("toggle_pet_claude_sessions_summary_window")),
 	/**  查询桌宠当前显隐状态。供前端启动时初始化 UI。 */
-	getPetVisibilityState: () => __TAURI_INVOKE<boolean>("get_pet_visibility_state"),
+	getPetClaudeSessionsSummaryVisibilityState: () => __TAURI_INVOKE<boolean>("get_pet_claude_sessions_summary_visibility_state"),
 	/**
-	 *  显示 pet_task 面板：仅当 pet 可见且存在活跃会话（Busy+Waiting）时 show + 定位，
+	 *  显示 pet_claude_sessions_task 面板：仅当 pet 可见且存在活跃会话（Busy+Waiting）时 show + 定位，
 	 *  否则 hide。显隐主导权在 pet 前端（基于 claude-sessions:changed payload 的 count），
 	 *  本命令作为前端驱动入口；pet 显隐命令也调用它做联动兜底。
 	 * 
 	 *  活跃会话口径与前端 isActiveClaudeSession / countActiveClaudeSessions 一致（SSOT: sessionStatus.ts）。
 	 */
-	showPetTask: () => typedError<null, string>(__TAURI_INVOKE("show_pet_task")),
+	showPetClaudeSessionsTaskWindow: () => typedError<null, string>(__TAURI_INVOKE("show_pet_claude_sessions_task_window")),
 	/**
-	 *  隐藏 pet_task 面板。pet 隐藏时由后端 hide_pet_window 命令联动调用，
+	 *  隐藏 pet_claude_sessions_task 面板。pet 隐藏时由后端 hide_pet_claude_sessions_summary_window 命令联动调用，
 	 *  避免孤立的悬浮列表；pet 前端 count 归零时也主动调用。
 	 */
-	hidePetTask: () => typedError<null, string>(__TAURI_INVOKE("hide_pet_task")),
+	hidePetClaudeSessionsTaskWindow: () => typedError<null, string>(__TAURI_INVOKE("hide_pet_claude_sessions_task_window")),
 	/**
 	 *  前端测得实际内容高度后回调，调整窗口高度并重新定位以保持与 pet 中心水平对齐。
-	 *  由 PetTaskApp 的 ResizeObserver（rAF 节流）触发；窗口已可见，不需 show。
+	 *  由 PetClaudeSessionsTaskApp 的 ResizeObserver（rAF 节流）触发；窗口已可见，不需 show。
 	 *  高度变化时 Y 按 panel 中心 = pet 中心重算，保证增减会话不破坏水平对齐。
 	 */
-	fitPetTask: (height: number | null) => typedError<null, string>(__TAURI_INVOKE("fit_pet_task", { height })),
+	fitPetClaudeSessionsTask: (height: number | null) => typedError<null, string>(__TAURI_INVOKE("fit_pet_claude_sessions_task", { height })),
 	showSettingsWindow: () => typedError<null, string>(__TAURI_INVOKE("show_settings_window")),
 	getConfig: (key: string) => typedError<string | null, string>(__TAURI_INVOKE("get_config", { key })),
 	setConfig: (key: string, value: string) => typedError<null, string>(__TAURI_INVOKE("set_config", { key, value })),
@@ -63,7 +63,7 @@ export const commands = {
 /* Types */
 /**
  *  终端会话快照。ClaudeSessionsPage 渲染 ClaudeSessionCard 列表的数据源；
- *  PetApp 聚合所有会话取"最忙"状态作为桌宠展示态。
+ *  PetClaudeSessionsSummaryApp 聚合所有会话取"最忙"状态作为桌宠展示态。
  */
 export type ClaudeSessionInfo = {
 	/**  Claude Code 进程 pid（也是 `~/.claude/sessions/<pid>.json` 的文件名）。 */

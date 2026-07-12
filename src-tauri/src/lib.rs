@@ -20,13 +20,13 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
             windows::panel::navigate_to_claude_session,
             windows::panel::open_in_editor,
             windows::panel::is_java_project,
-            windows::pet::show_pet_window,
-            windows::pet::hide_pet_window,
-            windows::pet::toggle_pet_window,
-            windows::pet::get_pet_visibility_state,
-            windows::pet_task::show_pet_task,
-            windows::pet_task::hide_pet_task,
-            windows::pet_task::fit_pet_task,
+            windows::pet_claude_sessions_summary::show_pet_claude_sessions_summary_window,
+            windows::pet_claude_sessions_summary::hide_pet_claude_sessions_summary_window,
+            windows::pet_claude_sessions_summary::toggle_pet_claude_sessions_summary_window,
+            windows::pet_claude_sessions_summary::get_pet_claude_sessions_summary_visibility_state,
+            windows::pet_claude_sessions_task::show_pet_claude_sessions_task_window,
+            windows::pet_claude_sessions_task::hide_pet_claude_sessions_task_window,
+            windows::pet_claude_sessions_task::fit_pet_claude_sessions_task,
             windows::settings::show_settings_window,
             shared::config::get_config,
             shared::config::set_config,
@@ -71,22 +71,22 @@ pub fn run() {
             shared::state::claude_sessions::init(app)?;
             windows::tray::setup(app)?;
 
-            // 先 rescan 填充 ClaudeSessionStore 并广播首批快照，保证后续 pet_task / pet
+            // 先 rescan 填充 ClaudeSessionStore 并广播首批快照，保证后续 pet_claude_sessions_task / pet
             // 窗口 React mount 后初次拉取 IPC 时 store 必有数据，根治启动期"0 个活跃"竞态。
             sessions::rescan(app.handle());
 
-            // 预构建 pet_task 窗口（隐藏）：webview 异步加载，React mount 时机虽不确定，
+            // 预构建 pet_claude_sessions_task 窗口（隐藏）：webview 异步加载，React mount 时机虽不确定，
             // 但 store 已满，初次 IPC 必拿到非空数据；后续 claude-sessions:changed 事件持续驱动。
-            if let Err(e) = windows::pet_task::ensure(app.handle()) {
-                log::warn!("[pet-task] startup ensure failed: {}", e);
+            if let Err(e) = windows::pet_claude_sessions_task::ensure(app.handle()) {
+                log::warn!("[pet-claude-sessions-task] startup ensure failed: {}", e);
             }
 
             sessions::watch::start(app.handle().clone());
             sessions::poll::start(app.handle().clone());
 
-            // 桌宠显隐读 pet_visible 偏好：用户上次隐藏则保持隐藏，否则启动显示。
-            // pet 显示后由前端基于 count 调 show_pet_task 联动面板显隐。
-            windows::pet::startup_show(app.handle());
+            // 桌宠显隐读 pet_claude_sessions_summary_visible 偏好：用户上次隐藏则保持隐藏，否则启动显示。
+            // pet 显示后由前端基于 count 调 show_pet_claude_sessions_task_window 联动面板显隐。
+            windows::pet_claude_sessions_summary::startup_show(app.handle());
             // 托盘菜单在 setup 时基于窗口可见性初始化文案，此时 pet 窗口尚未创建，
             // 故恒为"显示桌宠"；startup_show 确定真实显隐后刷新一次以纠正文案。
             windows::tray::refresh_menu_texts(app.handle());

@@ -5,7 +5,7 @@ import {
   DEFAULT_PET_DRAGGABLE,
   isYes,
   parseYesNo,
-  PET_DRAGGABLE_KEY,
+  PET_CLAUDE_SESSIONS_SUMMARY_DRAGGABLE_KEY,
 } from '@src/shared/config';
 import { EVENT_CLAUDE_SESSIONS_CHANGED } from '@src/shared/events';
 import { countActiveClaudeSessions } from '@src/shared/sessionStatus';
@@ -40,14 +40,14 @@ function decodeDraggable(v: string | null): boolean {
   return isYes(parseYesNo(v, DEFAULT_PET_DRAGGABLE));
 }
 
-function PetApp() {
+function PetClaudeSessionsSummaryApp() {
   const [status, setStatus] = useState<ClaudeSessionStatus>('Dead');
   const [count, setCount] = useState(0);
   const [hovered, setHovered] = useState(false);
   // 桌宠拖拽开关：开启时可拖拽、点击静默；关闭时不可拖拽、点击打开终端监控页。
-  const draggable = useConfigValue(PET_DRAGGABLE_KEY, decodeDraggable, false);
+  const draggable = useConfigValue(PET_CLAUDE_SESSIONS_SUMMARY_DRAGGABLE_KEY, decodeDraggable, false);
 
-  // 纯函数：从 sessions 快照计算 status + count。PetApp 与 PetTaskApp 共用
+  // 纯函数：从 sessions 快照计算 status + count。PetClaudeSessionsSummaryApp 与 PetClaudeSessionsTaskApp 共用
   // claude-sessions:changed payload 作为数据源，applySessions 保证两端对同一事件的响应原子化，
   // 不再走 IPC 二次拉取（消除高频 rescan 下的版本错位）。
   const applySessions = useCallback((sessions: ClaudeSessionInfo[]) => {
@@ -56,13 +56,13 @@ function PetApp() {
     setCount(agg.count);
   }, []);
 
-  // 初次 mount 主动拉一次（与 PetTaskApp 一致）；事件回调直接用 payload 调 applySessions。
+  // 初次 mount 主动拉一次（与 PetClaudeSessionsTaskApp 一致）；事件回调直接用 payload 调 applySessions。
   // cleanup 用 .then().catch() 防竞态。
   useEffect(() => {
     unwrap(commands.getClaudeSessions())
       .then(applySessions)
       .catch((e) => {
-        console.warn('[pet] load failed', e);
+        console.warn('[pet-claude-sessions-summary] load failed', e);
       });
     const unlisten = listen<ClaudeSessionInfo[]>(EVENT_CLAUDE_SESSIONS_CHANGED, (e) => {
       applySessions(e.payload);
@@ -70,16 +70,16 @@ function PetApp() {
     return () => {
       unlisten
         .then(fn => fn())
-        .catch(err => console.warn('[pet] unlisten failed:', err));
+        .catch(err => console.warn('[pet-claude-sessions-summary] unlisten failed:', err));
     };
   }, [applySessions]);
 
-  // count 变化时驱动 pet_task 显隐：count > 0 调 show_pet_task（后端按 pet 可见 && count 裁决），
-  // count == 0 调 hide_pet_task。pet_task 显隐主导权在此，后端 rescan 不再自动联动。
+  // count 变化时驱动 pet_claude_sessions_task 显隐：count > 0 调 show_pet_claude_sessions_task_window（后端按 pet 可见 && count 裁决），
+  // count == 0 调 hide_pet_claude_sessions_task_window。pet_claude_sessions_task 显隐主导权在此，后端 rescan 不再自动联动。
   useEffect(() => {
-    const cmd = count > 0 ? commands.showPetTask() : commands.hidePetTask();
+    const cmd = count > 0 ? commands.showPetClaudeSessionsTaskWindow() : commands.hidePetClaudeSessionsTaskWindow();
     unwrap(cmd).catch((e) => {
-      console.warn('[pet] pet_task visibility failed', e);
+      console.warn('[pet-claude-sessions-summary] pet_claude_sessions_task visibility failed', e);
     });
   }, [count]);
 
@@ -99,7 +99,7 @@ function PetApp() {
     try {
       await getCurrentWindow().startDragging();
     } catch (e) {
-      console.warn('[pet] startDragging failed:', e);
+      console.warn('[pet-claude-sessions-summary] startDragging failed:', e);
     }
   }, [draggable]);
   // 关闭拖拽模式下点击桌宠打开终端监控页；开启模式下 startDragging 已吞掉 click，兜底再判一次。
@@ -110,7 +110,7 @@ function PetApp() {
     try {
       await unwrap(commands.showPanelWindow());
     } catch (e) {
-      console.warn('[pet] open panel failed', e);
+      console.warn('[pet-claude-sessions-summary] open panel failed', e);
     }
   }, [draggable]);
 
@@ -139,4 +139,4 @@ function PetApp() {
   );
 }
 
-export default PetApp;
+export default PetClaudeSessionsSummaryApp;

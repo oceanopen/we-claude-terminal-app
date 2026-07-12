@@ -73,7 +73,7 @@ impl YesNo {
 }
 
 /// 终端会话快照。ClaudeSessionsPage 渲染 ClaudeSessionCard 列表的数据源；
-/// PetApp 聚合所有会话取"最忙"状态作为桌宠展示态。
+/// PetClaudeSessionsSummaryApp 聚合所有会话取"最忙"状态作为桌宠展示态。
 #[derive(Clone, Serialize, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ClaudeSessionInfo {

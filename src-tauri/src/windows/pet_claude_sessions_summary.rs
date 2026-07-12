@@ -16,10 +16,10 @@ use std::time::Duration;
 
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
-use crate::shared::config::{read_config_raw, write_config_raw, ConfigState, PET_VISIBLE_KEY};
+use crate::shared::config::{read_config_raw, write_config_raw, ConfigState, PET_CLAUDE_SESSIONS_SUMMARY_VISIBLE_KEY};
 use crate::shared::types::YesNo;
 use crate::shared::screen::{MonitorInfo, find_monitor_for_tray};
-use crate::windows::pet_task;
+use crate::windows::pet_claude_sessions_task;
 
 /// 桌宠窗口尺寸（逻辑像素）。
 const PET_SIZE: (f64, f64) = (128.0, 128.0);
@@ -28,7 +28,7 @@ const PET_SIZE: (f64, f64) = (128.0, 128.0);
 const PET_MARGIN: f64 = 24.0;
 
 /// 持久化桌宠位置的 config key（逻辑坐标 JSON：`{"x":..,"y":..}`）。
-const PET_POSITION_KEY: &str = "pet_position";
+const PET_CLAUDE_SESSIONS_SUMMARY_POSITION_KEY: &str = "pet_claude_sessions_summary_position";
 
 /// Moved 防抖时长：拖动期间频繁触发，停顿后落盘一次。
 const PET_POSITION_DEBOUNCE_MS: u64 = 600;
@@ -44,7 +44,7 @@ struct PetPositionSaved {
 fn pet_position(app: &AppHandle) -> (f64, f64) {
     // 优先用上次保存的位置；缺失或损坏时回退主屏右下角。
     if let Some(state) = app.try_state::<ConfigState>() {
-        if let Ok(Some(raw)) = read_config_raw(&*state, PET_POSITION_KEY) {
+        if let Ok(Some(raw)) = read_config_raw(&*state, PET_CLAUDE_SESSIONS_SUMMARY_POSITION_KEY) {
             if let Ok(saved) = serde_json::from_str::<PetPositionSaved>(&raw) {
                 return (saved.x.max(0.0), saved.y.max(0.0));
             }
@@ -69,21 +69,21 @@ fn pet_visible_pref(app: &AppHandle) -> bool {
     let Some(state) = app.try_state::<ConfigState>() else {
         return true;
     };
-    match read_config_raw(&*state, PET_VISIBLE_KEY) {
+    match read_config_raw(&*state, PET_CLAUDE_SESSIONS_SUMMARY_VISIBLE_KEY) {
         Ok(Some(v)) if v == YesNo::No.as_str() => false,
         _ => true,
     }
 }
 
 /// 创建或显示桌宠窗口。已存在则直接 show。
-pub fn ensure_pet_window(app: &AppHandle) -> tauri::Result<()> {
-    if let Some(w) = app.get_webview_window("pet") {
+pub fn ensure_pet_claude_sessions_summary_window(app: &AppHandle) -> tauri::Result<()> {
+    if let Some(w) = app.get_webview_window("pet-claude-sessions-summary") {
         let _ = w.show();
         return Ok(());
     }
 
     let (x, y) = pet_position(app);
-    let win = WebviewWindowBuilder::new(app, "pet", WebviewUrl::App("pet.html".into()))
+    let win = WebviewWindowBuilder::new(app, "pet-claude-sessions-summary", WebviewUrl::App("pet-claude-sessions-summary.html".into()))
         .title("Pet")
         .inner_size(PET_SIZE.0, PET_SIZE.1)
         .position(x, y)
@@ -114,7 +114,7 @@ pub fn ensure_pet_window(app: &AppHandle) -> tauri::Result<()> {
                     if token.swap(false, Ordering::SeqCst) {
                         return;
                     }
-                    let Some(w) = app.get_webview_window("pet") else { return };
+                    let Some(w) = app.get_webview_window("pet-claude-sessions-summary") else { return };
                     let Ok(scale) = w.scale_factor() else { return };
                     let Ok(phys) = w.outer_position() else { return };
                     let logical = phys.to_logical::<f64>(scale);
@@ -124,7 +124,7 @@ pub fn ensure_pet_window(app: &AppHandle) -> tauri::Result<()> {
                     })
                     .unwrap_or_default();
                     if let Some(state) = app.try_state::<ConfigState>() {
-                        let _ = write_config_raw(&*state, PET_POSITION_KEY, &raw);
+                        let _ = write_config_raw(&*state, PET_CLAUDE_SESSIONS_SUMMARY_POSITION_KEY, &raw);
                     }
                 });
             }
@@ -142,27 +142,27 @@ pub fn ensure_pet_window(app: &AppHandle) -> tauri::Result<()> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn show_pet_window(app: AppHandle) -> Result<(), String> {
-    ensure_pet_window(&app).map_err(|e| e.to_string())?;
-    // pet 显示后联动评估 pet_task 显隐（show_pet_task 内部按 count 裁决），
+pub fn show_pet_claude_sessions_summary_window(app: AppHandle) -> Result<(), String> {
+    ensure_pet_claude_sessions_summary_window(&app).map_err(|e| e.to_string())?;
+    // pet 显示后联动评估 pet_claude_sessions_task 显隐（show_pet_claude_sessions_task_window 内部按 count 裁决），
     // 覆盖 pet 重新显示时前端 useEffect 因 count 未变不触发的边缘场景。
-    pet_task::show_pet_task(app)
+    pet_claude_sessions_task::show_pet_claude_sessions_task_window(app)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn hide_pet_window(app: AppHandle) -> Result<(), String> {
-    if let Some(w) = app.get_webview_window("pet") {
+pub fn hide_pet_claude_sessions_summary_window(app: AppHandle) -> Result<(), String> {
+    if let Some(w) = app.get_webview_window("pet-claude-sessions-summary") {
         let _ = w.hide();
     }
-    // pet 隐藏联动隐藏 pet_task，避免孤立的悬浮列表。
-    pet_task::hide_pet_task(app)
+    // pet 隐藏联动隐藏 pet_claude_sessions_task，避免孤立的悬浮列表。
+    pet_claude_sessions_task::hide_pet_claude_sessions_task_window(app)
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn toggle_pet_window(app: AppHandle) -> Result<bool, String> {
-    let now_visible = if let Some(w) = app.get_webview_window("pet") {
+pub fn toggle_pet_claude_sessions_summary_window(app: AppHandle) -> Result<bool, String> {
+    let now_visible = if let Some(w) = app.get_webview_window("pet-claude-sessions-summary") {
         let visible = w.is_visible().unwrap_or(false);
         if visible {
             let _ = w.hide();
@@ -172,19 +172,19 @@ pub fn toggle_pet_window(app: AppHandle) -> Result<bool, String> {
             true
         }
     } else {
-        ensure_pet_window(&app).map_err(|e| e.to_string())?;
+        ensure_pet_claude_sessions_summary_window(&app).map_err(|e| e.to_string())?;
         true
     };
-    // pet 显隐变化联动 pet_task：显示则按 count 裁决，隐藏则强制 hide。
+    // pet 显隐变化联动 pet_claude_sessions_task：显示则按 count 裁决，隐藏则强制 hide。
     if now_visible {
-        let _ = pet_task::show_pet_task(app.clone());
+        let _ = pet_claude_sessions_task::show_pet_claude_sessions_task_window(app.clone());
     } else {
-        let _ = pet_task::hide_pet_task(app.clone());
+        let _ = pet_claude_sessions_task::hide_pet_claude_sessions_task_window(app.clone());
     }
     // 落盘显隐偏好，启动时据此恢复，避免重启后丢失用户的隐藏选择。
     if let Some(state) = app.try_state::<ConfigState>() {
         let val = if now_visible { YesNo::Yes } else { YesNo::No };
-        let _ = write_config_raw(&*state, PET_VISIBLE_KEY, val.as_str());
+        let _ = write_config_raw(&*state, PET_CLAUDE_SESSIONS_SUMMARY_VISIBLE_KEY, val.as_str());
     }
     Ok(now_visible)
 }
@@ -192,22 +192,22 @@ pub fn toggle_pet_window(app: AppHandle) -> Result<bool, String> {
 /// 查询桌宠当前显隐状态。供前端启动时初始化 UI。
 #[tauri::command]
 #[specta::specta]
-pub fn get_pet_visibility_state(app: AppHandle) -> bool {
-    app.get_webview_window("pet")
+pub fn get_pet_claude_sessions_summary_visibility_state(app: AppHandle) -> bool {
+    app.get_webview_window("pet-claude-sessions-summary")
         .and_then(|w| w.is_visible().ok())
         .unwrap_or(false)
 }
 
-/// 内部工具：app 启动时调用。读 pet_visible 偏好决定是否显示桌宠：
-/// 用户上次选择隐藏（pet_visible = "false"）时跳过窗口创建与 pet_task 显示，
-/// 维持隐藏态；否则确保桌宠可见并联动 pet_task。
+/// 内部工具：app 启动时调用。读 pet_claude_sessions_summary_visible 偏好决定是否显示桌宠：
+/// 用户上次选择隐藏（pet_claude_sessions_summary_visible = YesNo::No）时跳过窗口创建与 pet_claude_sessions_task 显示，
+/// 维持隐藏态；否则确保桌宠可见并联动 pet_claude_sessions_task。
 pub fn startup_show(app: &AppHandle) {
     if !pet_visible_pref(app) {
         return;
     }
-    if let Err(e) = ensure_pet_window(app) {
-        log::warn!("[pet] startup ensure failed: {}", e);
+    if let Err(e) = ensure_pet_claude_sessions_summary_window(app) {
+        log::warn!("[pet-claude-sessions-summary] startup ensure failed: {}", e);
     }
-    // pet 显示后联动评估 pet_task 显隐（show_pet_task 内部按 count 裁决）。
-    let _ = pet_task::show_pet_task(app.clone());
+    // pet 显示后联动评估 pet_claude_sessions_task 显隐（show_pet_claude_sessions_task_window 内部按 count 裁决）。
+    let _ = pet_claude_sessions_task::show_pet_claude_sessions_task_window(app.clone());
 }

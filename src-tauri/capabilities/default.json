@@ -4,8 +4,8 @@
   "description": "enables the default permissions",
   "windows": [
     "panel",
-    "pet",
-    "pet-task",
+    "pet-claude-sessions-summary",
+    "pet-claude-sessions-task",
     "settings"
   ],
   "permissions": [
