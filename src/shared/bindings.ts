@@ -11,7 +11,7 @@ export const commands = {
 	getClaudeSessions: () => typedError<ClaudeSessionInfo[], string>(__TAURI_INVOKE("get_claude_sessions")),
 	/**
 	 *  手动刷新会话列表：触发全量重扫并广播 claude-sessions:changed，
-	 *  订阅该事件的前端窗口（pet_claude_sessions_task / panel）自动收到新快照。
+	 *  订阅该事件的前端（panel 的 ClaudeSessionsPage 页、pet_claude_sessions_summary、pet_claude_sessions_task）自动收到新快照。
 	 */
 	refreshSessions: () => typedError<null, string>(__TAURI_INVOKE("refresh_sessions")),
 	/**

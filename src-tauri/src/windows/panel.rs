@@ -24,7 +24,7 @@ pub fn get_claude_sessions(
 }
 
 /// 手动刷新会话列表：触发全量重扫并广播 claude-sessions:changed，
-/// 订阅该事件的前端窗口（pet_claude_sessions_task / panel）自动收到新快照。
+/// 订阅该事件的前端（panel 的 ClaudeSessionsPage 页、pet_claude_sessions_summary、pet_claude_sessions_task）自动收到新快照。
 #[tauri::command]
 #[specta::specta]
 pub fn refresh_sessions(app: AppHandle) -> Result<(), String> {
