@@ -1,12 +1,12 @@
 import type { ClaudeSessionInfo } from '@src/shared/bindings';
 import { Box } from '@mui/material';
-import { sortClaudeSessions } from '@src/shared/sessionStatus';
+import { sortClaudeSessions } from '@src/shared/claudeSessionStatus';
 import ClaudeSessionCard from './ClaudeSessionCard';
 import EmptyState from './EmptyState';
 
 interface ClaudeSessionListProps {
-  // 全量会话快照（Dead 理论上不出现，后端 discover 已过滤）。列表内按 STATUS_PRIORITY
-  // 排序（SSOT: sessionStatus.ts）：Waiting > Busy > GitPending > Idle > Dead。
+  // 全量会话快照（Dead 理论上不出现，后端 discover 已过滤）。列表内按 CLAUDE_SESSION_STATUS_PRIORITY
+  // 排序（SSOT: claudeSessionStatus.ts）：Waiting > Busy > GitPending > Idle > Dead。
   sessions: ClaudeSessionInfo[];
   onOpenTerminal: (pid: number) => void;
 }

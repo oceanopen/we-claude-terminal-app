@@ -11,12 +11,12 @@ import {
   Typography,
 } from '@mui/material';
 import { commands } from '@src/shared/bindings';
+import { countAttentionClaudeSessions } from '@src/shared/claudeSessionStatus';
 import { unwrap } from '@src/shared/commands';
 import {
   EVENT_CLAUDE_SESSION_NAV_FAILED,
   EVENT_CLAUDE_SESSIONS_CHANGED,
 } from '@src/shared/events';
-import { countActiveClaudeSessions } from '@src/shared/sessionStatus';
 import { listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -108,9 +108,8 @@ function ClaudeSessionsPage() {
   }, [t]);
 
   // 页面展示全部会话（Dead 理论上不出现），ClaudeSessionList 内按优先级排序。
-  // summary 的"活跃"计数仍用 ACTIVE 口径（运行中 Busy+Waiting），
-  // 与 pet_task 的 ATTENTION 口径（含 GitPending）分工——panel 看运行数，pet_task 看待办数。
-  const activeCount = countActiveClaudeSessions(sessions);
+  // summary 计数与 pet_task 对齐，统一用 ATTENTION 口径（Busy+Waiting+GitPending 待关注）。
+  const attentionCount = countAttentionClaudeSessions(sessions);
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -125,7 +124,7 @@ function ClaudeSessionsPage() {
         }}
       >
         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {t('claudeSessions:summary', { total: sessions.length, active: activeCount })}
+          {t('claudeSessions:summary', { total: sessions.length, attention: attentionCount })}
         </Typography>
         <Box sx={{ flex: 1 }} />
         <IconButton size="small" onClick={handleRefresh} disabled={refreshing} aria-label="refresh">

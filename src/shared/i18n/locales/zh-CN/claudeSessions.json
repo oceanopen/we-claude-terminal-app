@@ -1,8 +1,8 @@
 {
-  "summary": "共 {{total}} 个会话  /  {{active}} 个活跃",
+  "summary": "共 {{total}} 个会话  /  {{attention}} 个待关注",
   "empty": {
-    "title": "暂无活跃会话",
-    "desc": "正在运行的 Claude Code 会话将显示在此处"
+    "title": "暂无会话",
+    "desc": "Claude Code 会话将显示在此处"
   },
   "error": {
     "title": "加载会话失败",

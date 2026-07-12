@@ -13,8 +13,8 @@ import {
 } from '@mui/material';
 import vscodeIconSvg from '@src/assets/vscode.svg?raw';
 import { commands } from '@src/shared/bindings';
+import { CLAUDE_SESSION_STATUS_COLOR, CLAUDE_SESSION_STATUS_I18N_KEY } from '@src/shared/claudeSessionStatus';
 import { unwrap } from '@src/shared/commands';
-import { STATUS_COLOR, STATUS_I18N_KEY } from '@src/shared/sessionStatus';
 import { formatDate, formatRelativeTime } from '@src/shared/time';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -74,12 +74,12 @@ function ClaudeSessionCard({ session, onOpenTerminal }: ClaudeSessionCardProps) 
         sx={{ '& .MuiCardHeader-action': { alignSelf: 'center', mt: 0 } }}
         action={(
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: STATUS_COLOR[session.status] }} />
+            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: CLAUDE_SESSION_STATUS_COLOR[session.status] }} />
             <Typography
               variant="caption"
-              sx={{ color: STATUS_COLOR[session.status], fontWeight: 700, fontSize: '0.7rem' }}
+              sx={{ color: CLAUDE_SESSION_STATUS_COLOR[session.status], fontWeight: 700, fontSize: '0.7rem' }}
             >
-              {t(STATUS_I18N_KEY[session.status])}
+              {t(CLAUDE_SESSION_STATUS_I18N_KEY[session.status])}
             </Typography>
           </Box>
         )}

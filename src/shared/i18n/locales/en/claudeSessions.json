@@ -1,8 +1,8 @@
 {
-  "summary": "Total {{total}} sessions / {{active}} active",
+  "summary": "Total {{total}} sessions / {{attention}} pending",
   "empty": {
-    "title": "No active sessions",
-    "desc": "Running Claude Code sessions will appear here"
+    "title": "No sessions",
+    "desc": "Claude Code sessions will appear here"
   },
   "error": {
     "title": "Failed to load sessions",

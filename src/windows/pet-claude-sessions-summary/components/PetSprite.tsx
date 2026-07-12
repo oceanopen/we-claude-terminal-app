@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import { Branch } from '@icon-park/react';
 import { Autorenew, Bedtime, Notifications, Schedule } from '@mui/icons-material';
 import { Box } from '@mui/material';
-import { STATUS_COLOR } from '@src/shared/sessionStatus';
+import { CLAUDE_SESSION_STATUS_COLOR } from '@src/shared/claudeSessionStatus';
 import '@icon-park/react/styles/index.css';
 
 interface PetSpriteProps {
@@ -14,7 +14,7 @@ interface PetSpriteProps {
 // 各状态对应的图标渲染函数。MUI 图标（Autorenew/Notifications/Schedule/Bedtime）走 sx；
 // GitPending 用 IconPark 的 Branch（git 分支图标，outline 线性风格），它走 size/fill/theme，
 // 故用渲染函数记录统一处理不同图标 API，避免 JSX 内分支。
-// 颜色统一跟随 STATUS_COLOR：GitPending 也是 info 蓝（与边框/徽章一致）。
+// 颜色统一跟随 CLAUDE_SESSION_STATUS_COLOR：GitPending 也是 info 蓝（与边框/徽章一致）。
 // IconPark 图标默认主题 outline，按需 deep import（@icon-park/react/es/icons/Branch）最小化打包。
 const renderIcon: Record<ClaudeSessionStatus, (color: string) => ReactElement> = {
   Busy: color => <Autorenew sx={{ color, fontSize: 56 }} />,
@@ -25,7 +25,7 @@ const renderIcon: Record<ClaudeSessionStatus, (color: string) => ReactElement> =
 };
 
 function PetSprite({ status, count }: PetSpriteProps) {
-  const color = STATUS_COLOR[status];
+  const color = CLAUDE_SESSION_STATUS_COLOR[status];
 
   return (
     <Box

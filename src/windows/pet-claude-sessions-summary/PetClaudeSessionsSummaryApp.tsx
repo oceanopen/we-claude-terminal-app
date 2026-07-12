@@ -1,5 +1,6 @@
 import type { ClaudeSessionInfo, ClaudeSessionStatus } from '@src/shared/bindings';
 import { commands } from '@src/shared/bindings';
+import { CLAUDE_SESSION_STATUS_PRIORITY, countAttentionClaudeSessions } from '@src/shared/claudeSessionStatus';
 import { unwrap } from '@src/shared/commands';
 import {
   DEFAULT_PET_DRAGGABLE,
@@ -8,14 +9,13 @@ import {
   PET_CLAUDE_SESSIONS_SUMMARY_DRAGGABLE_KEY,
 } from '@src/shared/config';
 import { EVENT_CLAUDE_SESSIONS_CHANGED } from '@src/shared/events';
-import { countAttentionClaudeSessions, STATUS_PRIORITY } from '@src/shared/sessionStatus';
 import { useConfigValue } from '@src/shared/useConfigValue';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useCallback, useEffect, useState } from 'react';
 import PetSprite from './components/PetSprite';
 
-// 状态聚合：取所有会话中"最需关注"的那个作为桌宠展示态（优先级 SSOT: sessionStatus.ts，
+// 状态聚合：取所有会话中"最需关注"的那个作为桌宠展示态（优先级 SSOT: claudeSessionStatus.ts，
 // Waiting > Busy > GitPending > Idle > Dead）。GitPending 排在 Idle 前：有未提交改动的空闲
 // 会话比纯空闲更值得提醒。空列表时为 Dead（无活跃会话的休眠态）。
 function aggregateStatus(sessions: ClaudeSessionInfo[]): { status: ClaudeSessionStatus; count: number } {
@@ -23,7 +23,7 @@ function aggregateStatus(sessions: ClaudeSessionInfo[]): { status: ClaudeSession
     return { status: 'Dead', count: 0 };
   }
   const top = [...sessions].sort(
-    (a, b) => STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status],
+    (a, b) => CLAUDE_SESSION_STATUS_PRIORITY[a.status] - CLAUDE_SESSION_STATUS_PRIORITY[b.status],
   )[0];
   // 数量口径：待关注会话（Busy+Waiting+GitPending），驱动徽章数字与 pet_task 显隐。
   // 含 GitPending：用户 commit 后空闲会话仍需提示。top.status 仍看全部会话，

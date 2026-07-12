@@ -2,12 +2,12 @@ import type { ClaudeSessionInfo, NavErr } from '@src/shared/bindings';
 import { Autorenew as AutorenewIcon } from '@mui/icons-material';
 import { Box, IconButton, List, Paper, Snackbar, Typography } from '@mui/material';
 import { commands } from '@src/shared/bindings';
+import { isAttentionClaudeSession, sortClaudeSessions } from '@src/shared/claudeSessionStatus';
 import { unwrap } from '@src/shared/commands';
 import {
   EVENT_CLAUDE_SESSION_NAV_FAILED,
   EVENT_CLAUDE_SESSIONS_CHANGED,
 } from '@src/shared/events';
-import { isAttentionClaudeSession, sortClaudeSessions } from '@src/shared/sessionStatus';
 import { listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -15,7 +15,7 @@ import ClaudeSessionItem from './components/ClaudeSessionItem';
 import PetClaudeSessionsTaskEmptyState from './components/PetClaudeSessionsTaskEmptyState';
 
 // 排序优先级 SSOT（Waiting > Busy > GitPending > Idle > Dead）与 sortClaudeSessions
-// 均收敛在 sessionStatus.ts，与 ClaudeSessionList / PetClaudeSessionsSummaryApp 共用。
+// 均收敛在 claudeSessionStatus.ts，与 ClaudeSessionList / PetClaudeSessionsSummaryApp 共用。
 
 // 与 ClaudeSessionsPage 共用的 NavErr → toast i18n key 映射（保持两端错误文案一致）。
 function navErrToToastKey(err: NavErr): { key: string; opts?: Record<string, unknown> } {

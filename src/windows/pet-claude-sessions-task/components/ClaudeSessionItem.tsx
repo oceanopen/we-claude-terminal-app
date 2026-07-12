@@ -1,9 +1,9 @@
 import type { ClaudeSessionInfo, TerminalApp } from '@src/shared/bindings';
 import { Box, ListItemButton, Typography } from '@mui/material';
-import { STATUS_COLOR, STATUS_I18N_KEY } from '@src/shared/sessionStatus';
+import { CLAUDE_SESSION_STATUS_COLOR, CLAUDE_SESSION_STATUS_I18N_KEY } from '@src/shared/claudeSessionStatus';
 import { useTranslation } from 'react-i18next';
 
-// status → i18n key 映射 SSOT（sessionStatus.ts，复用 claudeSessions:status.* 文案），与 ClaudeSessionCard 共用。
+// status → i18n key 映射 SSOT（claudeSessionStatus.ts，复用 claudeSessions:status.* 文案），与 ClaudeSessionCard 共用。
 
 // 暂不支持跳转的宿主终端（与 ClaudeSessionCard 保持一致，禁用点击）。
 const UNSUPPORTED_HOST: TerminalApp[] = ['IntelliJ', 'Unknown'];
@@ -16,7 +16,7 @@ interface ClaudeSessionItemProps {
 function ClaudeSessionItem({ session, onClick }: ClaudeSessionItemProps) {
   const { t } = useTranslation();
   const unsupported = UNSUPPORTED_HOST.includes(session.hostApp);
-  const color = STATUS_COLOR[session.status];
+  const color = CLAUDE_SESSION_STATUS_COLOR[session.status];
 
   return (
     <ListItemButton
@@ -48,7 +48,7 @@ function ClaudeSessionItem({ session, onClick }: ClaudeSessionItemProps) {
           variant="caption"
           sx={{ color, fontWeight: 700, fontSize: '0.7rem' }}
         >
-          {t(STATUS_I18N_KEY[session.status])}
+          {t(CLAUDE_SESSION_STATUS_I18N_KEY[session.status])}
         </Typography>
       </Box>
     </ListItemButton>

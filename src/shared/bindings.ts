@@ -42,7 +42,7 @@ export const commands = {
 	 *  否则 hide。显隐主导权在 pet 前端（基于 claude-sessions:changed payload 的 count），
 	 *  本命令作为前端驱动入口；pet 显隐命令也调用它做联动兜底。
 	 * 
-	 *  待关注会话口径与前端 isAttentionClaudeSession / countAttentionClaudeSessions 一致（SSOT: sessionStatus.ts）。
+	 *  待关注会话口径与前端 isAttentionClaudeSession / countAttentionClaudeSessions 一致（SSOT: claudeSessionStatus.ts）。
 	 *  含 GitPending：用户 commit 后空闲会话仍需展示"待提交"，与"仅活跃"语义升级为"待关注"。
 	 */
 	showPetClaudeSessionsTaskWindow: () => typedError<null, string>(__TAURI_INVOKE("show_pet_claude_sessions_task_window")),
