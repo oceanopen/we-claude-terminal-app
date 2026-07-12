@@ -1,6 +1,6 @@
 import type { NavErr, SessionInfo, SessionStatus } from '@src/shared/bindings';
 import { Autorenew as AutorenewIcon } from '@mui/icons-material';
-import { Box, Button, IconButton, List, Paper, Snackbar, Typography } from '@mui/material';
+import { Box, IconButton, List, Paper, Snackbar, Typography } from '@mui/material';
 import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
 import {
@@ -142,12 +142,6 @@ function PetTaskApp() {
     };
   }, []);
 
-  const handleShowMore = useCallback(() => {
-    unwrap(commands.showMonitorWindow()).catch((e) => {
-      console.warn('[pet-task] show monitor failed', e);
-    });
-  }, []);
-
   // 仅展示活跃会话（Busy+Waiting），数量与桌宠徽章一致。
   const activeSessions = sortSessions(sessions.filter(isActiveSession));
 
@@ -206,19 +200,6 @@ function PetTaskApp() {
               ))}
             </List>
           )}
-      <Box
-        sx={{
-          flexShrink: 0,
-          borderTop: 1,
-          borderColor: 'divider',
-          px: 1,
-          py: 0.5,
-        }}
-      >
-        <Button fullWidth size="small" onClick={handleShowMore} sx={{ fontSize: 11 }}>
-          {t('pet:task.more')}
-        </Button>
-      </Box>
       <Snackbar
         open={toast !== null}
         message={toast ?? ''}
