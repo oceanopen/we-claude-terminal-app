@@ -24,12 +24,14 @@ export const commands = {
 	/**
 	 *  用指定编辑器打开项目目录。
 	 * 
-	 *  macOS GUI 应用从 Dock/Finder 启动时继承的 PATH 仅 `/usr/bin:/bin:/usr/sbin:/sbin`，
+	 *  **macOS**：GUI 应用从 Dock/Finder 启动时继承的 PATH 仅 `/usr/bin:/bin:/usr/sbin:/sbin`，
 	 *  不含 `/usr/local/bin`——直接 spawn `code` / `idea` CLI 会 ENOENT（用户在终端手动执行
 	 *  `code` 能用是因为 shell 读 ~/.zshrc 补全了 PATH；从 .app bundle 启动则不走 shell 流程）。
+	 *  改用 macOS 原生 `open -a <App>`：`open` 在 /usr/bin 不依赖 PATH，由 LaunchServices 解析
+	 *  应用。IDEA 应用名因版本而异（CE/Ultimate/EDU），依次尝试候选名，首个成功即返回。
 	 * 
-	 *  改用 macOS 原生 `open -a <App>`：`open` 在 /usr/bin 不依赖 PATH，由 LaunchServices
-	 *  解析应用。IDEA 应用名因版本而异（CE/Ultimate/EDU），依次尝试候选名，首个成功即返回。
+	 *  **Windows / Linux**：GUI 应用继承的 PATH 通常含编辑器安装目录（VSCode 安装时默认勾选
+	 *  Add to PATH，IDEA 由 JetBrains Toolbox 创建 shell link），直接走 `code` / `idea` CLI 即可。
 	 * 
 	 *  editor 仅允许 "vscode" / "idea"；应用未安装 / 启动失败返回 Err(String)，前端 warn。
 	 */
