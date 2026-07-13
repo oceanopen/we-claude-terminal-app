@@ -22,9 +22,16 @@ export const commands = {
 	 */
 	navigateToClaudeSession: (pid: number) => typedError<null, string>(__TAURI_INVOKE("navigate_to_claude_session", { pid })),
 	/**
-	 *  用指定编辑器 CLI 打开项目目录。editor 仅允许 "vscode" / "idea" 两个枚举值，
-	 *  映射到 code / idea 命令；spawn 不阻塞（编辑器是长期运行的 GUI 进程）。
-	 *  命令不存在 / 启动失败返回 Err(String)，前端自行 warn 或提示。
+	 *  用指定编辑器打开项目目录。
+	 * 
+	 *  macOS GUI 应用从 Dock/Finder 启动时继承的 PATH 仅 `/usr/bin:/bin:/usr/sbin:/sbin`，
+	 *  不含 `/usr/local/bin`——直接 spawn `code` / `idea` CLI 会 ENOENT（用户在终端手动执行
+	 *  `code` 能用是因为 shell 读 ~/.zshrc 补全了 PATH；从 .app bundle 启动则不走 shell 流程）。
+	 * 
+	 *  改用 macOS 原生 `open -a <App>`：`open` 在 /usr/bin 不依赖 PATH，由 LaunchServices
+	 *  解析应用。IDEA 应用名因版本而异（CE/Ultimate/EDU），依次尝试候选名，首个成功即返回。
+	 * 
+	 *  editor 仅允许 "vscode" / "idea"；应用未安装 / 启动失败返回 Err(String)，前端 warn。
 	 */
 	openInEditor: (editor: string, cwd: string) => typedError<null, string>(__TAURI_INVOKE("open_in_editor", { editor, cwd })),
 	/**

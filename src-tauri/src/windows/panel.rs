@@ -72,28 +72,46 @@ pub fn navigate_to_claude_session(pid: u32, app: AppHandle) -> Result<(), String
     Ok(())
 }
 
-/// 用指定编辑器 CLI 打开项目目录。editor 仅允许 "vscode" / "idea" 两个枚举值，
-/// 映射到 code / idea 命令；spawn 不阻塞（编辑器是长期运行的 GUI 进程）。
-/// 命令不存在 / 启动失败返回 Err(String)，前端自行 warn 或提示。
+/// 用指定编辑器打开项目目录。
+///
+/// macOS GUI 应用从 Dock/Finder 启动时继承的 PATH 仅 `/usr/bin:/bin:/usr/sbin:/sbin`，
+/// 不含 `/usr/local/bin`——直接 spawn `code` / `idea` CLI 会 ENOENT（用户在终端手动执行
+/// `code` 能用是因为 shell 读 ~/.zshrc 补全了 PATH；从 .app bundle 启动则不走 shell 流程）。
+///
+/// 改用 macOS 原生 `open -a <App>`：`open` 在 /usr/bin 不依赖 PATH，由 LaunchServices
+/// 解析应用。IDEA 应用名因版本而异（CE/Ultimate/EDU），依次尝试候选名，首个成功即返回。
+///
+/// editor 仅允许 "vscode" / "idea"；应用未安装 / 启动失败返回 Err(String)，前端 warn。
 #[tauri::command]
 #[specta::specta]
 pub fn open_in_editor(editor: String, cwd: String) -> Result<(), String> {
-    let cmd = match editor.as_str() {
-        "vscode" => "code",
-        "idea" => "idea",
+    let apps: &[&str] = match editor.as_str() {
+        "vscode" => &["Visual Studio Code"],
+        "idea" => &[
+            "IntelliJ IDEA CE",
+            "IntelliJ IDEA",
+            "IntelliJ IDEA Ultimate",
+            "IntelliJ IDEA EDU",
+        ],
         other => return Err(format!("unsupported editor: {other}")),
     };
-    std::process::Command::new(cmd)
-        .arg(&cwd)
-        // GUI 编辑器（IDEA / VSCode）启动会把自身日志写到继承的 stdout/stderr，
-        // 污染 we-claude-terminal 的终端（IDEA 尤其嘈杂：Kotlin/Maven 插件 WARN、
-        // Gradle daemon 失败堆栈等）。重定向到 null 让子进程静默。
-        .stdin(std::process::Stdio::null())
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn()
-        .map_err(|e| format!("failed to launch {cmd}: {e}"))?;
-    Ok(())
+    for app in apps {
+        // open 启动 GUI 应用后立即返回（不阻塞等应用退出）；应用不存在则 exit code 非零。
+        // stdio null：GUI 编辑器（尤其 IDEA）会把 Kotlin/Maven/Gradle 日志写到继承的
+        // stdout/stderr 污染 we-claude-terminal 终端，重定向到 null 让子进程静默。
+        let ok = std::process::Command::new("open")
+            .args(["-a", app, &cwd])
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false);
+        if ok {
+            return Ok(());
+        }
+    }
+    Err(format!("failed to launch {editor}: no matching app found"))
 }
 
 /// 判断 cwd 是否 Java 项目（Maven pom.xml 或 Gradle build.gradle/build.gradle.kts）。
