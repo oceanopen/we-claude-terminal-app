@@ -61,6 +61,45 @@ fn drag_menu_key(app: &AppHandle) -> &'static str {
     }
 }
 
+/// 查询当前 Control 键是否被按下。
+///
+/// Tauri 2.11.2 / tray-icon 0.23.1 的 TrayIconEvent::Click 不携带任何修饰键信息，
+/// 因此托盘左键单击时无法从事件本身判断 Ctrl 状态，必须在触发瞬间主动查询键盘状态。
+///
+/// 平台说明：
+/// - macOS：CGEventSourceFlagsState 读取硬件级修饰键状态（查询式 API，无需辅助功能权限）。
+/// - Windows：GetAsyncKeyState 异步读取按键状态，最高位为 1 表示当前按下。
+/// - Linux：Tauri 托盘 show_menu 本身不支持，返回 false，维持原左键行为。
+fn control_key_pressed() -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        // kCGEventSourceStateHIDSystemState = 1（硬件级状态，最即时）；
+        // kCGEventFlagMaskControl = 1 << 18 = 0x40000。
+        #[link(name = "CoreGraphics", kind = "framework")]
+        unsafe extern "C" {
+            fn CGEventSourceFlagsState(state_id: i32, flags: u64) -> u64;
+        }
+        const STATE_HID: i32 = 1;
+        const MASK_CONTROL: u64 = 1 << 18;
+        unsafe { CGEventSourceFlagsState(STATE_HID, MASK_CONTROL) & MASK_CONTROL != 0 }
+    }
+    #[cfg(target_os = "windows")]
+    {
+        #[link(name = "user32")]
+        unsafe extern "system" {
+            fn GetAsyncKeyState(v_key: i32) -> i16;
+        }
+        const VK_CONTROL: i32 = 0x11;
+        // 返回值最高位（bit 15）为 1 表示按键当前处于按下状态，i16 解读即为负数。
+        unsafe { GetAsyncKeyState(VK_CONTROL) < 0 }
+    }
+    // Linux 等其他平台：托盘不支持编程式弹菜单，统一不识别 Ctrl。
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        false
+    }
+}
+
 pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // dev 模式用带 DEV 角标的图标，避免本地调试版与正式安装版在状态栏混淆。
     // include_bytes! 返回编译期固定大小数组 &[u8; N]，两套图标字节数不同，
@@ -143,6 +182,8 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         .show_menu_on_left_click(false)
         .on_tray_icon_event(|tray, event| {
             // 左键单击打开控制台窗口；右键由系统默认弹出菜单（无需处理）。
+            // Ctrl+左键单击：与原生右键效果一致，弹出托盘菜单。click 事件本身不带修饰键，
+            // 故在触发瞬间查询 Control 键状态：按下则走弹菜单分支，否则走打开控制台分支。
             // 注意：本回调首参是 &TrayIcon（非 &AppHandle），需经 app_handle() 取得句柄。
             if let TrayIconEvent::Click {
                 button: MouseButton::Left,
@@ -150,6 +191,21 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                 ..
             } = event
             {
+                if control_key_pressed() {
+                    // with_inner_tray_icon → show_menu 是弹菜单的唯一入口；其内部用
+                    // run_on_main_thread + 同步阻塞等待结果。本回调可能在主线程触发，
+                    // 直接调用会死锁。故 clone 后在独立后台线程触发：后台线程阻塞等待，
+                    // 主线程不被阻塞即可正常派发 show_menu。
+                    let tray = tray.clone();
+                    std::thread::spawn(move || {
+                        if let Err(e) = tray.with_inner_tray_icon(|inner| {
+                            inner.show_menu();
+                        }) {
+                            log::warn!("failed to show tray menu: {e}");
+                        }
+                    });
+                    return;
+                }
                 let app = tray.app_handle();
                 if let Err(e) = crate::windows::panel::show_panel_window(app.clone()) {
                     log::warn!("failed to open panel window: {e}");
