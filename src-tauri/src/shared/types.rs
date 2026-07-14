@@ -106,3 +106,37 @@ pub struct ClaudeSessionInfo {
     /// 无法识别时为空字符串。
     pub tty: String,
 }
+
+// ============================================================
+// 本地仓库管理：panel 窗口「本地仓库」菜单
+// ============================================================
+
+/// 本地仓库记录。持久化在 SQLite `repositories` 表（见 shared/repositories.rs）。
+/// RepositoriesPage 渲染 RepositoryCard 列表的数据源。
+///
+/// `name` / `dir` 由用户在添加表单填写；`remote_url` / `branch` / `last_commit_*`
+/// 由 `parse_repo_info` 跑 git CLI 解析，add/refresh 时写入；`updated_at` 为最近一次刷新时间。
+/// 解析失败的字段留空字符串 / 0 时间戳，前端据 `card.noRemote` / `card.noCommit` 兜底文案。
+#[derive(Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct Repository {
+    /// 自增主键（SQLite INTEGER PRIMARY KEY）。用 i32 而非 i64：本地仓库列表规模远小于 2^31，
+    /// 且 specta 禁止裸 i64 跨边界导出（BigInt 精度），i32 映射 TS number 无需 Number 注解。
+    pub id: i32,
+    /// 用户填写的仓库名称（展示用，可重复）。
+    pub name: String,
+    /// 仓库目录绝对路径（UNIQUE，严格校验须存在且为 git 仓库）。
+    pub dir: String,
+    /// `git remote get-url origin` 结果，无 origin 时为空字符串。
+    pub remote_url: String,
+    /// `git rev-parse --abbrev-ref HEAD` 结果，detached HEAD / 无提交时为空字符串。
+    pub branch: String,
+    /// 最近一次提交时间（毫秒时间戳，`git log -1 --format=%ct` ×1000）。无提交时为 0。
+    #[specta(type = Number)]
+    pub last_commit_at: i64,
+    /// 最近一次提交的标题（`git log -1 --format=%s`）。无提交时为空字符串。
+    pub last_commit_message: String,
+    /// 本记录最近一次刷新时间（毫秒时间戳），add/refresh 时写入。
+    #[specta(type = Number)]
+    pub updated_at: i64,
+}

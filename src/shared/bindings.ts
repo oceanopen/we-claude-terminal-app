@@ -69,6 +69,21 @@ export const commands = {
 	showSettingsWindow: () => typedError<null, string>(__TAURI_INVOKE("show_settings_window")),
 	getConfig: (key: string) => typedError<string | null, string>(__TAURI_INVOKE("get_config", { key })),
 	setConfig: (key: string, value: string) => typedError<null, string>(__TAURI_INVOKE("set_config", { key, value })),
+	/**  列出全部仓库（按最近提交时间倒序）。零 git 解析，即时返回。 */
+	listRepositories: () => typedError<Repository[], string>(__TAURI_INVOKE("list_repositories")),
+	/**
+	 *  添加仓库。**严格校验**：名称/目录非空、目录为存在的绝对路径、且为 git 仓库；
+	 *  dir 唯一（重复返回哨兵 "dir-exists"）。校验通过后解析 git 信息并入库，返回新仓库。
+	 */
+	addRepository: (name: string, dir: string) => typedError<Repository, string>(__TAURI_INVOKE("add_repository", { name, dir })),
+	/**  删除仓库。 */
+	deleteRepository: (id: number) => typedError<null, string>(__TAURI_INVOKE("delete_repository", { id })),
+	/**  刷新单个仓库：重解析 git 信息并更新，返回新数据。 */
+	refreshRepository: (id: number) => typedError<Repository, string>(__TAURI_INVOKE("refresh_repository", { id })),
+	/**  全量刷新：遍历重解析全部仓库并更新，返回新列表。 */
+	refreshAllRepositories: () => typedError<Repository[], string>(__TAURI_INVOKE("refresh_all_repositories")),
+	/**  用系统文件管理器打开目录。dir 必须为存在的绝对路径。 */
+	openInFileManager: (dir: string) => typedError<null, string>(__TAURI_INVOKE("open_in_file_manager", { dir })),
 };
 
 /* Types */
@@ -145,6 +160,36 @@ export type NavErr =
 { kind: "sessionNotFound" } | 
 /**  其他 IO 错误。 */
 { kind: "io"; message: string };
+
+/**
+ *  本地仓库记录。持久化在 SQLite `repositories` 表（见 shared/repositories.rs）。
+ *  RepositoriesPage 渲染 RepositoryCard 列表的数据源。
+ * 
+ *  `name` / `dir` 由用户在添加表单填写；`remote_url` / `branch` / `last_commit_*`
+ *  由 `parse_repo_info` 跑 git CLI 解析，add/refresh 时写入；`updated_at` 为最近一次刷新时间。
+ *  解析失败的字段留空字符串 / 0 时间戳，前端据 `card.noRemote` / `card.noCommit` 兜底文案。
+ */
+export type Repository = {
+	/**
+	 *  自增主键（SQLite INTEGER PRIMARY KEY）。用 i32 而非 i64：本地仓库列表规模远小于 2^31，
+	 *  且 specta 禁止裸 i64 跨边界导出（BigInt 精度），i32 映射 TS number 无需 Number 注解。
+	 */
+	id: number,
+	/**  用户填写的仓库名称（展示用，可重复）。 */
+	name: string,
+	/**  仓库目录绝对路径（UNIQUE，严格校验须存在且为 git 仓库）。 */
+	dir: string,
+	/**  `git remote get-url origin` 结果，无 origin 时为空字符串。 */
+	remoteUrl: string,
+	/**  `git rev-parse --abbrev-ref HEAD` 结果，detached HEAD / 无提交时为空字符串。 */
+	branch: string,
+	/**  最近一次提交时间（毫秒时间戳，`git log -1 --format=%ct` ×1000）。无提交时为 0。 */
+	lastCommitAt: number,
+	/**  最近一次提交的标题（`git log -1 --format=%s`）。无提交时为空字符串。 */
+	lastCommitMessage: string,
+	/**  本记录最近一次刷新时间（毫秒时间戳），add/refresh 时写入。 */
+	updatedAt: number,
+};
 
 /**
  *  宿主终端应用。通过 `ps -p <ppid>` 链式反查 Claude 进程的祖先进程名得出。

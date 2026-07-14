@@ -1,5 +1,6 @@
 {
   "menu": {
-    "claudeSessions": "Claude Sessions"
+    "claudeSessions": "Claude Sessions",
+    "repositories": "Repositories"
   }
 }

@@ -1,5 +1,6 @@
 {
   "menu": {
-    "claudeSessions": "Claude 会话监听"
+    "claudeSessions": "Claude 会话监听",
+    "repositories": "本地仓库"
   }
 }

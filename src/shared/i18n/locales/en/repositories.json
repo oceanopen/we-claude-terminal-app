@@ -1,0 +1,66 @@
+{
+  "summary": "{{total}} repositories",
+  "search": {
+    "name": "Search by name",
+    "remote": "Search by remote URL"
+  },
+  "actions": {
+    "add": "Add Repository",
+    "refresh": "Refresh"
+  },
+  "add": {
+    "title": "Add Local Repository",
+    "name": "Repository name",
+    "namePlaceholder": "Enter repository name",
+    "dir": "Repository directory",
+    "dirPlaceholder": "Select or enter directory (absolute path)",
+    "browse": "Browse",
+    "confirm": "OK",
+    "cancel": "Cancel"
+  },
+  "delete": {
+    "title": "Delete Repository",
+    "confirmMsg": "Delete repository \"{{name}}\"? This cannot be undone.",
+    "confirm": "Delete",
+    "cancel": "Cancel"
+  },
+  "card": {
+    "remoteLabel": "Remote",
+    "branchLabel": "Branch",
+    "commitLabel": "Last commit",
+    "noRemote": "No remote configured",
+    "noBranch": "No branch",
+    "noCommit": "No commits",
+    "openFolder": "Open in Folder",
+    "refresh": "Refresh",
+    "delete": "Delete"
+  },
+  "toast": {
+    "added": "Repository \"{{name}}\" added",
+    "addFailed": "Failed to add: {{message}}",
+    "notGitRepo": "Directory does not exist or is not a git repository",
+    "dirExists": "This directory has already been added",
+    "deleted": "Repository deleted",
+    "deleteFailed": "Failed to delete: {{message}}",
+    "refreshed": "Repository \"{{name}}\" refreshed",
+    "refreshFailed": "Failed to refresh: {{message}}",
+    "refreshAllDone": "All repositories refreshed",
+    "refreshAllFailed": "Failed to refresh all: {{message}}",
+    "openFailed": "Failed to open directory: {{message}}"
+  },
+  "empty": {
+    "title": "No local repositories",
+    "desc": "Click \"Add Repository\" to start managing",
+    "noMatch": "No repositories match your search"
+  },
+  "error": {
+    "title": "Failed to load repositories",
+    "desc": "Please try again later",
+    "retry": "Retry"
+  },
+  "time": {
+    "justNow": "just now",
+    "minutesAgo": "{{minutes}} min ago",
+    "hoursAgo": "{{hours}} h ago"
+  }
+}

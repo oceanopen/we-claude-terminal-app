@@ -55,6 +55,8 @@ tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+# 本地仓库管理：添加仓库弹窗的系统目录选择器（文件夹选择对话框）。
+tauri-plugin-dialog = "2"
 rusqlite = { version = "0.32", features = ["bundled"] }
 sys-locale = "0.3"
 notify = "6"

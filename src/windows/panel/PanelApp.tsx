@@ -1,3 +1,4 @@
+import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import SensorsOutlinedIcon from '@mui/icons-material/SensorsOutlined';
 import {
   alpha,
@@ -12,12 +13,13 @@ import {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ClaudeSessionsPage from './ClaudeSessionsPage';
+import RepositoriesPage from './RepositoriesPage';
 
 // panel 窗口（控制台）是各种场景管理页面的通用容器。
 // 左侧菜单 + 右侧内容的交互复刻自 settings 窗口（SettingsApp）：
 // useState<MenuKey> 单状态 + menuItems 配置数组驱动左侧 List + 右侧条件渲染。
-// 当前仅有 Claude 会话监听一个菜单，后续在此数组追加新菜单项即可扩展。
-type MenuKey = 'claudeSessions';
+// 当前菜单：Claude 会话监听、本地仓库管理；后续在此数组追加新菜单项即可扩展。
+type MenuKey = 'claudeSessions' | 'repositories';
 
 function PanelApp() {
   const { t } = useTranslation();
@@ -26,6 +28,7 @@ function PanelApp() {
 
   const menuItems: { key: MenuKey; label: string; icon: React.ReactNode }[] = [
     { key: 'claudeSessions', label: t('panel:menu.claudeSessions'), icon: <SensorsOutlinedIcon /> },
+    { key: 'repositories', label: t('panel:menu.repositories'), icon: <FolderOutlinedIcon /> },
   ];
 
   return (
@@ -90,6 +93,7 @@ function PanelApp() {
         }}
       >
         {activeMenu === 'claudeSessions' && <ClaudeSessionsPage />}
+        {activeMenu === 'repositories' && <RepositoriesPage />}
       </Box>
     </Box>
   );

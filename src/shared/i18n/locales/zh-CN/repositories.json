@@ -1,0 +1,66 @@
+{
+  "summary": "共 {{total}} 个仓库",
+  "search": {
+    "name": "按仓库名称搜索",
+    "remote": "按远程地址搜索"
+  },
+  "actions": {
+    "add": "添加本地仓库",
+    "refresh": "刷新"
+  },
+  "add": {
+    "title": "添加本地仓库",
+    "name": "仓库名称",
+    "namePlaceholder": "请输入仓库名称",
+    "dir": "仓库目录",
+    "dirPlaceholder": "请选择或输入仓库目录（绝对路径）",
+    "browse": "浏览",
+    "confirm": "确定",
+    "cancel": "取消"
+  },
+  "delete": {
+    "title": "删除仓库",
+    "confirmMsg": "确认删除仓库「{{name}}」？此操作不可恢复。",
+    "confirm": "删除",
+    "cancel": "取消"
+  },
+  "card": {
+    "remoteLabel": "远程",
+    "branchLabel": "分支",
+    "commitLabel": "最近提交",
+    "noRemote": "未配置远程",
+    "noBranch": "无分支",
+    "noCommit": "无提交记录",
+    "openFolder": "在文件夹中打开",
+    "refresh": "刷新",
+    "delete": "删除"
+  },
+  "toast": {
+    "added": "仓库「{{name}}」添加成功",
+    "addFailed": "添加失败：{{message}}",
+    "notGitRepo": "目录不存在或不是 git 仓库",
+    "dirExists": "该目录已添加过",
+    "deleted": "仓库已删除",
+    "deleteFailed": "删除失败：{{message}}",
+    "refreshed": "仓库「{{name}}」已刷新",
+    "refreshFailed": "刷新失败：{{message}}",
+    "refreshAllDone": "全部仓库已刷新",
+    "refreshAllFailed": "全量刷新失败：{{message}}",
+    "openFailed": "打开目录失败：{{message}}"
+  },
+  "empty": {
+    "title": "暂无本地仓库",
+    "desc": "点击「添加本地仓库」开始管理",
+    "noMatch": "没有匹配的仓库"
+  },
+  "error": {
+    "title": "加载仓库列表失败",
+    "desc": "请稍后重试",
+    "retry": "重试"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "minutesAgo": "{{minutes}} 分钟前",
+    "hoursAgo": "{{hours}} 小时前"
+  }
+}

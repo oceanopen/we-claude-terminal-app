@@ -15,18 +15,20 @@ export function formatDate(date: DateInput, pattern: string): string {
 
 /**
  * 相对时间文案（刚刚 / X 分钟前 / X 小时前），依赖调用方注入的 i18n t。
- * 用到的 i18n key：claudeSessions:time.{justNow, minutesAgo, hoursAgo}。
+ * namespace 默认 'claudeSessions'（向后兼容），用到的 i18n key：${namespace}:time.{justNow, minutesAgo, hoursAgo}。
+ * 新页面（如 repositories）传入对应命名空间即可复用，无需各自实现相对时间逻辑。
  */
 export function formatRelativeTime(
   updatedAt: number,
   t: (key: string, opts?: Record<string, unknown>) => string,
+  namespace = 'claudeSessions',
 ): string {
   const diffSec = Math.max(0, Math.floor((Date.now() - updatedAt) / 1000));
   if (diffSec < 60) {
-    return t('claudeSessions:time.justNow');
+    return t(`${namespace}:time.justNow`);
   }
   if (diffSec < 3600) {
-    return t('claudeSessions:time.minutesAgo', { minutes: Math.floor(diffSec / 60) });
+    return t(`${namespace}:time.minutesAgo`, { minutes: Math.floor(diffSec / 60) });
   }
-  return t('claudeSessions:time.hoursAgo', { hours: Math.floor(diffSec / 3600) });
+  return t(`${namespace}:time.hoursAgo`, { hours: Math.floor(diffSec / 3600) });
 }

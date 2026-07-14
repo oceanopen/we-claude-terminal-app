@@ -10,7 +10,7 @@ use tauri_specta::{collect_commands, Builder};
 // run()（注册 invoke handler）与 bin/export_bindings.rs（生成 TS 绑定）共用此函数，
 // 保证命令清单单一来源，避免两份注册表漂移。
 pub fn build_specta_builder() -> Builder<tauri::Wry> {
-    use crate::shared::types::{ConfigChangedPayload, ClaudeSessionInfo, ClaudeSessionStatus, TerminalApp, YesNo};
+    use crate::shared::types::{ConfigChangedPayload, ClaudeSessionInfo, ClaudeSessionStatus, Repository, TerminalApp, YesNo};
     use crate::terminal::NavErr;
     Builder::<tauri::Wry>::new()
         .commands(collect_commands![
@@ -30,6 +30,12 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
             windows::settings::show_settings_window,
             shared::config::get_config,
             shared::config::set_config,
+            shared::repositories::list_repositories,
+            shared::repositories::add_repository,
+            shared::repositories::delete_repository,
+            shared::repositories::refresh_repository,
+            shared::repositories::refresh_all_repositories,
+            shared::repositories::open_in_file_manager,
         ])
         // 以下类型不出现在任何 command 签名中（仅作为事件载荷或前端数据模型），
         // 用 typ 显式注册，让 specta 把它们导出到 bindings.ts 供前端复用。
@@ -39,6 +45,7 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
         .typ::<YesNo>()
         .typ::<ClaudeSessionInfo>()
         .typ::<NavErr>()
+        .typ::<Repository>()
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -49,6 +56,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(specta_builder.invoke_handler())
         .setup(move |app| {
             // macOS 隐藏 Dock 图标：将应用激活策略设为 Accessory（代理应用），
@@ -69,6 +77,8 @@ pub fn run() {
 
             shared::config::init(app)?;
             shared::state::claude_sessions::init(app)?;
+            // 本地仓库管理表（复用 config::init 建立的同一 app.db 连接，故须在 config::init 之后）。
+            shared::repositories::init(app)?;
             windows::tray::setup(app)?;
 
             // 先 rescan 填充 ClaudeSessionStore 并广播首批快照，保证后续 pet_claude_sessions_task / pet
