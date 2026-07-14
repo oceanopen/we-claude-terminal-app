@@ -14,11 +14,12 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
 use crate::shared::config::{read_config_raw, write_config_raw, ConfigState, PET_CLAUDE_SESSIONS_SUMMARY_VISIBLE_KEY};
 use crate::shared::types::YesNo;
 use crate::shared::screen::{MonitorInfo, find_monitor_for_tray};
+use crate::shared::events::EVENT_PET_CLAUDE_SESSIONS_TASK_REFIT;
 use crate::windows::pet_claude_sessions_task;
 
 /// 桌宠窗口尺寸（逻辑像素）。
@@ -127,6 +128,9 @@ pub fn ensure_pet_claude_sessions_summary_window(app: &AppHandle) -> tauri::Resu
                     if let Some(state) = app.try_state::<ConfigState>() {
                         let _ = write_config_raw(&*state, PET_CLAUDE_SESSIONS_SUMMARY_POSITION_KEY, &raw);
                     }
+                    // pet 停止移动后通知 pet_task 重新对齐到 pet 当前位置：拖拽中不刷新（防抖），
+                    // 停下来一次性定位。前端 refit 监听 → fit → position_near_pet 按 pet 当前坐标重定位。
+                    let _ = app.emit(EVENT_PET_CLAUDE_SESSIONS_TASK_REFIT, ());
                 });
             }
             tauri::WindowEvent::CloseRequested { api, .. } => {
