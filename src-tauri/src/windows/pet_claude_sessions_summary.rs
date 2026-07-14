@@ -96,6 +96,7 @@ pub fn ensure_pet_claude_sessions_summary_window(app: &AppHandle) -> tauri::Resu
         .shadow(false)
         .focused(false)
         .visible(false) // 先建后显，避免首屏白闪
+        .accept_first_mouse(true) // macOS 未聚焦时首次点击即派发，配合前端 mousedown→hover
         .build()?;
 
     let w = win.clone();

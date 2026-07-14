@@ -9,6 +9,7 @@ import {
   EVENT_CLAUDE_SESSIONS_CHANGED,
 } from '@src/shared/events';
 import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ClaudeSessionItem from './components/ClaudeSessionItem';
@@ -101,6 +102,24 @@ function PetClaudeSessionsTaskApp() {
   const handleMouseLeave = useCallback(() => {
     setHovered(false);
   }, []);
+  // 点击即高亮：未聚焦窗口的 mouseenter 不触发，mousedown 是"鼠标在窗口内"最可靠的信号。
+  const handleMouseDown = useCallback(() => {
+    setHovered(true);
+  }, []);
+  // 窗口失焦（打开新窗口 / 切换应用等）时清除 hover：失焦时鼠标常仍停在窗口内，
+  // mouseleave 不触发，需监听 Tauri focus 变化兜底。
+  useEffect(() => {
+    const unlisten = getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+      if (!focused) {
+        setHovered(false);
+      }
+    });
+    return () => {
+      unlisten
+        .then(fn => fn())
+        .catch(err => console.warn('[pet-claude-sessions-task] onFocusChanged unlisten failed:', err));
+    };
+  }, []);
 
   // 动态高度：ResizeObserver 监听 Paper 实际内容高度变化（会话增减 / 空态切换），
   // rAF 合并同帧多次回调，调 fit_pet_claude_sessions_task 让后端 set_size + 重新定位（保持与 pet 中心对齐）。
@@ -137,6 +156,7 @@ function PetClaudeSessionsTaskApp() {
       elevation={3}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
       sx={{
         width: 280,
         display: 'flex',

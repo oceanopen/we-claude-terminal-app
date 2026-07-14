@@ -86,9 +86,25 @@ function PetClaudeSessionsSummaryApp() {
   const handleMouseLeave = useCallback(() => {
     setHovered(false);
   }, []);
+  // 窗口失焦（打开新窗口 / 切换应用等）时清除 hover：失焦时鼠标常仍停在窗口内，
+  // mouseleave 不触发，需监听 Tauri focus 变化兜底。
+  useEffect(() => {
+    const unlisten = getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+      if (!focused) {
+        setHovered(false);
+      }
+    });
+    return () => {
+      unlisten
+        .then(fn => fn())
+        .catch(err => console.warn('[pet-claude-sessions-summary] onFocusChanged unlisten failed:', err));
+    };
+  }, []);
   // 开启拖拽：鼠标按下进入原生窗口拖拽（startDragging 会吞掉后续 click，故无需特殊处理）。
   // 关闭拖拽：mouseDown 空转，交由 handleClick 打开终端监控页。
   const handleMouseDown = useCallback(async () => {
+    // 点击即高亮：未聚焦窗口的 mouseenter 不触发，mousedown 是"鼠标在窗口内"最可靠的信号。
+    setHovered(true);
     if (!draggable) {
       return;
     }
