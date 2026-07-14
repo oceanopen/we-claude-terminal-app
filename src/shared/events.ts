@@ -6,3 +6,5 @@ export const EVENT_CONFIG_CHANGED = 'config-changed';
 export const EVENT_CLAUDE_SESSIONS_CHANGED = 'claude-sessions:changed';
 
 export const EVENT_CLAUDE_SESSION_NAV_FAILED = 'claude-sessions:nav-failed';
+
+export const EVENT_PET_CLAUDE_SESSIONS_TASK_REFIT = 'pet-claude-sessions-task:refit';

@@ -11,8 +11,9 @@
 //
 // 位置每次 show 时重算，跟随 pet 当前位置；左屏边缘自动翻转到 pet 右侧，Y 夹紧 work_area。
 
-use tauri::{AppHandle, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewUrl, WebviewWindowBuilder};
 
+use crate::shared::events::EVENT_PET_CLAUDE_SESSIONS_TASK_REFIT;
 use crate::shared::screen::MonitorInfo;
 use crate::shared::state::claude_sessions::ClaudeSessionStore;
 use crate::shared::types::ClaudeSessionStatus;
@@ -140,13 +141,20 @@ pub fn show_pet_claude_sessions_task_window(app: AppHandle) -> Result<(), String
         return Ok(());
     };
     if let Some(pet) = app.get_webview_window("pet-claude-sessions-summary") {
-        // show 时前端尚未 mount 测量，先用默认高度定位；前端 ResizeObserver 首回调会
-        // 通过 fit_pet_claude_sessions_task 用实际高度覆盖，保持与 pet 中心水平对齐。
-        if let Some((x, y)) = position_near_pet(&pet, PET_CLAUDE_SESSIONS_TASK_DEFAULT_HEIGHT) {
+        // 用窗口当前实际高度定位：re-show 时即上次 fit 保留的高度，避免默认高度导致的跳动；
+        // 首次 show 前端尚未测量，当前高度即默认高度，后续 ResizeObserver 首回调会用实际高度覆盖。
+        let panel_h = task_win
+            .outer_size()
+            .ok()
+            .and_then(|s| task_win.scale_factor().ok().map(|sf| s.height as f64 / sf))
+            .unwrap_or(PET_CLAUDE_SESSIONS_TASK_DEFAULT_HEIGHT);
+        if let Some((x, y)) = position_near_pet(&pet, panel_h) {
             let _ = task_win.set_position(LogicalPosition::new(x, y));
         }
     }
     let _ = task_win.show();
+    // show 后通知前端重新测量内容高度并回调 fit 刷新位置（统一可复用的重定位入口）。
+    let _ = app.emit_to(PET_CLAUDE_SESSIONS_TASK_LABEL, EVENT_PET_CLAUDE_SESSIONS_TASK_REFIT, ());
     Ok(())
 }
 

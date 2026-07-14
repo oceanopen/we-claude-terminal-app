@@ -7,6 +7,7 @@ import { unwrap } from '@src/shared/commands';
 import {
   EVENT_CLAUDE_SESSION_NAV_FAILED,
   EVENT_CLAUDE_SESSIONS_CHANGED,
+  EVENT_PET_CLAUDE_SESSIONS_TASK_REFIT,
 } from '@src/shared/events';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -121,8 +122,36 @@ function PetClaudeSessionsTaskApp() {
     };
   }, []);
 
+  // 重新测量 Paper 实际内容高度并回调 fit_pet_claude_sessions_task（set_size + 重新定位）。
+  // 可复用：ResizeObserver（内容尺寸变化）、refit 事件（show / 未来 pet 拖动跟随）均调用它。
+  const refit = useCallback(() => {
+    const root = rootRef.current;
+    if (!root) {
+      return;
+    }
+    const height = root.offsetHeight;
+    unwrap(commands.fitPetClaudeSessionsTask(height)).catch((e) => {
+      console.warn('[pet-claude-sessions-task] fitPetClaudeSessionsTask failed', e);
+    });
+  }, []);
+
+  // 监听后端 refit 请求（show_pet_claude_sessions_task_window 在 show 后 emit_to）：重新测量并刷新位置。
+  // 统一可复用入口——未来 pet 拖动跟随等"尺寸不变却需重定位"的场景也可复用同一事件。
+  useEffect(() => {
+    const unlisten = listen(EVENT_PET_CLAUDE_SESSIONS_TASK_REFIT, () => {
+      refit();
+    });
+    return () => {
+      unlisten
+        .then(fn => fn())
+        .catch((err: unknown) => {
+          console.warn('[pet-claude-sessions-task:refit] unlisten failed:', err);
+        });
+    };
+  }, [refit]);
+
   // 动态高度：ResizeObserver 监听 Paper 实际内容高度变化（会话增减 / 空态切换），
-  // rAF 合并同帧多次回调，调 fit_pet_claude_sessions_task 让后端 set_size + 重新定位（保持与 pet 中心对齐）。
+  // rAF 合并同帧多次回调后调 refit（set_size + 重新定位，保持与 pet 中心对齐）。
   // observe 后异步触发首回调，等价于 mount 即 fit，覆盖 show 时用的默认高度。
   useEffect(() => {
     const root = rootRef.current;
@@ -132,19 +161,14 @@ function PetClaudeSessionsTaskApp() {
     let raf = 0;
     const observer = new ResizeObserver(() => {
       cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const height = root.offsetHeight;
-        unwrap(commands.fitPetClaudeSessionsTask(height)).catch((e) => {
-          console.warn('[pet-claude-sessions-task] fitPetClaudeSessionsTask failed', e);
-        });
-      });
+      raf = requestAnimationFrame(refit);
     });
     observer.observe(root);
     return () => {
       cancelAnimationFrame(raf);
       observer.disconnect();
     };
-  }, []);
+  }, [refit]);
 
   // 展示待关注会话（Busy+Waiting+GitPending）：运行中、等输入、或空闲但有未提交改动。
   // 数量与桌宠徽章一致（ATTENTION 口径），驱动本面板显隐。
