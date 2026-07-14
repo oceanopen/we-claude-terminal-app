@@ -44,6 +44,24 @@ function PetSprite({ status, count }: PetSpriteProps) {
       }}
     >
       {renderIcon[status](color)}
+      {import.meta.env.DEV && (
+        <Box
+          sx={{
+            // dev 构建标记：圆内右下角空隙处的红色小圆 + 白边，样式对齐托盘 dev 角标
+            // (src/assets/app-icon-dev.svg)。仅 dev 模式显示，避免本地调试版与正式版混淆；
+            // 落在圆内、icon 右下方空隙，不挡 icon，与会话数徽章错位不重叠。
+            position: 'absolute',
+            bottom: 14,
+            right: 14,
+            width: 12,
+            height: 12,
+            borderRadius: '50%',
+            bgcolor: '#EF4444',
+            border: '2px solid #fff',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+          }}
+        />
+      )}
       {count > 0 && (
         <Box
           sx={{
