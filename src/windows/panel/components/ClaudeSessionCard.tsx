@@ -99,7 +99,7 @@ function ClaudeSessionCard({ session, onOpenTerminal }: ClaudeSessionCardProps) 
         >
           {session.cwd}
         </Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.5 }}>
           {formatRelativeTime(session.updatedAt, t)} | {formatDate(session.updatedAt, 'YYYY-MM-DD HH:mm:ss')}
         </Typography>
       </CardContent>
