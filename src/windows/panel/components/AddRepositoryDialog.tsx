@@ -18,22 +18,24 @@ import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-// 添加本地仓库弹窗（项目首个 Dialog 用法）。
-// 名称 + 目录（目录带「浏览」按钮调系统文件夹选择器），提交时后端严格校验
-// （目录须存在且为 git 仓库），失败以内联 Alert 展示错误信息并保留弹窗供用户修正。
-// 成功后回调 onAdded(repo) 由父组件刷新列表 + toast，并关闭弹窗。
+// 添加/编辑本地仓库弹窗。
+// 传入 repo 时为编辑模式：标题改为"编辑仓库"、ID 只读展示、name/dir 默认反显、
+// 提交调用 updateRepository；不传则为添加模式，行为不变。
 //
 // 由父组件按需挂载（{open && <AddRepositoryDialog/>}）：每次打开都是全新 useState 初值，
 // 无需重置 effect；关闭即卸载。
 interface AddRepositoryDialogProps {
   onClose: () => void;
   onAdded: (repo: Repository) => void;
+  onUpdated?: (repo: Repository) => void;
+  repo?: Repository;
 }
 
-function AddRepositoryDialog({ onClose, onAdded }: AddRepositoryDialogProps) {
+function AddRepositoryDialog({ onClose, onAdded, onUpdated, repo }: AddRepositoryDialogProps) {
   const { t } = useTranslation();
-  const [name, setName] = useState('');
-  const [dir, setDir] = useState('');
+  const isEdit = !!repo;
+  const [name, setName] = useState(repo?.name ?? '');
+  const [dir, setDir] = useState(repo?.dir ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,8 +54,13 @@ function AddRepositoryDialog({ onClose, onAdded }: AddRepositoryDialogProps) {
     setSubmitting(true);
     setError(null);
     try {
-      const repo = await unwrap(commands.addRepository(name.trim(), dir.trim()));
-      onAdded(repo);
+      if (isEdit && repo) {
+        const updated = await unwrap(commands.updateRepository(repo.id, name.trim(), dir.trim()));
+        onUpdated?.(updated);
+      } else {
+        const added = await unwrap(commands.addRepository(name.trim(), dir.trim()));
+        onAdded(added);
+      }
       onClose();
     } catch (e) {
       // 后端哨兵字符串 → i18n 文案；未知错误带原始信息。
@@ -62,6 +69,8 @@ function AddRepositoryDialog({ onClose, onAdded }: AddRepositoryDialogProps) {
         setError(t('repositories:toast.notGitRepo'));
       } else if (err === 'dir-exists') {
         setError(t('repositories:toast.dirExists'));
+      } else if (isEdit) {
+        setError(t('repositories:toast.updateFailed', { message: err }));
       } else {
         setError(t('repositories:toast.addFailed', { message: err }));
       }
@@ -78,9 +87,18 @@ function AddRepositoryDialog({ onClose, onAdded }: AddRepositoryDialogProps) {
       fullWidth
       maxWidth="sm"
     >
-      <DialogTitle>{t('repositories:add.title')}</DialogTitle>
+      <DialogTitle>{isEdit ? t('repositories:edit.title') : t('repositories:add.title')}</DialogTitle>
       <DialogContent>
         <Box sx={{ mt: 0.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {isEdit && (
+            <TextField
+              label={t('repositories:edit.idLabel')}
+              value={repo!.id}
+              fullWidth
+              slotProps={{ input: { readOnly: true } }}
+              variant="filled"
+            />
+          )}
           <TextField
             label={t('repositories:add.name')}
             placeholder={t('repositories:add.namePlaceholder')}
@@ -128,7 +146,7 @@ function AddRepositoryDialog({ onClose, onAdded }: AddRepositoryDialogProps) {
           {t('repositories:add.cancel')}
         </Button>
         <Button variant="contained" onClick={handleConfirm} disabled={!canSubmit}>
-          {t('repositories:add.confirm')}
+          {isEdit ? t('repositories:edit.confirm') : t('repositories:add.confirm')}
         </Button>
       </DialogActions>
     </Dialog>

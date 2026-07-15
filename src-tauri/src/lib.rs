@@ -32,6 +32,7 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
             shared::config::set_config,
             shared::repositories::list_repositories,
             shared::repositories::add_repository,
+            shared::repositories::update_repository,
             shared::repositories::delete_repository,
             shared::repositories::refresh_repository,
             shared::repositories::refresh_all_repositories,

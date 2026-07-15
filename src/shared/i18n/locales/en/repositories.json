@@ -24,6 +24,11 @@
     "confirm": "Delete",
     "cancel": "Cancel"
   },
+  "edit": {
+    "title": "Edit Repository",
+    "idLabel": "ID",
+    "confirm": "Save"
+  },
   "card": {
     "dirLabel": "Directory",
     "remoteLabel": "Remote",
@@ -34,6 +39,7 @@
     "noCommit": "No commits",
     "openFolder": "Open in Folder",
     "refresh": "Refresh",
+    "edit": "Edit",
     "delete": "Delete"
   },
   "toast": {
@@ -47,7 +53,9 @@
     "refreshFailed": "Failed to refresh: {{message}}",
     "refreshAllDone": "All repositories refreshed",
     "refreshAllFailed": "Failed to refresh all: {{message}}",
-    "openFailed": "Failed to open directory: {{message}}"
+    "openFailed": "Failed to open directory: {{message}}",
+    "updated": "Repository \"{{name}}\" updated",
+    "updateFailed": "Failed to update: {{message}}"
   },
   "empty": {
     "title": "No local repositories",

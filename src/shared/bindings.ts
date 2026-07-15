@@ -76,6 +76,11 @@ export const commands = {
 	 *  dir 唯一（重复返回哨兵 "dir-exists"）。校验通过后解析 git 信息并入库，返回新仓库。
 	 */
 	addRepository: (name: string, dir: string) => typedError<Repository, string>(__TAURI_INVOKE("add_repository", { name, dir })),
+	/**
+	 *  更新仓库的名称和目录。校验新目录须为 git 仓库且不与其他记录重复；
+	 *  校验通过后重新解析 git 信息并更新，返回更新后的仓库。
+	 */
+	updateRepository: (id: number, name: string, dir: string) => typedError<Repository, string>(__TAURI_INVOKE("update_repository", { id, name, dir })),
 	/**  删除仓库。 */
 	deleteRepository: (id: number) => typedError<null, string>(__TAURI_INVOKE("delete_repository", { id })),
 	/**  刷新单个仓库：重解析 git 信息并更新，返回新数据。 */

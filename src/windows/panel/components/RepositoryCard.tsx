@@ -5,6 +5,7 @@ import {
   Autorenew as AutorenewIcon,
   CloudOutlined as CloudOutlinedIcon,
   DeleteOutlined as DeleteOutlinedIcon,
+  EditOutlined as EditOutlinedIcon,
   FolderOpenOutlined as FolderOpenOutlinedIcon,
   FolderOutlined as FolderOutlinedIcon,
   HistoryOutlined as HistoryOutlinedIcon,
@@ -19,13 +20,14 @@ const truncateSx = {
   whiteSpace: 'nowrap',
 } as const;
 
-// 单卡片：Header 仓库名 + 刷新/删除；Content 目录/远程/分支/最近提交；Actions「在文件夹中打开」。
+// 单卡片：Header 仓库名 + 刷新/编辑/删除；Content 目录/远程/分支/最近提交；Actions「在文件夹中打开」。
 // 卡片 height:100% + flex column，保证网格内同行卡片高度对齐、操作栏贴底。
 interface RepositoryCardProps {
   repo: Repository;
   refreshing: boolean;
   onOpenFolder: (repo: Repository) => void;
   onRefresh: (repo: Repository) => void;
+  onEdit: (repo: Repository) => void;
   onDelete: (repo: Repository) => void;
 }
 
@@ -54,7 +56,7 @@ function InfoRow({ icon, label, children }: { icon: ReactNode; label?: string; c
   );
 }
 
-function RepositoryCard({ repo, refreshing, onOpenFolder, onRefresh, onDelete }: RepositoryCardProps) {
+function RepositoryCard({ repo, refreshing, onOpenFolder, onRefresh, onEdit, onDelete }: RepositoryCardProps) {
   const { t } = useTranslation();
   const hasRemote = repo.remoteUrl.length > 0;
   const hasBranch = repo.branch.length > 0;
@@ -82,6 +84,9 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onRefresh, onDelete }:
                   },
                 }}
               />
+            </IconButton>
+            <IconButton size="small" onClick={() => onEdit(repo)} aria-label={t('repositories:card.edit')}>
+              <EditOutlinedIcon />
             </IconButton>
             <IconButton size="small" onClick={() => onDelete(repo)} aria-label={t('repositories:card.delete')}>
               <DeleteOutlinedIcon />

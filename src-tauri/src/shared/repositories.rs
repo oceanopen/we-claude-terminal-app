@@ -295,6 +295,54 @@ pub fn add_repository(
     insert_conn(&conn, name, &dir, &info, now)
 }
 
+/// 更新仓库的名称和目录。校验新目录须为 git 仓库且不与其他记录重复；
+/// 校验通过后重新解析 git 信息并更新，返回更新后的仓库。
+#[tauri::command]
+#[specta::specta]
+pub fn update_repository(
+    state: State<'_, ConfigState>,
+    id: i32,
+    name: String,
+    dir: String,
+) -> Result<Repository, String> {
+    let name = name.trim();
+    let dir = dir.trim();
+    if name.is_empty() {
+        return Err("name-required".into());
+    }
+    if dir.is_empty() {
+        return Err("dir-required".into());
+    }
+    let path = std::path::Path::new(&dir);
+    if !path.is_absolute() || !path.is_dir() || !is_git_repo(&dir) {
+        return Err("not-a-git-repo".into());
+    }
+
+    let info = parse_repo_info(&dir);
+    let now = chrono::Utc::now().timestamp_millis();
+
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    // dir 唯一性校验：排除自身记录
+    let dup = conn
+        .query_row(
+            "SELECT 1 FROM repositories WHERE dir = ?1 AND id != ?2",
+            params![dir, id],
+            |_| Ok(()),
+        )
+        .optional()
+        .map_err(|e| e.to_string())?;
+    if dup.is_some() {
+        return Err("dir-exists".into());
+    }
+
+    conn.execute(
+        "UPDATE repositories SET name = ?1, dir = ?2, remote_url = ?3, branch = ?4, last_commit_at = ?5, last_commit_message = ?6, updated_at = ?7 WHERE id = ?8",
+        params![name, dir, info.remote_url, info.branch, info.last_commit_at, info.last_commit_message, now, id],
+    )
+    .map_err(|e| e.to_string())?;
+    get_by_id_conn(&conn, id)
+}
+
 /// 删除仓库。
 #[tauri::command]
 #[specta::specta]

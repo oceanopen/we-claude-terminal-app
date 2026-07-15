@@ -23,6 +23,7 @@ function RepositoriesPage() {
   const [searchName, setSearchName] = useState('');
   const [searchRemote, setSearchRemote] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Repository | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Repository | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -60,6 +61,11 @@ function RepositoriesPage() {
   const handleAdded = useCallback((repo: Repository) => {
     setRepos(prev => [...prev, repo]);
     setToast(t('repositories:toast.added', { name: repo.name }));
+  }, [t]);
+
+  const handleUpdated = useCallback((repo: Repository) => {
+    setRepos(prev => prev.map(r => (r.id === repo.id ? repo : r)));
+    setToast(t('repositories:toast.updated', { name: repo.name }));
   }, [t]);
 
   const handleRefreshAll = useCallback(async () => {
@@ -242,6 +248,7 @@ function RepositoriesPage() {
                 refreshing={refreshingId === repo.id}
                 onOpenFolder={handleOpenFolder}
                 onRefresh={handleRefreshOne}
+                onEdit={setEditTarget}
                 onDelete={setDeleteTarget}
               />
             ))}
@@ -261,6 +268,15 @@ function RepositoriesPage() {
         <AddRepositoryDialog
           onClose={() => setAddDialogOpen(false)}
           onAdded={handleAdded}
+        />
+      )}
+
+      {editTarget && (
+        <AddRepositoryDialog
+          repo={editTarget}
+          onClose={() => setEditTarget(null)}
+          onAdded={handleAdded}
+          onUpdated={handleUpdated}
         />
       )}
 
