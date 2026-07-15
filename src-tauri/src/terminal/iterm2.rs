@@ -7,6 +7,11 @@
 
 use std::process::Command;
 
+use tauri::{AppHandle, Manager};
+
+use crate::shared::config::{
+    ConfigState, DEFAULT_ITERM2_SPLIT_DIRECTION, ITERM2_SPLIT_DIRECTION_KEY,
+};
 use crate::terminal::{NavErr, Target};
 
 const SCRIPT_TEMPLATE: &str = r#"
@@ -77,9 +82,34 @@ pub fn focus_session(target: &Target<'_>) -> Result<(), NavErr> {
 }
 
 /// 在 iTerm2 中打开目录：有窗口则新建 Tab，无窗口则新建窗口，并 cd 到指定目录。
-/// 新建 Tab 后自动在下方垂直分屏（等同于 Cmd+Shift+D），上下两个 pane 均 cd 到同一目录。
-pub fn open_directory(dir: &str) -> Result<(), NavErr> {
+/// 新建 Tab 后自动分屏（默认上下分屏），两个 pane 均 cd 到同一目录。
+/// 分屏方向由 `iterm2_split_direction` 配置项控制：horizontal = 上下，vertical = 左右。
+pub fn open_directory(app: &AppHandle, dir: &str) -> Result<(), NavErr> {
     let escaped_dir = escape_dir_for_applescript(dir);
+
+    // 读取分屏方向配置，缺失或非法值回退为默认（horizontal = 上下分屏）。
+    let split_direction = app
+        .state::<ConfigState>()
+        .0
+        .lock()
+        .ok()
+        .and_then(|conn| {
+            let mut stmt = conn
+                .prepare("SELECT value FROM config WHERE key = ?1")
+                .ok()?;
+            stmt.query_row(rusqlite::params![ITERM2_SPLIT_DIRECTION_KEY], |row| {
+                row.get::<_, String>(0)
+            })
+            .ok()
+        })
+        .unwrap_or_else(|| DEFAULT_ITERM2_SPLIT_DIRECTION.to_string());
+
+    // horizontal = split horizontally（上下分屏），vertical = split vertically（左右分屏）
+    let split_cmd = match split_direction.as_str() {
+        "vertical" => "split vertically",
+        _ => "split horizontally",
+    };
+
     let script = format!(
         r#"
 tell application "iTerm2"
@@ -88,7 +118,7 @@ tell application "iTerm2"
         set newWin to (create window with default profile)
         tell current session of newWin
             write text "cd {escaped_dir}"
-            set splitSess to (split horizontally with default profile)
+            set splitSess to ({split_cmd} with default profile)
             tell splitSess
                 write text "cd {escaped_dir}"
             end tell
@@ -98,7 +128,7 @@ tell application "iTerm2"
             set newTab to (create tab with default profile)
             tell current session of newTab
                 write text "cd {escaped_dir}"
-                set splitSess to (split horizontally with default profile)
+                set splitSess to ({split_cmd} with default profile)
                 tell splitSess
                     write text "cd {escaped_dir}"
                 end tell
@@ -108,6 +138,7 @@ tell application "iTerm2"
 end tell
 "#,
         escaped_dir = escaped_dir,
+        split_cmd = split_cmd,
     );
     let output = Command::new("osascript")
         .args(["-e", &script])

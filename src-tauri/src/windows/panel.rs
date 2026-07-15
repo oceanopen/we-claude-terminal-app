@@ -150,10 +150,10 @@ pub fn is_java_project(cwd: String) -> bool {
 
 /// 用指定终端打开目录。仅 macOS 支持；terminal 仅允许 "iterm2" / "terminal"。
 /// 有窗口则新建 Tab，无窗口则新建窗口，并 cd 到指定目录。
-/// iTerm2 模式下自动在下方垂直分屏。
+/// iTerm2 模式下根据 `iterm2_split_direction` 配置决定分屏方向（默认上下分屏）。
 #[tauri::command]
 #[specta::specta]
-pub fn open_in_terminal(terminal: String, dir: String) -> Result<(), String> {
+pub fn open_in_terminal(app: AppHandle, terminal: String, dir: String) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     {
         use crate::shared::types::TerminalApp;
@@ -162,11 +162,11 @@ pub fn open_in_terminal(terminal: String, dir: String) -> Result<(), String> {
             "terminal" => TerminalApp::Terminal,
             other => return Err(format!("unsupported terminal: {other}")),
         };
-        open_directory_dispatch(host_app, &dir).map_err(|e| format!("{e:?}"))
+        open_directory_dispatch(&app, host_app, &dir).map_err(|e| format!("{e:?}"))
     }
     #[cfg(not(target_os = "macos"))]
     {
-        let _ = (terminal, dir);
+        let _ = (app, terminal, dir);
         Err("open_in_terminal is only supported on macOS".to_string())
     }
 }

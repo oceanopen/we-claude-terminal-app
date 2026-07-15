@@ -1,13 +1,29 @@
+import type { SelectChangeEvent } from '@mui/material/Select';
+import type { Iterm2SplitDirection } from '@src/shared/config';
+import CallSplitOutlinedIcon from '@mui/icons-material/CallSplitOutlined';
 import SensorsOutlinedIcon from '@mui/icons-material/SensorsOutlined';
-import { Box, Button, FormHelperText, Slider, Typography } from '@mui/material';
 import {
+  Box,
+  Button,
+  Divider,
+  FormControl,
+  FormHelperText,
+  MenuItem,
+  Select,
+  Slider,
+  Typography,
+} from '@mui/material';
+import {
+  DEFAULT_ITERM2_SPLIT_DIRECTION,
   DEFAULT_POLL_INTERVAL_SECS,
   getConfig,
+  ITERM2_SPLIT_DIRECTION_KEY,
   MAX_POLL_INTERVAL_SECS,
   MIN_POLL_INTERVAL_SECS,
   POLL_INTERVAL_SECS_KEY,
   setConfig,
 } from '@src/shared/config';
+import { iterm2SplitDirectionOptions } from '@src/shared/settingOption';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -16,26 +32,45 @@ function MonitorConfigPage() {
 
   const [savedInterval, setSavedInterval] = useState<number>(DEFAULT_POLL_INTERVAL_SECS);
   const [draftInterval, setDraftInterval] = useState<number>(DEFAULT_POLL_INTERVAL_SECS);
+  const [savedSplitDirection, setSavedSplitDirection] = useState<Iterm2SplitDirection>(DEFAULT_ITERM2_SPLIT_DIRECTION);
+  const [draftSplitDirection, setDraftSplitDirection] = useState<Iterm2SplitDirection>(DEFAULT_ITERM2_SPLIT_DIRECTION);
 
   useEffect(() => {
-    getConfig(POLL_INTERVAL_SECS_KEY).then((v) => {
-      const parsed = v != null ? Number.parseInt(v, 10) : Number.NaN;
+    Promise.all([
+      getConfig(POLL_INTERVAL_SECS_KEY),
+      getConfig(ITERM2_SPLIT_DIRECTION_KEY),
+    ]).then(([interval, splitDirection]) => {
+      const parsed = interval != null ? Number.parseInt(interval, 10) : Number.NaN;
       if (Number.isFinite(parsed)) {
         // DB 可能存越界或非 step 倍数（直接改 DB / 旧脏数据），clamp 到合法范围。
         const clamped = Math.min(Math.max(parsed, MIN_POLL_INTERVAL_SECS), MAX_POLL_INTERVAL_SECS);
         setSavedInterval(clamped);
         setDraftInterval(clamped);
       }
+      if (splitDirection === 'horizontal' || splitDirection === 'vertical') {
+        setSavedSplitDirection(splitDirection);
+        setDraftSplitDirection(splitDirection);
+      }
     });
   }, []);
 
-  const dirty = draftInterval !== savedInterval;
+  const dirty = draftInterval !== savedInterval || draftSplitDirection !== savedSplitDirection;
 
-  const handleReset = () => setDraftInterval(DEFAULT_POLL_INTERVAL_SECS);
-  const handleCancel = () => setDraftInterval(savedInterval);
+  const handleReset = () => {
+    setDraftInterval(DEFAULT_POLL_INTERVAL_SECS);
+    setDraftSplitDirection(DEFAULT_ITERM2_SPLIT_DIRECTION);
+  };
+  const handleCancel = () => {
+    setDraftInterval(savedInterval);
+    setDraftSplitDirection(savedSplitDirection);
+  };
   const handleSave = async () => {
-    await setConfig(POLL_INTERVAL_SECS_KEY, String(draftInterval));
+    await Promise.all([
+      setConfig(POLL_INTERVAL_SECS_KEY, String(draftInterval)),
+      setConfig(ITERM2_SPLIT_DIRECTION_KEY, draftSplitDirection),
+    ]);
     setSavedInterval(draftInterval);
+    setSavedSplitDirection(draftSplitDirection);
   };
 
   const marks = [
@@ -85,6 +120,37 @@ function MonitorConfigPage() {
             />
 
             <FormHelperText>{t('settings:help.pollInterval')}</FormHelperText>
+          </Box>
+
+          <Divider />
+
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              px: 2,
+              py: 1.5,
+              gap: 2,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <CallSplitOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+              <Typography>{t('settings:row.iterm2SplitDirection')}</Typography>
+            </Box>
+            <FormControl size="small" sx={{ minWidth: 140 }}>
+              <Select
+                value={draftSplitDirection}
+                onChange={(e: SelectChangeEvent<Iterm2SplitDirection>) =>
+                  setDraftSplitDirection(e.target.value as Iterm2SplitDirection)}
+              >
+                {iterm2SplitDirectionOptions.map(opt => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {t(opt.labelKey)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
         </Box>
       </Box>

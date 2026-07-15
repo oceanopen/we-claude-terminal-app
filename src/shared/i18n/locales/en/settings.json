@@ -11,14 +11,17 @@
   "row": {
     "language": "Language",
     "appearance": "Appearance",
-    "pollInterval": "Fallback poll interval"
+    "pollInterval": "Fallback poll interval",
+    "iterm2SplitDirection": "iTerm2 split direction"
   },
   "option": {
     "followSystem": "Follow system",
     "light": "Light",
     "dark": "Dark",
     "chinese": "中文",
-    "english": "English"
+    "english": "English",
+    "splitHorizontal": "Horizontal (top-bottom)",
+    "splitVertical": "Vertical (left-right)"
   },
   "unit": {
     "seconds": "s"

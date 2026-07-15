@@ -13,6 +13,8 @@ pub mod terminal_app;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
+use tauri::AppHandle;
+
 use crate::shared::types::TerminalApp;
 
 /// 跳转目标。仅靠 tty 精确匹配会话身份。
@@ -55,9 +57,9 @@ pub fn dispatch(host_app: TerminalApp, target: &Target<'_>) -> Result<(), NavErr
 
 /// 按终端类型分发到对应 open_directory 实现。
 /// IntelliJ / Unknown 直接返回 UnsupportedHostApp。
-pub fn open_directory_dispatch(host_app: TerminalApp, dir: &str) -> Result<(), NavErr> {
+pub fn open_directory_dispatch(app: &AppHandle, host_app: TerminalApp, dir: &str) -> Result<(), NavErr> {
     match host_app {
-        TerminalApp::ITerm2 => iterm2::open_directory(dir),
+        TerminalApp::ITerm2 => iterm2::open_directory(app, dir),
         TerminalApp::Terminal => terminal_app::open_directory(dir),
         TerminalApp::IntelliJ | TerminalApp::Unknown => Err(NavErr::UnsupportedHostApp),
     }

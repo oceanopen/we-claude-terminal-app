@@ -11,14 +11,17 @@
   "row": {
     "language": "语言",
     "appearance": "外观",
-    "pollInterval": "兜底轮询周期"
+    "pollInterval": "兜底轮询周期",
+    "iterm2SplitDirection": "iTerm2 分屏方向"
   },
   "option": {
     "followSystem": "跟随系统",
     "light": "浅色",
     "dark": "深色",
     "chinese": "中文",
-    "english": "English"
+    "english": "English",
+    "splitHorizontal": "上下分屏",
+    "splitVertical": "左右分屏"
   },
   "unit": {
     "seconds": "秒"

@@ -21,6 +21,11 @@ pub const DEFAULT_POLL_INTERVAL_SECS: u64 = 60;
 pub const MIN_POLL_INTERVAL_SECS: u64 = 5;
 pub const MAX_POLL_INTERVAL_SECS: u64 = 120;
 
+/// iTerm2 分屏方向。horizontal = 上下分屏（split horizontally），vertical = 左右分屏（split vertically）。
+/// 默认值与前端 src/shared/config.ts 镜像，改动任一处需同步另一处。
+pub const ITERM2_SPLIT_DIRECTION_KEY: &str = "iterm2_split_direction";
+pub const DEFAULT_ITERM2_SPLIT_DIRECTION: &str = "horizontal";
+
 pub struct ConfigState(pub Mutex<Connection>);
 
 pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
