@@ -100,6 +100,12 @@ function RepositoriesPage() {
     });
   }, [t]);
 
+  const handleOpenInTerminal = useCallback((repo: Repository, terminal: 'iterm2' | 'terminal') => {
+    unwrap(commands.openInTerminal(terminal, repo.dir)).catch((e) => {
+      setToast(t('repositories:toast.openTerminalFailed', { message: String(e) }));
+    });
+  }, [t]);
+
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteTarget) {
       return;
@@ -247,6 +253,7 @@ function RepositoriesPage() {
                 repo={repo}
                 refreshing={refreshingId === repo.id}
                 onOpenFolder={handleOpenFolder}
+                onOpenInTerminal={handleOpenInTerminal}
                 onRefresh={handleRefreshOne}
                 onEdit={setEditTarget}
                 onDelete={setDeleteTarget}

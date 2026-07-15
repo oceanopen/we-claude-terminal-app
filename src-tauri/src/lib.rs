@@ -20,6 +20,7 @@ pub fn build_specta_builder() -> Builder<tauri::Wry> {
             windows::panel::navigate_to_claude_session,
             windows::panel::open_in_editor,
             windows::panel::is_java_project,
+            windows::panel::open_in_terminal,
             windows::pet_claude_sessions_summary::show_pet_claude_sessions_summary_window,
             windows::pet_claude_sessions_summary::hide_pet_claude_sessions_summary_window,
             windows::pet_claude_sessions_summary::toggle_pet_claude_sessions_summary_window,

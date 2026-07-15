@@ -13,7 +13,7 @@ use crate::shared::screen::{
 };
 use crate::shared::state::claude_sessions::ClaudeSessionStore;
 use crate::shared::types::ClaudeSessionInfo;
-use crate::terminal::{NavErr, Target, dispatch};
+use crate::terminal::{NavErr, Target, dispatch, open_directory_dispatch};
 
 #[tauri::command]
 #[specta::specta]
@@ -146,6 +146,28 @@ pub fn is_java_project(cwd: String) -> bool {
     path.join("pom.xml").exists()
         || path.join("build.gradle").exists()
         || path.join("build.gradle.kts").exists()
+}
+
+/// 用指定终端打开目录。仅 macOS 支持；terminal 仅允许 "iterm2" / "terminal"。
+/// 有窗口则新建 Tab，无窗口则新建窗口，并 cd 到指定目录。
+#[tauri::command]
+#[specta::specta]
+pub fn open_in_terminal(terminal: String, dir: String) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        use crate::shared::types::TerminalApp;
+        let host_app = match terminal.as_str() {
+            "iterm2" => TerminalApp::ITerm2,
+            "terminal" => TerminalApp::Terminal,
+            other => return Err(format!("unsupported terminal: {other}")),
+        };
+        open_directory_dispatch(host_app, &dir).map_err(|e| format!("{e:?}"))
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (terminal, dir);
+        Err("open_in_terminal is only supported on macOS".to_string())
+    }
 }
 
 #[tauri::command]

@@ -38,6 +38,8 @@
     "noBranch": "No branch",
     "noCommit": "No commits",
     "openFolder": "Open in Folder",
+    "iTerm2": "iTerm2",
+    "terminal": "Terminal",
     "refresh": "Refresh",
     "edit": "Edit",
     "delete": "Delete"
@@ -54,6 +56,7 @@
     "refreshAllDone": "All repositories refreshed",
     "refreshAllFailed": "Failed to refresh all: {{message}}",
     "openFailed": "Failed to open directory: {{message}}",
+    "openTerminalFailed": "Failed to open terminal: {{message}}",
     "updated": "Repository \"{{name}}\" updated",
     "updateFailed": "Failed to update: {{message}}"
   },

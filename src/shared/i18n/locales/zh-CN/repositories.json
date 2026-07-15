@@ -38,6 +38,8 @@
     "noBranch": "无分支",
     "noCommit": "无提交记录",
     "openFolder": "在文件夹中打开",
+    "iTerm2": "iTerm2",
+    "terminal": "Terminal",
     "refresh": "刷新",
     "edit": "编辑",
     "delete": "删除"
@@ -54,6 +56,7 @@
     "refreshAllDone": "全部仓库已刷新",
     "refreshAllFailed": "全量刷新失败：{{message}}",
     "openFailed": "打开目录失败：{{message}}",
+    "openTerminalFailed": "打开终端失败：{{message}}",
     "updated": "仓库「{{name}}」更新成功",
     "updateFailed": "更新失败：{{message}}"
   },

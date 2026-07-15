@@ -41,6 +41,11 @@ export const commands = {
 	 *  前端据此禁用 VSCode/IDEA 中不合适的那一个，保留两个按钮便于未来扩展。
 	 */
 	isJavaProject: (cwd: string) => __TAURI_INVOKE<boolean>("is_java_project", { cwd }),
+	/**
+	 *  用指定终端打开目录。仅 macOS 支持；terminal 仅允许 "iterm2" / "terminal"。
+	 *  有窗口则新建 Tab，无窗口则新建窗口，并 cd 到指定目录。
+	 */
+	openInTerminal: (terminal: string, dir: string) => typedError<null, string>(__TAURI_INVOKE("open_in_terminal", { terminal, dir })),
 	showPetClaudeSessionsSummaryWindow: () => typedError<null, string>(__TAURI_INVOKE("show_pet_claude_sessions_summary_window")),
 	hidePetClaudeSessionsSummaryWindow: () => typedError<null, string>(__TAURI_INVOKE("hide_pet_claude_sessions_summary_window")),
 	togglePetClaudeSessionsSummaryWindow: () => typedError<boolean, string>(__TAURI_INVOKE("toggle_pet_claude_sessions_summary_window")),

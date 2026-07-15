@@ -1,5 +1,6 @@
 import type { Repository } from '@src/shared/bindings';
 import type { ReactNode } from 'react';
+import { SiIterm2 } from '@icons-pack/react-simple-icons';
 import {
   AccountTree as AccountTreeIcon,
   Autorenew as AutorenewIcon,
@@ -9,6 +10,7 @@ import {
   FolderOpenOutlined as FolderOpenOutlinedIcon,
   FolderOutlined as FolderOutlinedIcon,
   HistoryOutlined as HistoryOutlinedIcon,
+  Terminal as TerminalIcon,
 } from '@mui/icons-material';
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Divider, IconButton, Typography } from '@mui/material';
 import { formatDate, formatRelativeTime } from '@src/shared/time';
@@ -26,6 +28,7 @@ interface RepositoryCardProps {
   repo: Repository;
   refreshing: boolean;
   onOpenFolder: (repo: Repository) => void;
+  onOpenInTerminal: (repo: Repository, terminal: 'iterm2' | 'terminal') => void;
   onRefresh: (repo: Repository) => void;
   onEdit: (repo: Repository) => void;
   onDelete: (repo: Repository) => void;
@@ -56,7 +59,7 @@ function InfoRow({ icon, label, children }: { icon: ReactNode; label?: string; c
   );
 }
 
-function RepositoryCard({ repo, refreshing, onOpenFolder, onRefresh, onEdit, onDelete }: RepositoryCardProps) {
+function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRefresh, onEdit, onDelete }: RepositoryCardProps) {
   const { t } = useTranslation();
   const hasRemote = repo.remoteUrl.length > 0;
   const hasBranch = repo.branch.length > 0;
@@ -133,6 +136,12 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onRefresh, onEdit, onD
       <CardActions>
         <Button size="small" onClick={() => onOpenFolder(repo)} startIcon={<FolderOpenOutlinedIcon />}>
           {t('repositories:card.openFolder')}
+        </Button>
+        <Button size="small" onClick={() => onOpenInTerminal(repo, 'iterm2')} startIcon={<SiIterm2 size="1.25rem" color="currentColor" />}>
+          {t('repositories:card.iTerm2')}
+        </Button>
+        <Button size="small" onClick={() => onOpenInTerminal(repo, 'terminal')} startIcon={<TerminalIcon style={{ fontSize: '1.5rem' }} />}>
+          {t('repositories:card.terminal')}
         </Button>
       </CardActions>
     </Card>
