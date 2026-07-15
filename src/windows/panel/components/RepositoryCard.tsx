@@ -2,12 +2,12 @@ import type { Repository } from '@src/shared/bindings';
 import type { ReactNode } from 'react';
 import {
   AccountTree as AccountTreeIcon,
+  Autorenew as AutorenewIcon,
   CloudOutlined as CloudOutlinedIcon,
   DeleteOutlined as DeleteOutlinedIcon,
   FolderOpenOutlined as FolderOpenOutlinedIcon,
   FolderOutlined as FolderOutlinedIcon,
   HistoryOutlined as HistoryOutlinedIcon,
-  RefreshOutlined as RefreshOutlinedIcon,
 } from '@mui/icons-material';
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Divider, IconButton, Typography } from '@mui/material';
 import { formatDate, formatRelativeTime } from '@src/shared/time';
@@ -19,7 +19,7 @@ const truncateSx = {
   whiteSpace: 'nowrap',
 } as const;
 
-// 单卡片：Header 仓库名；Content 目录/远程/分支/最近提交；Actions 左「在文件夹中打开」+ 右刷新/删除。
+// 单卡片：Header 仓库名 + 刷新/删除；Content 目录/远程/分支/最近提交；Actions「在文件夹中打开」。
 // 卡片 height:100% + flex column，保证网格内同行卡片高度对齐、操作栏贴底。
 interface RepositoryCardProps {
   repo: Repository;
@@ -65,6 +65,29 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onRefresh, onDelete }:
       <CardHeader
         title={repo.name}
         slotProps={{ title: { fontWeight: 600, noWrap: true } }}
+        action={(
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <IconButton
+              size="small"
+              onClick={() => onRefresh(repo)}
+              disabled={refreshing}
+              aria-label={t('repositories:card.refresh')}
+            >
+              <AutorenewIcon
+                sx={{
+                  'animation': refreshing ? 'spin 0.8s linear infinite' : undefined,
+                  '@keyframes spin': {
+                    from: { transform: 'rotate(0deg)' },
+                    to: { transform: 'rotate(360deg)' },
+                  },
+                }}
+              />
+            </IconButton>
+            <IconButton size="small" onClick={() => onDelete(repo)} aria-label={t('repositories:card.delete')}>
+              <DeleteOutlinedIcon />
+            </IconButton>
+          </Box>
+        )}
         sx={{ '& .MuiCardHeader-action': { alignSelf: 'center', mt: 0 } }}
       />
       <Divider />
@@ -102,31 +125,10 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onRefresh, onDelete }:
         </InfoRow>
       </CardContent>
       <Divider />
-      <CardActions sx={{ justifyContent: 'space-between' }}>
+      <CardActions>
         <Button size="small" onClick={() => onOpenFolder(repo)} startIcon={<FolderOpenOutlinedIcon />}>
           {t('repositories:card.openFolder')}
         </Button>
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <IconButton
-            size="small"
-            onClick={() => onRefresh(repo)}
-            disabled={refreshing}
-            aria-label={t('repositories:card.refresh')}
-          >
-            <RefreshOutlinedIcon
-              sx={{
-                'animation': refreshing ? 'spin 0.8s linear infinite' : undefined,
-                '@keyframes spin': {
-                  from: { transform: 'rotate(0deg)' },
-                  to: { transform: 'rotate(360deg)' },
-                },
-              }}
-            />
-          </IconButton>
-          <IconButton size="small" onClick={() => onDelete(repo)} aria-label={t('repositories:card.delete')}>
-            <DeleteOutlinedIcon />
-          </IconButton>
-        </Box>
       </CardActions>
     </Card>
   );
