@@ -30,4 +30,5 @@ export interface Iterm2SplitDirectionOption {
 export const iterm2SplitDirectionOptions: Iterm2SplitDirectionOption[] = [
   { value: 'horizontal', labelKey: 'settings:option.splitHorizontal' },
   { value: 'vertical', labelKey: 'settings:option.splitVertical' },
+  { value: 'none', labelKey: 'settings:option.splitNone' },
 ];

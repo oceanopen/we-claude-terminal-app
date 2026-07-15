@@ -50,9 +50,9 @@ export const DEFAULT_POLL_INTERVAL_SECS = 60;
 export const MIN_POLL_INTERVAL_SECS = 5;
 export const MAX_POLL_INTERVAL_SECS = 120;
 
-// iTerm2 分屏方向。horizontal = 上下分屏（split horizontally），vertical = 左右分屏（split vertically）。
+// iTerm2 分屏方向。horizontal = 上下分屏，vertical = 左右分屏，none = 不分屏。
 // 与后端 config.rs 镜像，改动任一处需同步另一处。
-export type Iterm2SplitDirection = 'horizontal' | 'vertical';
+export type Iterm2SplitDirection = 'horizontal' | 'vertical' | 'none';
 
 export const ITERM2_SPLIT_DIRECTION_KEY = 'iterm2_split_direction';
 export const DEFAULT_ITERM2_SPLIT_DIRECTION: Iterm2SplitDirection = 'horizontal';

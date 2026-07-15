@@ -21,7 +21,8 @@
     "chinese": "中文",
     "english": "English",
     "splitHorizontal": "上下分屏",
-    "splitVertical": "左右分屏"
+    "splitVertical": "左右分屏",
+    "splitNone": "不分屏"
   },
   "unit": {
     "seconds": "秒"

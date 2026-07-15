@@ -21,7 +21,8 @@
     "chinese": "中文",
     "english": "English",
     "splitHorizontal": "Horizontal (top-bottom)",
-    "splitVertical": "Vertical (left-right)"
+    "splitVertical": "Vertical (left-right)",
+    "splitNone": "No split"
   },
   "unit": {
     "seconds": "s"

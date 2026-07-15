@@ -82,8 +82,8 @@ pub fn focus_session(target: &Target<'_>) -> Result<(), NavErr> {
 }
 
 /// 在 iTerm2 中打开目录：有窗口则新建 Tab，无窗口则新建窗口，并 cd 到指定目录。
-/// 新建 Tab 后自动分屏（默认上下分屏），两个 pane 均 cd 到同一目录。
-/// 分屏方向由 `iterm2_split_direction` 配置项控制：horizontal = 上下，vertical = 左右。
+/// 分屏方向由 `iterm2_split_direction` 配置项控制：
+///   horizontal = 上下分屏，vertical = 左右分屏，none = 不分屏。
 pub fn open_directory(app: &AppHandle, dir: &str) -> Result<(), NavErr> {
     let escaped_dir = escape_dir_for_applescript(dir);
 
@@ -104,14 +104,37 @@ pub fn open_directory(app: &AppHandle, dir: &str) -> Result<(), NavErr> {
         })
         .unwrap_or_else(|| DEFAULT_ITERM2_SPLIT_DIRECTION.to_string());
 
-    // horizontal = split horizontally（上下分屏），vertical = split vertically（左右分屏）
-    let split_cmd = match split_direction.as_str() {
-        "vertical" => "split vertically",
-        _ => "split horizontally",
-    };
-
-    let script = format!(
-        r#"
+    let script = match split_direction.as_str() {
+        // 不分屏：仅 cd 到目录，不执行 split
+        "none" => format!(
+            r#"
+tell application "iTerm2"
+    activate
+    if (count of windows) is 0 then
+        set newWin to (create window with default profile)
+        tell current session of newWin
+            write text "cd {escaped_dir}"
+        end tell
+    else
+        tell current window
+            set newTab to (create tab with default profile)
+            tell current session of newTab
+                write text "cd {escaped_dir}"
+            end tell
+        end tell
+    end if
+end tell
+"#,
+            escaped_dir = escaped_dir,
+        ),
+        // 分屏模式：horizontal 或 vertical
+        _ => {
+            let split_cmd = match split_direction.as_str() {
+                "vertical" => "split vertically",
+                _ => "split horizontally",
+            };
+            format!(
+                r#"
 tell application "iTerm2"
     activate
     if (count of windows) is 0 then
@@ -137,9 +160,11 @@ tell application "iTerm2"
     end if
 end tell
 "#,
-        escaped_dir = escaped_dir,
-        split_cmd = split_cmd,
-    );
+                escaped_dir = escaped_dir,
+                split_cmd = split_cmd,
+            )
+        }
+    };
     let output = Command::new("osascript")
         .args(["-e", &script])
         .output()?;
