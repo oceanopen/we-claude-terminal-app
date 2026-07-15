@@ -25,6 +25,7 @@
     "cancel": "Cancel"
   },
   "card": {
+    "dirLabel": "Directory",
     "remoteLabel": "Remote",
     "branchLabel": "Branch",
     "commitLabel": "Last commit",

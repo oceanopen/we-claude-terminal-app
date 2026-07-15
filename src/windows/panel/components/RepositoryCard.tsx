@@ -44,12 +44,12 @@ function InfoRow({ icon, label, children }: { icon: ReactNode; label?: string; c
         {icon}
       </Box>
       {label && (
-        <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0, minWidth: 50 }}>
           {label}
         </Typography>
       )}
       {/* minWidth:0 让 flex 子项内文本 ellipsis 生效 */}
-      <Box sx={{ minWidth: 0, flex: 1 }}>{children}</Box>
+      <Box sx={{ minWidth: 0, flex: 1, display: 'flex', alignItems: 'flex-start' }}>{children}</Box>
     </Box>
   );
 }
@@ -69,7 +69,7 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onRefresh, onDelete }:
       />
       <Divider />
       <CardContent sx={{ flex: 1 }}>
-        <InfoRow icon={<FolderOutlinedIcon sx={{ fontSize: '0.95rem' }} />}>
+        <InfoRow icon={<FolderOutlinedIcon sx={{ fontSize: '0.95rem' }} />} label={t('repositories:card.dirLabel')}>
           <Typography sx={{ fontFamily: 'monospace', fontSize: '0.75rem', ...truncateSx }} title={repo.dir}>
             {repo.dir}
           </Typography>

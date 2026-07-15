@@ -25,6 +25,7 @@
     "cancel": "取消"
   },
   "card": {
+    "dirLabel": "目录",
     "remoteLabel": "远程",
     "branchLabel": "分支",
     "commitLabel": "最近提交",
