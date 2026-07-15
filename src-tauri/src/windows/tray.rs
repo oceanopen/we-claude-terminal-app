@@ -207,14 +207,14 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                     return;
                 }
                 let app = tray.app_handle();
-                if let Err(e) = crate::windows::panel::show_panel_window(app.clone()) {
+                if let Err(e) = crate::windows::panel::show_panel_window(app.clone(), None) {
                     log::warn!("failed to open panel window: {e}");
                 }
             }
         })
         .on_menu_event(|app, event| match event.id().as_ref() {
             "panel" => {
-                if let Err(e) = crate::windows::panel::show_panel_window(app.clone()) {
+                if let Err(e) = crate::windows::panel::show_panel_window(app.clone(), None) {
                     log::warn!("failed to open panel window: {e}");
                 }
             }

@@ -120,7 +120,7 @@ function PetClaudeSessionsSummaryApp() {
       return;
     }
     try {
-      await unwrap(commands.showPanelWindow());
+      await unwrap(commands.showPanelWindow('claudeSessions'));
     } catch (e) {
       console.warn('[pet-claude-sessions-summary] open panel failed', e);
     }

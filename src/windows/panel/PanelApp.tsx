@@ -10,7 +10,9 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { useState } from 'react';
+import { EVENT_PANEL_NAVIGATE } from '@src/shared/events';
+import { listen } from '@tauri-apps/api/event';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ClaudeSessionsPage from './ClaudeSessionsPage';
 import RepositoriesPage from './RepositoriesPage';
@@ -25,6 +27,16 @@ function PanelApp() {
   const { t } = useTranslation();
   const [activeMenu, setActiveMenu] = useState<MenuKey>('claudeSessions');
   const theme = useTheme();
+
+  // 监听后端 panel:navigate 事件，切换到指定页面（如 pet 点击打开控制台时自动导航到 Claude 会话监听页）。
+  useEffect(() => {
+    const unlisten = listen<MenuKey>(EVENT_PANEL_NAVIGATE, (e) => {
+      setActiveMenu(e.payload);
+    });
+    return () => {
+      unlisten.then(fn => fn()).catch(err => console.warn('[PanelApp] unlisten panel:navigate failed:', err));
+    };
+  }, []);
 
   const menuItems: { key: MenuKey; label: string; icon: React.ReactNode }[] = [
     { key: 'claudeSessions', label: t('panel:menu.claudeSessions'), icon: <SensorsOutlinedIcon /> },

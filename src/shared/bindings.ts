@@ -7,7 +7,7 @@ import { invoke as __TAURI_INVOKE } from "@tauri-apps/api/core";
 
 /** Commands */
 export const commands = {
-	showPanelWindow: () => typedError<null, string>(__TAURI_INVOKE("show_panel_window")),
+	showPanelWindow: (navigateTo: string | null) => typedError<null, string>(__TAURI_INVOKE("show_panel_window", { navigateTo })),
 	getClaudeSessions: () => typedError<ClaudeSessionInfo[], string>(__TAURI_INVOKE("get_claude_sessions")),
 	/**
 	 *  手动刷新会话列表：触发全量重扫并广播 claude-sessions:changed，

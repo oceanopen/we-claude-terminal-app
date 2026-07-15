@@ -7,6 +7,7 @@
 use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 use crate::shared::events::EVENT_CLAUDE_SESSION_NAV_FAILED;
+use crate::shared::events::EVENT_PANEL_NAVIGATE;
 use crate::shared::screen::{
     find_monitor_for_tray, ratio_size, work_area_center, DEFAULT_SIZE, PANEL_RATIO,
 };
@@ -149,7 +150,7 @@ pub fn is_java_project(cwd: String) -> bool {
 
 #[tauri::command]
 #[specta::specta]
-pub fn show_panel_window(app: tauri::AppHandle) -> Result<(), String> {
+pub fn show_panel_window(app: tauri::AppHandle, navigate_to: Option<String>) -> Result<(), String> {
     let monitor = find_monitor_for_tray(&app, "tray");
     let (width, height) = monitor
         .as_ref()
@@ -191,6 +192,13 @@ pub fn show_panel_window(app: tauri::AppHandle) -> Result<(), String> {
     let _ = panel_win.show();
     let _ = panel_win.unminimize();
     let _ = panel_win.set_focus();
+
+    // 按需导航到指定页面：窗口可能是从其他页面关闭后再次打开的，
+    // 仅当 navigate_to 非空时 emit 事件让前端 PanelApp 切换到指定页面。
+    // 托盘打开窗口不传此参数（保持上次停留页面），pet 点击传 "claudeSessions"。
+    if let Some(page) = navigate_to {
+        let _ = app.emit_to("panel", EVENT_PANEL_NAVIGATE, page);
+    }
 
     Ok(())
 }
