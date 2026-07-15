@@ -10,7 +10,6 @@ import {
   FolderOpenOutlined as FolderOpenOutlinedIcon,
   FolderOutlined as FolderOutlinedIcon,
   HistoryOutlined as HistoryOutlinedIcon,
-  Terminal as TerminalIcon,
 } from '@mui/icons-material';
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Divider, IconButton, Typography } from '@mui/material';
 import { formatDate, formatRelativeTime } from '@src/shared/time';
@@ -139,9 +138,6 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
         </Button>
         <Button size="small" onClick={() => onOpenInTerminal(repo, 'iterm2')} startIcon={<SiIterm2 size="1.25rem" color="currentColor" />}>
           {t('repositories:card.iTerm2')}
-        </Button>
-        <Button size="small" onClick={() => onOpenInTerminal(repo, 'terminal')} startIcon={<TerminalIcon style={{ fontSize: '1.5rem' }} />}>
-          {t('repositories:card.terminal')}
         </Button>
       </CardActions>
     </Card>

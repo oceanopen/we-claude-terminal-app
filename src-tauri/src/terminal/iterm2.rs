@@ -77,6 +77,7 @@ pub fn focus_session(target: &Target<'_>) -> Result<(), NavErr> {
 }
 
 /// 在 iTerm2 中打开目录：有窗口则新建 Tab，无窗口则新建窗口，并 cd 到指定目录。
+/// 新建 Tab 后自动在下方垂直分屏（等同于 Cmd+Shift+D），上下两个 pane 均 cd 到同一目录。
 pub fn open_directory(dir: &str) -> Result<(), NavErr> {
     let escaped_dir = escape_dir_for_applescript(dir);
     let script = format!(
@@ -87,12 +88,20 @@ tell application "iTerm2"
         set newWin to (create window with default profile)
         tell current session of newWin
             write text "cd {escaped_dir}"
+            set splitSess to (split horizontally with default profile)
+            tell splitSess
+                write text "cd {escaped_dir}"
+            end tell
         end tell
     else
         tell current window
             set newTab to (create tab with default profile)
             tell current session of newTab
                 write text "cd {escaped_dir}"
+                set splitSess to (split horizontally with default profile)
+                tell splitSess
+                    write text "cd {escaped_dir}"
+                end tell
             end tell
         end tell
     end if
@@ -111,13 +120,13 @@ end tell
 }
 
 /// 将目录路径转义后嵌入 AppleScript 的 `write text "cd ..."` 语句。
-/// 仅返回 shell 安全的路径部分（单引号包裹 + 转义），不含 `cd` 前缀，由调用方拼命令。
+/// 仅返回 shell 安全的路径部分，不含 `cd` 前缀，由调用方拼命令。
+/// 空格用反斜杠转义（`my\ dir`），不使用单引号包裹，生成更自然的 cd 命令。
 fn escape_dir_for_applescript(dir: &str) -> String {
-    // Shell: 单引号包裹，内部 ' 替换为 '\''（结束引号 → 转义单引号 → 重新开引号）
-    let shell_safe = dir.replace('\'', "'\\''");
-    let quoted = format!("'{}'", shell_safe);
+    // Shell: 空格前加反斜杠，使 `cd my\ dir` 正确处理含空格路径
+    let shell_safe = dir.replace(' ', "\\ ");
     // AppleScript 字符串上下文: \\ → 字面 \, \" → 字面 "
-    quoted.replace('\\', "\\\\").replace('"', "\\\"")
+    shell_safe.replace('\\', "\\\\").replace('"', "\\\"")
 }
 
 #[cfg(test)]

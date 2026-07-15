@@ -150,6 +150,7 @@ pub fn is_java_project(cwd: String) -> bool {
 
 /// 用指定终端打开目录。仅 macOS 支持；terminal 仅允许 "iterm2" / "terminal"。
 /// 有窗口则新建 Tab，无窗口则新建窗口，并 cd 到指定目录。
+/// iTerm2 模式下自动在下方垂直分屏。
 #[tauri::command]
 #[specta::specta]
 pub fn open_in_terminal(terminal: String, dir: String) -> Result<(), String> {
