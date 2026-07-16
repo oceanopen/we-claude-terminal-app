@@ -69,13 +69,23 @@ pub fn run() {
                 let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             }
 
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
+            // 日志：dev 用 Info + 默认 target（stdout/webview）；release 用 Warn + 写日志文件（OS 日志目录），方便生产排障。
+            let log_plugin = if cfg!(debug_assertions) {
+                tauri_plugin_log::Builder::default()
+                    .level(log::LevelFilter::Info)
+                    .build()
+            } else {
+                tauri_plugin_log::Builder::default()
+                    .level(log::LevelFilter::Warn)
+                    .targets([tauri_plugin_log::Target::new(
+                        tauri_plugin_log::TargetKind::LogDir { file_name: None },
+                    )])
+                    // 1 MiB/文件，保留最近 5 份（旧的重命名带日期），总量 ~5 MiB 有界
+                    .max_file_size(1_048_576)
+                    .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepSome(5))
+                    .build()
+            };
+            app.handle().plugin(log_plugin)?;
 
             shared::config::init(app)?;
             shared::state::claude_sessions::init(app)?;

@@ -30,8 +30,17 @@ pub struct ConfigState(pub Mutex<Connection>);
 
 pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let app_data_dir = app.path().app_data_dir()?;
-    std::fs::create_dir_all(&app_data_dir)?;
-    let db_path = app_data_dir.join("app.db");
+    // dev 构建使用独立子目录，避免调试时改动污染正式版用户数据（与 tray/lib 的 [DEV] 约定一致）
+    let data_dir = if cfg!(debug_assertions) {
+        app_data_dir.join("dev")
+    } else {
+        app_data_dir
+    };
+    std::fs::create_dir_all(&data_dir)?;
+    if cfg!(debug_assertions) {
+        log::info!("[config] dev data dir: {}", data_dir.display());
+    }
+    let db_path = data_dir.join("app.db");
     let conn = Connection::open(db_path)?;
     conn.execute(
         "CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
