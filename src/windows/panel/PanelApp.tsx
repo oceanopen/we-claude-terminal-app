@@ -10,7 +10,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { EVENT_PANEL_NAVIGATE } from '@src/shared/events';
+import { EVENT_PANEL_NAVIGATE, EVENT_PANEL_SHOWN } from '@src/shared/events';
 import { listen } from '@tauri-apps/api/event';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +26,7 @@ type MenuKey = 'claudeSessions' | 'repositories';
 function PanelApp() {
   const { t } = useTranslation();
   const [activeMenu, setActiveMenu] = useState<MenuKey>('claudeSessions');
+  const [repoRefreshTrigger, setRepoRefreshTrigger] = useState(0);
   const theme = useTheme();
 
   // 监听后端 panel:navigate 事件，切换到指定页面（如 pet 点击打开控制台时自动导航到 Claude 会话监听页）。
@@ -37,6 +38,19 @@ function PanelApp() {
       unlisten.then(fn => fn()).catch(err => console.warn('[PanelApp] unlisten panel:navigate failed:', err));
     };
   }, []);
+
+  // 监听 panel:shown 事件：窗口从隐藏恢复时，仅当当前页面是本地仓库管理时触发刷新。
+  // 后端先 emit navigate 再 emit shown，确保此处 activeMenu 已是最新值。
+  useEffect(() => {
+    const unlisten = listen(EVENT_PANEL_SHOWN, () => {
+      if (activeMenu === 'repositories') {
+        setRepoRefreshTrigger(prev => prev + 1);
+      }
+    });
+    return () => {
+      unlisten.then(fn => fn()).catch(err => console.warn('[PanelApp] unlisten panel:shown failed:', err));
+    };
+  }, [activeMenu]);
 
   const menuItems: { key: MenuKey; label: string; icon: React.ReactNode }[] = [
     { key: 'claudeSessions', label: t('panel:menu.claudeSessions'), icon: <SensorsOutlinedIcon /> },
@@ -105,7 +119,7 @@ function PanelApp() {
         }}
       >
         {activeMenu === 'claudeSessions' && <ClaudeSessionsPage />}
-        {activeMenu === 'repositories' && <RepositoriesPage />}
+        {activeMenu === 'repositories' && <RepositoriesPage windowShownTrigger={repoRefreshTrigger} />}
       </Box>
     </Box>
   );

@@ -8,6 +8,7 @@ use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, State, We
 
 use crate::shared::events::EVENT_CLAUDE_SESSION_NAV_FAILED;
 use crate::shared::events::EVENT_PANEL_NAVIGATE;
+use crate::shared::events::EVENT_PANEL_SHOWN;
 use crate::shared::screen::{
     find_monitor_for_tray, ratio_size, work_area_center, DEFAULT_SIZE, PANEL_RATIO,
 };
@@ -216,12 +217,13 @@ pub fn show_panel_window(app: tauri::AppHandle, navigate_to: Option<String>) -> 
     let _ = panel_win.unminimize();
     let _ = panel_win.set_focus();
 
-    // 按需导航到指定页面：窗口可能是从其他页面关闭后再次打开的，
-    // 仅当 navigate_to 非空时 emit 事件让前端 PanelApp 切换到指定页面。
-    // 托盘打开窗口不传此参数（保持上次停留页面），pet 点击传 "claudeSessions"。
+    // 先导航再通知 shown，确保前端收到 shown 时 activeMenu 已更新。
     if let Some(page) = navigate_to {
         let _ = app.emit_to("panel", EVENT_PANEL_NAVIGATE, page);
     }
+
+    // 通知前端窗口已从隐藏恢复，订阅方（RepositoriesPage）据此触发数据刷新。
+    let _ = app.emit_to("panel", EVENT_PANEL_SHOWN, ());
 
     Ok(())
 }

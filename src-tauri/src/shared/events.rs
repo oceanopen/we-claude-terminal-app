@@ -22,3 +22,7 @@ pub const EVENT_PET_CLAUDE_SESSIONS_TASK_REFIT: &str = "pet-claude-sessions-task
 /// panel 窗口导航请求（payload = MenuKey 字符串）。show_panel_window 在 show 后 emit_to panel 窗口，
 /// PanelApp 监听后切换到指定页面（如 pet 点击打开控制台时自动导航到 Claude 会话监听页）。
 pub const EVENT_PANEL_NAVIGATE: &str = "panel:navigate";
+
+/// panel 窗口从隐藏恢复时广播（无 payload）。show_panel_window 在 show 后 emit_to panel 窗口，
+/// 订阅方（RepositoriesPage）据此触发数据刷新，确保用户看到的始终是最新状态。
+pub const EVENT_PANEL_SHOWN: &str = "panel:shown";
