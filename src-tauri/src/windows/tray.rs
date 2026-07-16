@@ -115,11 +115,7 @@ pub fn setup(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     };
     let icon = tauri::image::Image::from_bytes(icon_bytes).expect("failed to load tray icon");
 
-    let tooltip = if cfg!(debug_assertions) {
-        "We Claude Terminal [DEV]"
-    } else {
-        "We Claude Terminal"
-    };
+    let tooltip = app.config().product_name.as_deref().unwrap_or("We Claude Terminal");
 
     let lang = current_language(app.handle());
 

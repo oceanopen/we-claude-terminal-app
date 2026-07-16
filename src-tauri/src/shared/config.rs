@@ -29,17 +29,10 @@ pub const DEFAULT_ITERM2_SPLIT_DIRECTION: &str = "horizontal";
 pub struct ConfigState(pub Mutex<Connection>);
 
 pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    let app_data_dir = app.path().app_data_dir()?;
-    // dev 构建使用独立子目录，避免调试时改动污染正式版用户数据（与 tray/lib 的 [DEV] 约定一致）
-    let data_dir = if cfg!(debug_assertions) {
-        app_data_dir.join("dev")
-    } else {
-        app_data_dir
-    };
+    let data_dir = app.path().app_data_dir()?;
+    // dev 构建通过 tauri.dev.conf.json 覆盖 identifier 为 .dev 后缀，
+    // 自动隔离到独立 app_data_dir，无需代码层再追加子目录。
     std::fs::create_dir_all(&data_dir)?;
-    if cfg!(debug_assertions) {
-        log::info!("[config] dev data dir: {}", data_dir.display());
-    }
     let db_path = data_dir.join("app.db");
     let conn = Connection::open(db_path)?;
     conn.execute(
