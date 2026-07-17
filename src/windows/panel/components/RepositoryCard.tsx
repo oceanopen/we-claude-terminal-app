@@ -7,11 +7,10 @@ import {
   CloudOutlined as CloudOutlinedIcon,
   DeleteOutlined as DeleteOutlinedIcon,
   EditOutlined as EditOutlinedIcon,
-  FolderOpenOutlined as FolderOpenOutlinedIcon,
   FolderOutlined as FolderOutlinedIcon,
   HistoryOutlined as HistoryOutlinedIcon,
 } from '@mui/icons-material';
-import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Divider, IconButton, Typography } from '@mui/material';
+import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Divider, IconButton, Link, Typography } from '@mui/material';
 import { formatDate, formatRelativeTime } from '@src/shared/time';
 import { useTranslation } from 'react-i18next';
 
@@ -21,7 +20,7 @@ const truncateSx = {
   whiteSpace: 'nowrap',
 } as const;
 
-// 单卡片：Header 仓库名 + 刷新/编辑/删除；Content 系统目录/仓库地址/当前分支/最近提交；Actions「在文件夹中打开」。
+// 单卡片：Header 仓库名 + 刷新/编辑/删除；Content 系统目录(点击打开)/仓库地址/当前分支/最近提交；Actions iTerm2 中打开。
 // 卡片 height:100% + flex column，保证网格内同行卡片高度对齐、操作栏贴底。
 interface RepositoryCardProps {
   repo: Repository;
@@ -100,9 +99,24 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
       <Divider />
       <CardContent sx={{ flex: 1 }}>
         <InfoRow icon={<FolderOutlinedIcon sx={{ fontSize: '0.95rem' }} />} label={t('repositories:card.dirLabel')}>
-          <Typography sx={{ fontFamily: 'monospace', fontSize: '0.75rem', ...truncateSx }} title={repo.dir}>
+          <Link
+            component="button"
+            type="button"
+            onClick={() => onOpenFolder(repo)}
+            title={repo.dir}
+            underline="hover"
+            sx={{
+              fontFamily: 'monospace',
+              fontSize: '0.75rem',
+              textAlign: 'left',
+              display: 'block',
+              width: '100%',
+              minWidth: 0,
+              ...truncateSx,
+            }}
+          >
             {repo.dir}
-          </Typography>
+          </Link>
         </InfoRow>
 
         <InfoRow icon={<CloudOutlinedIcon sx={{ fontSize: '0.95rem' }} />} label={t('repositories:card.remoteLabel')}>
@@ -133,9 +147,6 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
       </CardContent>
       <Divider />
       <CardActions>
-        <Button size="small" onClick={() => onOpenFolder(repo)} startIcon={<FolderOpenOutlinedIcon />}>
-          {t('repositories:card.openFolder')}
-        </Button>
         <Button size="small" onClick={() => onOpenInTerminal(repo, 'iterm2')} startIcon={<SiIterm2 size="1.25rem" color="currentColor" />}>
           {t('repositories:card.iTerm2')}
         </Button>
