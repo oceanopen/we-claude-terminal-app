@@ -91,7 +91,10 @@ export const commands = {
 	deleteRepository: (id: number) => typedError<null, string>(__TAURI_INVOKE("delete_repository", { id })),
 	/**  刷新单个仓库：重解析 git 信息并更新，返回新数据。 */
 	refreshRepository: (id: number) => typedError<Repository, string>(__TAURI_INVOKE("refresh_repository", { id })),
-	/**  全量刷新：遍历重解析全部仓库并更新，返回新列表。 */
+	/**
+	 *  全量刷新：遍历重解析全部仓库并更新，返回新列表。
+	 *  async + spawn_blocking：git 子进程操作让出 async 线程，不阻塞其他 IPC 调用。
+	 */
 	refreshAllRepositories: () => typedError<Repository[], string>(__TAURI_INVOKE("refresh_all_repositories")),
 	/**  用系统文件管理器打开目录。dir 必须为存在的绝对路径。 */
 	openInFileManager: (dir: string) => typedError<null, string>(__TAURI_INVOKE("open_in_file_manager", { dir })),

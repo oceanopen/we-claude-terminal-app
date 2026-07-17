@@ -36,6 +36,7 @@ export default await antfu(
       'style/brace-style': ['error', '1tbs'],
       'no-console': 'off',
       'style/jsx-one-expression-per-line': 'off',
+      'react/exhaustive-deps': 'off',
     },
   },
   {

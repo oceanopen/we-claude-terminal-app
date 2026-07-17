@@ -373,9 +373,10 @@ pub fn refresh_repository(state: State<'_, ConfigState>, id: i32) -> Result<Repo
 }
 
 /// 全量刷新：遍历重解析全部仓库并更新，返回新列表。
+/// async + spawn_blocking：git 子进程操作让出 async 线程，不阻塞其他 IPC 调用。
 #[tauri::command]
 #[specta::specta]
-pub fn refresh_all_repositories(
+pub async fn refresh_all_repositories(
     state: State<'_, ConfigState>,
 ) -> Result<Vec<Repository>, String> {
     let entries = {
@@ -383,11 +384,16 @@ pub fn refresh_all_repositories(
         list_id_dir_conn(&conn)?
     };
     let now = chrono::Utc::now().timestamp_millis();
-    // 串行解析全部（不持锁）；idle 仓库少，单次 ~100ms 量级可接受。
-    let infos: Vec<(i32, RepoInfo)> = entries
-        .iter()
-        .map(|(id, dir)| (*id, parse_repo_info(dir)))
-        .collect();
+    // 串行解析全部（不持锁）；git 操作通过 spawn_blocking 在阻塞线程池执行，
+    // async 线程让出供其他 IPC 使用。
+    let infos: Vec<(i32, RepoInfo)> = tauri::async_runtime::spawn_blocking(move || {
+        entries
+            .iter()
+            .map(|(id, dir)| (*id, parse_repo_info(dir)))
+            .collect()
+    })
+    .await
+    .map_err(|e| e.to_string())?;
     {
         let conn = state.0.lock().map_err(|e| e.to_string())?;
         // 收集错误而非提前返回：部分仓库 UPDATE 失败时，已成功的更新已落库，

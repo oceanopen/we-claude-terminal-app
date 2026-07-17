@@ -67,10 +67,7 @@ function RepositoriesPage({ windowShownTrigger }: { windowShownTrigger: number }
       await load();
       void refreshAll();
     })();
-  },
-  // 仅挂载时执行
-  // eslint-disable-next-line react/exhaustive-deps
-  []);
+  }, []); // 仅挂载时执行
 
   // PanelApp 通过 windowShownTrigger 通知窗口从隐藏恢复且当前页面为仓库管理页，触发刷新。
   useEffect(() => {
