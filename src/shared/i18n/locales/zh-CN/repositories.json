@@ -38,6 +38,8 @@
     "noBranch": "无分支",
     "noCommit": "无提交记录",
     "iTerm2": "iTerm2",
+    "vscode": "VSCode",
+    "idea": "IntelliJ IDEA",
     "refresh": "刷新",
     "edit": "编辑",
     "delete": "删除"

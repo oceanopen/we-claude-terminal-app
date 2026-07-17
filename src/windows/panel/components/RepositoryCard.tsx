@@ -1,6 +1,6 @@
 import type { Repository } from '@src/shared/bindings';
 import type { ReactNode } from 'react';
-import { SiIterm2 } from '@icons-pack/react-simple-icons';
+import { SiIntellijidea, SiIterm2 } from '@icons-pack/react-simple-icons';
 import {
   AccountTree as AccountTreeIcon,
   Autorenew as AutorenewIcon,
@@ -11,7 +11,11 @@ import {
   HistoryOutlined as HistoryOutlinedIcon,
 } from '@mui/icons-material';
 import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Divider, IconButton, Link, Typography } from '@mui/material';
+import vscodeIconSvg from '@src/assets/vscode.svg?raw';
+import { commands } from '@src/shared/bindings';
+import { unwrap } from '@src/shared/commands';
 import { formatDate, formatRelativeTime } from '@src/shared/time';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const truncateSx = {
@@ -20,7 +24,18 @@ const truncateSx = {
   whiteSpace: 'nowrap',
 } as const;
 
-// 单卡片：Header 仓库名 + 刷新/编辑/删除；Content 系统目录(点击打开)/仓库地址/当前分支/最近提交；Actions iTerm2 中打开。
+// VSCode 官方单色品牌图标（src/assets/vscode.svg 通过 ?raw 注入，保留 currentColor 主题色跟随；同 ClaudeSessionCard）。
+function VsCodeIcon() {
+  return (
+    <span
+      style={{ display: 'inline-flex', width: '1.25rem', height: '1.25rem' }}
+      // eslint-disable-next-line react/dom-no-dangerously-set-innerhtml -- 注入项目内静态 SVG 字符串，非外部输入，无 XSS 风险
+      dangerouslySetInnerHTML={{ __html: vscodeIconSvg }}
+    />
+  );
+}
+
+// 单卡片：Header 仓库名 + 刷新/编辑/删除；Content 系统目录(点击打开)/仓库地址/当前分支/最近提交；Actions 左下 VSCode/IDEA、右下 iTerm2。
 // 卡片 height:100% + flex column，保证网格内同行卡片高度对齐、操作栏贴底。
 interface RepositoryCardProps {
   repo: Repository;
@@ -62,6 +77,23 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
   const hasRemote = repo.remoteUrl.length > 0;
   const hasBranch = repo.branch.length > 0;
   const hasCommit = repo.lastCommitAt > 0;
+
+  // Java 项目判断（pom.xml / build.gradle / build.gradle.kts）：
+  // 决定 VSCode/IDEA 哪个禁用——Java 项目优先 IDEA，其他优先 VSCode（同 ClaudeSessionCard）。
+  // 命令返回裸 Promise<boolean>（非 typedError），错误时 fallback false（按非 Java 处理）。
+  const [isJava, setIsJava] = useState(false);
+  useEffect(() => {
+    commands.isJavaProject(repo.dir)
+      .then(setIsJava)
+      .catch(() => setIsJava(false));
+  }, [repo.dir]);
+
+  // 编辑器打开：失败时静默 warn（编辑器未装的常见场景，不值得用 toast 打断；同 ClaudeSessionCard）。
+  const handleOpenInEditor = useCallback((editor: 'vscode' | 'idea') => {
+    unwrap(commands.openInEditor(editor, repo.dir)).catch((e) => {
+      console.warn(`[repositories] openInEditor(${editor}) failed`, e);
+    });
+  }, [repo.dir]);
 
   return (
     <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -146,7 +178,25 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
         </InfoRow>
       </CardContent>
       <Divider />
-      <CardActions>
+      <CardActions sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            size="small"
+            disabled={isJava}
+            onClick={() => handleOpenInEditor('vscode')}
+            startIcon={<VsCodeIcon />}
+          >
+            {t('repositories:card.vscode')}
+          </Button>
+          <Button
+            size="small"
+            disabled={!isJava}
+            onClick={() => handleOpenInEditor('idea')}
+            startIcon={<SiIntellijidea size="1.15rem" color="currentColor" />}
+          >
+            {t('repositories:card.idea')}
+          </Button>
+        </Box>
         <Button size="small" onClick={() => onOpenInTerminal(repo, 'iterm2')} startIcon={<SiIterm2 size="1.25rem" color="currentColor" />}>
           {t('repositories:card.iTerm2')}
         </Button>
