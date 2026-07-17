@@ -30,9 +30,9 @@
     "confirm": "Save"
   },
   "card": {
-    "dirLabel": "Directory",
-    "remoteLabel": "Remote",
-    "branchLabel": "Branch",
+    "dirLabel": "System directory",
+    "remoteLabel": "Repository URL",
+    "branchLabel": "Current branch",
     "commitLabel": "Last commit",
     "noRemote": "No remote configured",
     "noBranch": "No branch",

@@ -21,7 +21,7 @@ const truncateSx = {
   whiteSpace: 'nowrap',
 } as const;
 
-// 单卡片：Header 仓库名 + 刷新/编辑/删除；Content 目录/远程/分支/最近提交；Actions「在文件夹中打开」。
+// 单卡片：Header 仓库名 + 刷新/编辑/删除；Content 系统目录/仓库地址/当前分支/最近提交；Actions「在文件夹中打开」。
 // 卡片 height:100% + flex column，保证网格内同行卡片高度对齐、操作栏贴底。
 interface RepositoryCardProps {
   repo: Repository;
@@ -40,7 +40,7 @@ function InfoRow({ icon, label, children }: { icon: ReactNode; label?: string; c
         sx={{
           width: 18,
           flexShrink: 0,
-          color: 'text.secondary',
+          color: 'text.disabled',
           display: 'flex',
           justifyContent: 'center',
         }}
@@ -48,7 +48,7 @@ function InfoRow({ icon, label, children }: { icon: ReactNode; label?: string; c
         {icon}
       </Box>
       {label && (
-        <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0, minWidth: 50 }}>
+        <Typography variant="caption" sx={{ color: 'text.disabled', flexShrink: 0, minWidth: 50 }}>
           {label}
         </Typography>
       )}
@@ -117,7 +117,7 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
                 <Chip size="small" variant="outlined" label={repo.branch} />
               )
             : (
-                <Typography variant="caption" color="text.disabled">
+                <Typography variant="caption" sx={{ color: 'text.disabled' }}>
                   {t('repositories:card.noBranch')}
                 </Typography>
               )}

@@ -30,9 +30,9 @@
     "confirm": "保存"
   },
   "card": {
-    "dirLabel": "目录",
-    "remoteLabel": "远程",
-    "branchLabel": "分支",
+    "dirLabel": "系统目录",
+    "remoteLabel": "仓库地址",
+    "branchLabel": "当前分支",
     "commitLabel": "最近提交",
     "noRemote": "未配置远程",
     "noBranch": "无分支",
