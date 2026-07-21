@@ -10,6 +10,7 @@ import {
 } from '@src/shared/config';
 import { EVENT_CLAUDE_SESSIONS_CHANGED } from '@src/shared/events';
 import { useConfigValue } from '@src/shared/useConfigValue';
+import { usePetHover } from '@src/shared/usePetHover';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useCallback, useEffect, useState } from 'react';
@@ -39,7 +40,7 @@ function decodeDraggable(v: string | null): boolean {
 function PetClaudeSessionsSummaryApp() {
   const [status, setStatus] = useState<ClaudeSessionStatus>('Dead');
   const [count, setCount] = useState(0);
-  const [hovered, setHovered] = useState(false);
+  const { hovered, handlers } = usePetHover();
   // 桌宠拖拽开关：开启时可拖拽、点击静默；关闭时不可拖拽、点击打开终端监控页。
   const draggable = useConfigValue(PET_CLAUDE_SESSIONS_SUMMARY_DRAGGABLE_KEY, decodeDraggable, false);
 
@@ -79,32 +80,11 @@ function PetClaudeSessionsSummaryApp() {
     });
   }, [count]);
 
-  // 鼠标悬停反馈：mouseenter 高亮、mouseleave 恢复（驱动 opacity 过渡）。
-  const handleMouseEnter = useCallback(() => {
-    setHovered(true);
-  }, []);
-  const handleMouseLeave = useCallback(() => {
-    setHovered(false);
-  }, []);
-  // 窗口失焦（打开新窗口 / 切换应用等）时清除 hover：失焦时鼠标常仍停在窗口内，
-  // mouseleave 不触发，需监听 Tauri focus 变化兜底。
-  useEffect(() => {
-    const unlisten = getCurrentWindow().onFocusChanged(({ payload: focused }) => {
-      if (!focused) {
-        setHovered(false);
-      }
-    });
-    return () => {
-      unlisten
-        .then(fn => fn())
-        .catch(err => console.warn('[pet-claude-sessions-summary] onFocusChanged unlisten failed:', err));
-    };
-  }, []);
   // 开启拖拽：鼠标按下进入原生窗口拖拽（startDragging 会吞掉后续 click，故无需特殊处理）。
   // 关闭拖拽：mouseDown 空转，交由 handleClick 打开终端监控页。
   const handleMouseDown = useCallback(async () => {
     // 点击即高亮：未聚焦窗口的 mouseenter 不触发，mousedown 是"鼠标在窗口内"最可靠的信号。
-    setHovered(true);
+    handlers.onMouseDown();
     if (!draggable) {
       return;
     }
@@ -113,7 +93,7 @@ function PetClaudeSessionsSummaryApp() {
     } catch (e) {
       console.warn('[pet-claude-sessions-summary] startDragging failed:', e);
     }
-  }, [draggable]);
+  }, [draggable, handlers]);
   // 关闭拖拽模式下点击桌宠打开终端监控页；开启模式下 startDragging 已吞掉 click，兜底再判一次。
   const handleClick = useCallback(async () => {
     if (draggable) {
@@ -141,8 +121,9 @@ function PetClaudeSessionsSummaryApp() {
         opacity: hovered ? 1 : 0.3,
         transition: 'opacity 0.2s',
       }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={handlers.onMouseEnter}
+      onMouseMove={handlers.onMouseMove}
+      onMouseLeave={handlers.onMouseLeave}
       onMouseDown={handleMouseDown}
       onClick={handleClick}
     >

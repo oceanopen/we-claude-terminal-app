@@ -9,8 +9,8 @@ import {
   EVENT_CLAUDE_SESSIONS_CHANGED,
   EVENT_PET_CLAUDE_SESSIONS_TASK_REFIT,
 } from '@src/shared/events';
+import { usePetHover } from '@src/shared/usePetHover';
 import { listen } from '@tauri-apps/api/event';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ClaudeSessionItem from './components/ClaudeSessionItem';
@@ -39,7 +39,7 @@ function PetClaudeSessionsTaskApp() {
   const [sessions, setSessions] = useState<ClaudeSessionInfo[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [hovered, setHovered] = useState(false);
+  const { hovered, handlers, reset } = usePetHover();
   const rootRef = useRef<HTMLDivElement>(null);
 
   // 初次拉取：失败静默（列表为空时自然展示空状态，不阻塞面板渲染）。
@@ -97,31 +97,6 @@ function PetClaudeSessionsTaskApp() {
     }
   }, []);
 
-  const handleMouseEnter = useCallback(() => {
-    setHovered(true);
-  }, []);
-  const handleMouseLeave = useCallback(() => {
-    setHovered(false);
-  }, []);
-  // 点击即高亮：未聚焦窗口的 mouseenter 不触发，mousedown 是"鼠标在窗口内"最可靠的信号。
-  const handleMouseDown = useCallback(() => {
-    setHovered(true);
-  }, []);
-  // 窗口失焦（打开新窗口 / 切换应用等）时清除 hover：失焦时鼠标常仍停在窗口内，
-  // mouseleave 不触发，需监听 Tauri focus 变化兜底。
-  useEffect(() => {
-    const unlisten = getCurrentWindow().onFocusChanged(({ payload: focused }) => {
-      if (!focused) {
-        setHovered(false);
-      }
-    });
-    return () => {
-      unlisten
-        .then(fn => fn())
-        .catch(err => console.warn('[pet-claude-sessions-task] onFocusChanged unlisten failed:', err));
-    };
-  }, []);
-
   // 重新测量 Paper 实际内容高度并回调 fit_pet_claude_sessions_task（set_size + 重新定位）。
   // 可复用：ResizeObserver（内容尺寸变化）、refit 事件（show / 未来 pet 拖动跟随）均调用它。
   const refit = useCallback(() => {
@@ -139,6 +114,8 @@ function PetClaudeSessionsTaskApp() {
   // 统一可复用入口——未来 pet 拖动跟随等"尺寸不变却需重定位"的场景也可复用同一事件。
   useEffect(() => {
     const unlisten = listen(EVENT_PET_CLAUDE_SESSIONS_TASK_REFIT, () => {
+      // show / 重定位后立刻 reset：清掉 hide 残留的 hovered 并抵消紧随的合成 mouseenter，确保弹出即暗态。
+      reset();
       refit();
     });
     return () => {
@@ -148,7 +125,7 @@ function PetClaudeSessionsTaskApp() {
           console.warn('[pet-claude-sessions-task:refit] unlisten failed:', err);
         });
     };
-  }, [refit]);
+  }, [refit, reset]);
 
   // 动态高度：ResizeObserver 监听 Paper 实际内容高度变化（会话增减 / 空态切换），
   // rAF 合并同帧多次回调后调 refit（set_size + 重新定位，保持与 pet 中心对齐）。
@@ -178,9 +155,10 @@ function PetClaudeSessionsTaskApp() {
     <Paper
       ref={rootRef}
       elevation={3}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onMouseDown={handleMouseDown}
+      onMouseEnter={handlers.onMouseEnter}
+      onMouseMove={handlers.onMouseMove}
+      onMouseLeave={handlers.onMouseLeave}
+      onMouseDown={handlers.onMouseDown}
       sx={{
         width: 280,
         display: 'flex',
