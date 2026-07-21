@@ -115,14 +115,15 @@ function RepositoriesPage({ windowShownTrigger }: { windowShownTrigger: number }
     }
   }, [t]);
 
-  const handleOpenFolder = useCallback((repo: Repository) => {
-    unwrap(commands.openInFileManager(repo.dir)).catch((e) => {
+  // 打开回调改为按 dir 传递：卡片「系统目录」行传仓库根目录，VSCode/iTerm2 经菜单选择后传「仓库目录 + 子目录」。
+  const handleOpenFolder = useCallback((dir: string) => {
+    unwrap(commands.openInFileManager(dir)).catch((e) => {
       setToast(t('repositories:toast.openFailed', { message: String(e) }));
     });
   }, [t]);
 
-  const handleOpenInTerminal = useCallback((repo: Repository, terminal: 'iterm2' | 'terminal') => {
-    unwrap(commands.openInTerminal(terminal, repo.dir)).catch((e) => {
+  const handleOpenInTerminal = useCallback((dir: string, terminal: 'iterm2' | 'terminal') => {
+    unwrap(commands.openInTerminal(terminal, dir)).catch((e) => {
       setToast(t('repositories:toast.openTerminalFailed', { message: String(e) }));
     });
   }, [t]);

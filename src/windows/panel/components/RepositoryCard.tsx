@@ -1,19 +1,36 @@
 import type { Repository } from '@src/shared/bindings';
-import type { ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { SiIntellijidea, SiIterm2 } from '@icons-pack/react-simple-icons';
 import {
   AccountTree as AccountTreeIcon,
   Autorenew as AutorenewIcon,
   CloudOutlined as CloudOutlinedIcon,
   DeleteOutlined as DeleteOutlinedIcon,
+  DescriptionOutlined as DescriptionOutlinedIcon,
   EditOutlined as EditOutlinedIcon,
   FolderOutlined as FolderOutlinedIcon,
   HistoryOutlined as HistoryOutlinedIcon,
+  SubdirectoryArrowRightOutlined as SubdirectoryArrowRightOutlinedIcon,
 } from '@mui/icons-material';
-import { Box, Button, Card, CardActions, CardContent, CardHeader, Chip, Divider, IconButton, Link, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardHeader,
+  Chip,
+  Divider,
+  IconButton,
+  Link,
+  Menu,
+  MenuItem,
+  Typography,
+} from '@mui/material';
 import vscodeIconSvg from '@src/assets/vscode.svg?raw';
 import { commands } from '@src/shared/bindings';
 import { unwrap } from '@src/shared/commands';
+import { joinRepoDir } from '@src/shared/repoPath';
 import { formatDate, formatRelativeTime } from '@src/shared/time';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -35,17 +52,22 @@ function VsCodeIcon() {
   );
 }
 
-// 单卡片：Header 仓库名 + 刷新/编辑/删除；Content 系统目录(点击打开)/仓库地址/当前分支/最近提交；Actions 左下 VSCode/IDEA、右下 iTerm2。
+// 单卡片：Header 仓库名 + 刷新/编辑/删除；Content 系统目录(点击打开)/仓库地址/当前分支/仓库描述/项目子目录/最近提交；
+// Actions 左下 VSCode/IDEA、右下 iTerm2——点击弹出 Menu 选择目标子目录（无子目录则直接打开仓库根目录）。
 // 卡片 height:100% + flex column，保证网格内同行卡片高度对齐、操作栏贴底。
+//
+// 打开目标统一按 dir: string 传递：系统目录行传仓库根目录，VSCode/IDEA/iTerm2 按菜单所选子目录拼接（无子目录时传根目录）。
 interface RepositoryCardProps {
   repo: Repository;
   refreshing: boolean;
-  onOpenFolder: (repo: Repository) => void;
-  onOpenInTerminal: (repo: Repository, terminal: 'iterm2' | 'terminal') => void;
+  onOpenFolder: (dir: string) => void;
+  onOpenInTerminal: (dir: string, terminal: 'iterm2' | 'terminal') => void;
   onRefresh: (repo: Repository) => void;
   onEdit: (repo: Repository) => void;
   onDelete: (repo: Repository) => void;
 }
+
+type OpenAction = 'vscode' | 'idea' | 'iterm2';
 
 function InfoRow({ icon, label, children }: { icon: ReactNode; label?: string; children: ReactNode }) {
   return (
@@ -77,6 +99,12 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
   const hasRemote = repo.remoteUrl.length > 0;
   const hasBranch = repo.branch.length > 0;
   const hasCommit = repo.lastCommitAt > 0;
+  const hasDesc = repo.description.length > 0;
+  const hasSubDirs = repo.subDirList.length > 0;
+
+  // 打开目标选择菜单：VSCode/IDEA/iTerm2 点击后若有子目录则弹 Menu 选择，无则直接打开仓库根目录。
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [menuAction, setMenuAction] = useState<OpenAction | null>(null);
 
   // Java 项目判断（pom.xml / build.gradle / build.gradle.kts）：
   // 决定 VSCode/IDEA 哪个禁用——Java 项目优先 IDEA，其他优先 VSCode（同 ClaudeSessionCard）。
@@ -88,12 +116,42 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
       .catch(() => setIsJava(false));
   }, [repo.dir]);
 
-  // 编辑器打开：失败时静默 warn（编辑器未装的常见场景，不值得用 toast 打断；同 ClaudeSessionCard）。
-  const handleOpenInEditor = useCallback((editor: 'vscode' | 'idea') => {
-    unwrap(commands.openInEditor(editor, repo.dir)).catch((e) => {
-      console.warn(`[repositories] openInEditor(${editor}) failed`, e);
-    });
-  }, [repo.dir]);
+  // 执行打开：vscode/idea 走 openInEditor（失败静默 warn，编辑器未装的常见场景；同 ClaudeSessionCard）；
+  // iterm2 走 onOpenInTerminal（失败 toast）。
+  const openTarget = useCallback((action: OpenAction, dir: string) => {
+    if (action === 'iterm2') {
+      onOpenInTerminal(dir, 'iterm2');
+    } else {
+      unwrap(commands.openInEditor(action, dir)).catch((e) => {
+        console.warn(`[repositories] openInEditor(${action}) failed`, e);
+      });
+    }
+  }, [onOpenInTerminal]);
+
+  // 操作按钮点击：无子目录直接打开仓库根目录；有子目录弹 Menu 选择。
+  const handleActionClick = (action: OpenAction, event: MouseEvent<HTMLElement>) => {
+    if (!hasSubDirs) {
+      openTarget(action, repo.dir);
+      return;
+    }
+    setMenuAction(action);
+    setMenuAnchor(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setMenuAction(null);
+  };
+
+  // 菜单选中某子目录：拼接仓库目录 + 子目录后打开。
+  const handleMenuItemClick = (subDir: string) => {
+    const target = joinRepoDir(repo.dir, subDir);
+    const action = menuAction;
+    handleMenuClose();
+    if (action) {
+      openTarget(action, target);
+    }
+  };
 
   return (
     <Card variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -134,7 +192,7 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
           <Link
             component="button"
             type="button"
-            onClick={() => onOpenFolder(repo)}
+            onClick={() => onOpenFolder(repo.dir)}
             title={repo.dir}
             underline="hover"
             sx={{
@@ -169,6 +227,42 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
               )}
         </InfoRow>
 
+        <InfoRow icon={<DescriptionOutlinedIcon sx={{ fontSize: '0.95rem' }} />} label={t('repositories:card.descLabel')}>
+          {hasDesc
+            ? (
+                <Typography variant="caption" sx={{ ...truncateSx, color: 'text.secondary' }} title={repo.description}>
+                  {repo.description}
+                </Typography>
+              )
+            : (
+                <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                  {t('repositories:card.noDesc')}
+                </Typography>
+              )}
+        </InfoRow>
+
+        <InfoRow icon={<SubdirectoryArrowRightOutlinedIcon sx={{ fontSize: '0.95rem' }} />} label={t('repositories:card.subDirsLabel')}>
+          {hasSubDirs
+            ? (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={repo.subDirList[0].subDir}
+                    title={repo.subDirList[0].subDirDescription || repo.subDirList[0].subDir}
+                  />
+                  {repo.subDirList.length > 1 && (
+                    <Chip size="small" label={`+${repo.subDirList.length - 1}`} />
+                  )}
+                </Box>
+              )
+            : (
+                <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                  {t('repositories:card.noSubDirs')}
+                </Typography>
+              )}
+        </InfoRow>
+
         <InfoRow icon={<HistoryOutlinedIcon sx={{ fontSize: '0.95rem' }} />} label={t('repositories:card.commitLabel')}>
           <Typography variant="caption" sx={{ color: hasCommit ? 'text.secondary' : 'text.disabled' }}>
             {hasCommit
@@ -183,7 +277,7 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
           <Button
             size="small"
             disabled={isJava}
-            onClick={() => handleOpenInEditor('vscode')}
+            onClick={e => handleActionClick('vscode', e)}
             startIcon={<VsCodeIcon />}
           >
             {t('repositories:card.vscode')}
@@ -191,16 +285,30 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
           <Button
             size="small"
             disabled={!isJava}
-            onClick={() => handleOpenInEditor('idea')}
+            onClick={e => handleActionClick('idea', e)}
             startIcon={<SiIntellijidea size="1.15rem" color="currentColor" />}
           >
             {t('repositories:card.idea')}
           </Button>
         </Box>
-        <Button size="small" onClick={() => onOpenInTerminal(repo, 'iterm2')} startIcon={<SiIterm2 size="1.25rem" color="currentColor" />}>
+        <Button size="small" onClick={e => handleActionClick('iterm2', e)} startIcon={<SiIterm2 size="1.25rem" color="currentColor" />}>
           {t('repositories:card.iTerm2')}
         </Button>
       </CardActions>
+
+      {/* 子目录选择菜单：仅当 subDirList 非空时，操作按钮点击触发。 */}
+      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={handleMenuClose}>
+        {repo.subDirList.map(sub => (
+          <MenuItem
+            key={sub.subDir}
+            onClick={() => handleMenuItemClick(sub.subDir)}
+            title={sub.subDirDescription || sub.subDir}
+            sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+          >
+            {sub.subDir}
+          </MenuItem>
+        ))}
+      </Menu>
     </Card>
   );
 }
