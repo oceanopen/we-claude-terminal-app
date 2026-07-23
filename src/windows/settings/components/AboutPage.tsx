@@ -48,7 +48,11 @@ function AboutPage() {
     }
     setState({ kind: 'checking' });
     try {
-      const update = await check({ timeout: 10_000 });
+      // 弱网下 plugin-updater 默认无应用层超时，会等到 OS/TCP 层才失败（最坏几分钟）。
+      // 单源 5s 硬超时：plugin v2 的 timeout 是 per-endpoint（每个 endpoint 独立享有一个 reqwest
+      // ClientBuilder.timeout 窗口），endpoints 数组 [GitHub, Gitee] 串行回退，最坏合计 10s。
+      // 超时后落入下方 catch 的 error 状态，用户可点「重试」。
+      const update = await check({ timeout: 5_000 });
       if (update) {
         updateRef.current = update;
         setState({ kind: 'available', update });

@@ -11,9 +11,12 @@ jobs:
     strategy:
       matrix:
         include:
-          # macOS 构建：生成通用二进制（同时支持 Intel 和 Apple Silicon）
+          # macOS 构建：Apple Silicon（M 芯片）
           - platform: macos-latest
-            args: --target universal-apple-darwin
+            args: --target aarch64-apple-darwin
+          # macOS 构建：Intel（x86_64）
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin
           # Windows 构建：默认 target，无需额外参数
           - platform: windows-latest
             args: ''
@@ -40,10 +43,10 @@ jobs:
         with:
           toolchain: stable
 
-      # 添加 macOS 多架构编译目标（x86_64 = Intel, aarch64 = Apple Silicon）
-      - name: Install macOS targets
+      # 添加 macOS 编译目标（按矩阵只安装当前架构对应的单个 target）
+      - name: Install macOS target
         if: matrix.platform == 'macos-latest'
-        run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
+        run: rustup target add ${{ matrix.args == '--target aarch64-apple-darwin' && 'aarch64-apple-darwin' || 'x86_64-apple-darwin' }}
 
       # 安装前端及 Tauri 依赖
       - name: Install app dependencies
@@ -75,3 +78,16 @@ jobs:
           releaseName: 'We Claude Terminal ${{ github.ref_name }}'
           releaseDraft: false
           prerelease: false
+
+  # ============================================================
+  # Gitee 同步：矩阵构建全部完成后执行（best-effort，绝不阻塞 GitHub 主流程）
+  # 实现已抽离为可复用 workflow（.github/workflows/release-gitee-sync.yml），此处仅声明依赖与调用。
+  # github.ref_name / github.sha / 所有 secrets 通过调用上下文自动继承（secrets: inherit），
+  # 故被调用 workflow 无需 inputs，何时运行由此处的 needs / if 决定。
+  # ============================================================
+  sync-gitee:
+    needs: build
+    # 仅当 mac+windows 矩阵全部成功才同步（构建失败则无资产可同步）
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    uses: ./.github/workflows/release-gitee-sync.yml
+    secrets: inherit

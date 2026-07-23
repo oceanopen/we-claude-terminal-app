@@ -30,3 +30,4 @@ dist-ssr
 *.sw?
 
 .claude-tmp
+__pycache__
