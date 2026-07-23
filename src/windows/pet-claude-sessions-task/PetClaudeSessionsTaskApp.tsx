@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import ClaudeSessionItem from './components/ClaudeSessionItem';
 import PetClaudeSessionsTaskEmptyState from './components/PetClaudeSessionsTaskEmptyState';
 
-// 排序优先级 SSOT（Waiting > Busy > GitPending > Idle > Dead）与 sortClaudeSessions
+// 排序优先级 SSOT（Waiting > GitPending > Busy > Idle > Dead）与 sortClaudeSessions
 // 均收敛在 claudeSessionStatus.ts，与 ClaudeSessionList / PetClaudeSessionsSummaryApp 共用。
 
 // 与 ClaudeSessionsPage 共用的 NavErr → toast i18n key 映射（保持两端错误文案一致）。

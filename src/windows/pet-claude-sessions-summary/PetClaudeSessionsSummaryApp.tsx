@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 import PetSprite from './components/PetSprite';
 
 // 状态聚合：取所有会话中"最需关注"的那个作为桌宠展示态（优先级 SSOT: claudeSessionStatus.ts，
-// Waiting > Busy > GitPending > Idle > Dead）。GitPending 排在 Idle 前：有未提交改动的空闲
+// Waiting > GitPending > Busy > Idle > Dead）。GitPending 排在 Idle 前：有未提交改动的空闲
 // 会话比纯空闲更值得提醒。空列表时为 Dead（无活跃会话的休眠态）。
 function aggregateStatus(sessions: ClaudeSessionInfo[]): { status: ClaudeSessionStatus; count: number } {
   if (sessions.length === 0) {

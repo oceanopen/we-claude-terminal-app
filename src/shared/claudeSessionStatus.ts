@@ -21,12 +21,12 @@ export const CLAUDE_SESSION_STATUS_I18N_KEY: Record<ClaudeSessionStatus, string>
   Dead: 'claudeSessions:status.dead',
 };
 
-// 排序优先级 SSOT：Waiting > Busy > GitPending > Idle > Dead。数字越小优先级越高。
+// 排序优先级 SSOT：Waiting > GitPending > Busy > Idle > Dead。数字越小优先级越高。
 // panel 列表、pet_task 列表、桌宠聚合共用，避免多份副本靠注释"对齐"而在加状态时漏改其一。
 export const CLAUDE_SESSION_STATUS_PRIORITY: Record<ClaudeSessionStatus, number> = {
   Waiting: 0,
-  Busy: 1,
-  GitPending: 2,
+  GitPending: 1,
+  Busy: 2,
   Idle: 3,
   Dead: 4,
 };
