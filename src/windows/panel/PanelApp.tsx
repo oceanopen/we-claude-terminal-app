@@ -10,6 +10,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
+import appIcon from '@src/assets/app-icon.svg';
 import { EVENT_PANEL_NAVIGATE, EVENT_PANEL_SHOWN } from '@src/shared/events';
 import { listen } from '@tauri-apps/api/event';
 import { useEffect, useState } from 'react';
@@ -70,9 +71,20 @@ function PanelApp() {
           bgcolor: 'background.paper',
         }}
       >
-        <Box sx={{ p: 2, textAlign: 'center' }}>
+        {/* pl:3 = 24px = List px:1(8) + ListItemButton paddingLeft(16)，
+            logo 容器宽 36px 复刻 ListItemIcon minWidth，使 logo / 标题
+            与下方菜单项的 icon / 文字分别垂直对齐。 */}
+        <Box sx={{ display: 'flex', alignItems: 'center', py: 2, pl: 3, pr: 2 }}>
+          <Box sx={{ width: 36, display: 'flex', alignItems: 'center' }}>
+            <Box
+              component="img"
+              src={appIcon}
+              alt={t('common:brand')}
+              sx={{ width: 24, height: 24, borderRadius: 0.5 }}
+            />
+          </Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }} color="text.secondary">
-            {t('common:brand')}
+            {t('panel:title')}
           </Typography>
         </Box>
         <List sx={{ px: 1 }}>
