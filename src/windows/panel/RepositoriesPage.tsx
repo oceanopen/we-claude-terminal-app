@@ -115,7 +115,7 @@ function RepositoriesPage({ windowShownTrigger }: { windowShownTrigger: number }
     }
   }, [t]);
 
-  // 打开回调改为按 dir 传递：卡片「系统目录」行传仓库根目录，VSCode/iTerm2 经菜单选择后传「仓库目录 + 子目录」。
+  // 打开回调改为按 dir 传递：卡片「仓库目录」行传仓库根目录，VSCode/iTerm2 经菜单选择后传「仓库目录 + 子目录」。
   const handleOpenFolder = useCallback((dir: string) => {
     unwrap(commands.openInFileManager(dir)).catch((e) => {
       setToast(t('repositories:toast.openFailed', { message: String(e) }));

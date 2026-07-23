@@ -6,11 +6,9 @@ import {
   Autorenew as AutorenewIcon,
   CloudOutlined as CloudOutlinedIcon,
   DeleteOutlined as DeleteOutlinedIcon,
-  DescriptionOutlined as DescriptionOutlinedIcon,
   EditOutlined as EditOutlinedIcon,
   FolderOutlined as FolderOutlinedIcon,
   HistoryOutlined as HistoryOutlinedIcon,
-  SubdirectoryArrowRightOutlined as SubdirectoryArrowRightOutlinedIcon,
 } from '@mui/icons-material';
 import {
   Box,
@@ -52,11 +50,11 @@ function VsCodeIcon() {
   );
 }
 
-// 单卡片：Header 仓库名 + 刷新/编辑/删除；Content 系统目录(点击打开)/仓库地址/当前分支/仓库描述/项目子目录/最近提交；
+// 单卡片：Header 仓库名 + 刷新/编辑/删除；Content 仓库目录(点击打开)/仓库地址/当前分支/最近提交；
 // Actions 左下 VSCode/IDEA、右下 iTerm2——点击弹出 Menu 选择目标子目录（无子目录则直接打开仓库根目录）。
 // 卡片 height:100% + flex column，保证网格内同行卡片高度对齐、操作栏贴底。
 //
-// 打开目标统一按 dir: string 传递：系统目录行传仓库根目录，VSCode/IDEA/iTerm2 按菜单所选子目录拼接（无子目录时传根目录）。
+// 打开目标统一按 dir: string 传递：仓库目录行传仓库根目录，VSCode/IDEA/iTerm2 按菜单所选子目录拼接（无子目录时传根目录）。
 interface RepositoryCardProps {
   repo: Repository;
   refreshing: boolean;
@@ -99,7 +97,6 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
   const hasRemote = repo.remoteUrl.length > 0;
   const hasBranch = repo.branch.length > 0;
   const hasCommit = repo.lastCommitAt > 0;
-  const hasDesc = repo.description.length > 0;
   const hasSubDirs = repo.subDirList.length > 0;
 
   // 打开目标选择菜单：VSCode/IDEA/iTerm2 点击后若有子目录则弹 Menu 选择，无则直接打开仓库根目录。
@@ -223,42 +220,6 @@ function RepositoryCard({ repo, refreshing, onOpenFolder, onOpenInTerminal, onRe
             : (
                 <Typography variant="caption" sx={{ color: 'text.disabled' }}>
                   {t('repositories:card.noBranch')}
-                </Typography>
-              )}
-        </InfoRow>
-
-        <InfoRow icon={<DescriptionOutlinedIcon sx={{ fontSize: '0.95rem' }} />} label={t('repositories:card.descLabel')}>
-          {hasDesc
-            ? (
-                <Typography variant="caption" sx={{ ...truncateSx, color: 'text.secondary' }} title={repo.description}>
-                  {repo.description}
-                </Typography>
-              )
-            : (
-                <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                  {t('repositories:card.noDesc')}
-                </Typography>
-              )}
-        </InfoRow>
-
-        <InfoRow icon={<SubdirectoryArrowRightOutlinedIcon sx={{ fontSize: '0.95rem' }} />} label={t('repositories:card.subDirsLabel')}>
-          {hasSubDirs
-            ? (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    label={repo.subDirList[0].subDir}
-                    title={repo.subDirList[0].subDirDescription || repo.subDirList[0].subDir}
-                  />
-                  {repo.subDirList.length > 1 && (
-                    <Chip size="small" label={`+${repo.subDirList.length - 1}`} />
-                  )}
-                </Box>
-              )
-            : (
-                <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                  {t('repositories:card.noSubDirs')}
                 </Typography>
               )}
         </InfoRow>

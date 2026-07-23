@@ -37,17 +37,13 @@
     "confirm": "Save"
   },
   "card": {
-    "dirLabel": "System directory",
+    "dirLabel": "Repository directory",
     "remoteLabel": "Repository URL",
     "branchLabel": "Current branch",
     "commitLabel": "Last commit",
-    "descLabel": "Description",
-    "subDirsLabel": "Subdirectories",
     "noRemote": "No remote configured",
     "noBranch": "No branch",
     "noCommit": "No commits",
-    "noDesc": "No description",
-    "noSubDirs": "No subdirectories",
     "iTerm2": "iTerm2",
     "vscode": "VSCode",
     "idea": "IntelliJ IDEA",

@@ -37,17 +37,13 @@
     "confirm": "保存"
   },
   "card": {
-    "dirLabel": "系统目录",
+    "dirLabel": "仓库目录",
     "remoteLabel": "仓库地址",
     "branchLabel": "当前分支",
     "commitLabel": "最近提交",
-    "descLabel": "仓库描述",
-    "subDirsLabel": "项目子目录",
     "noRemote": "未配置远程",
     "noBranch": "无分支",
     "noCommit": "无提交记录",
-    "noDesc": "未填写描述",
-    "noSubDirs": "未配置子目录",
     "iTerm2": "iTerm2",
     "vscode": "VSCode",
     "idea": "IntelliJ IDEA",
