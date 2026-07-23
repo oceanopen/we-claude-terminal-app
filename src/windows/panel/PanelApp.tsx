@@ -1,22 +1,41 @@
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import SensorsOutlinedIcon from '@mui/icons-material/SensorsOutlined';
 import {
   alpha,
   Box,
+  IconButton,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
 import appIcon from '@src/assets/app-icon.svg';
+import {
+  DEFAULT_PANEL_SIDEBAR_COLLAPSED,
+  isYes,
+  PANEL_SIDEBAR_COLLAPSED_KEY,
+  parseYesNo,
+  setConfig,
+  toYesNo,
+} from '@src/shared/config';
 import { EVENT_PANEL_NAVIGATE, EVENT_PANEL_SHOWN } from '@src/shared/events';
+import { useConfigValue } from '@src/shared/useConfigValue';
 import { listen } from '@tauri-apps/api/event';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ClaudeSessionsPage from './ClaudeSessionsPage';
 import RepositoriesPage from './RepositoriesPage';
+
+// 侧边栏折叠状态 decode：缺失/非法值回落到默认（展开）。
+// 模块级函数保证引用稳定（useConfigValue 依赖项要求，避免每次渲染重订阅）。
+function decodeSidebarCollapsed(raw: string | null): boolean {
+  return isYes(parseYesNo(raw, DEFAULT_PANEL_SIDEBAR_COLLAPSED));
+}
 
 // panel 窗口（控制台）是各种场景管理页面的通用容器。
 // 左侧菜单 + 右侧内容的交互复刻自 settings 窗口（SettingsApp）：
@@ -29,6 +48,11 @@ function PanelApp() {
   const [activeMenu, setActiveMenu] = useState<MenuKey>('claudeSessions');
   const [repoRefreshTrigger, setRepoRefreshTrigger] = useState(0);
   const theme = useTheme();
+  // 侧边栏折叠状态：订阅 config（跨重启持久化、多窗口同步）。setConfig 触发 config-changed 事件，hook 自动回写，无需手动 setState。
+  const collapsed = useConfigValue(PANEL_SIDEBAR_COLLAPSED_KEY, decodeSidebarCollapsed, false);
+  const toggleCollapsed = () => {
+    void setConfig(PANEL_SIDEBAR_COLLAPSED_KEY, toYesNo(!collapsed));
+  };
 
   // 监听后端 panel:navigate 事件，切换到指定页面（如 pet 点击打开控制台时自动导航到 Claude 会话监听页）。
   useEffect(() => {
@@ -62,20 +86,34 @@ function PanelApp() {
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
       <Box
         sx={{
-          width: 200,
+          width: collapsed ? 56 : 200,
           flexShrink: 0,
           borderRight: 1,
           borderColor: 'divider',
           display: 'flex',
           flexDirection: 'column',
           bgcolor: 'background.paper',
+          overflow: 'hidden',
+          transition: theme.transitions.create('width', {
+            duration: theme.transitions.duration.standard,
+            easing: theme.transitions.easing.sharp,
+          }),
         }}
       >
-        {/* pl:3 = 24px = List px:1(8) + ListItemButton paddingLeft(16)，
-            logo 容器宽 36px 复刻 ListItemIcon minWidth，使 logo / 标题
-            与下方菜单项的 icon / 文字分别垂直对齐。 */}
-        <Box sx={{ display: 'flex', alignItems: 'center', py: 2, pl: 3, pr: 2 }}>
-          <Box sx={{ width: 36, display: 'flex', alignItems: 'center' }}>
+        {/* 展开态：pl:3 = 24px = List px:1(8) + ListItemButton paddingLeft(16)，logo 容器宽 36px
+            复刻 ListItemIcon minWidth，使 logo / 标题与下方菜单项 icon / 文字分别垂直对齐。
+            折叠态：仅居中显示 logo，隐藏标题文字。 */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            py: 2,
+            pl: collapsed ? 0 : 3,
+            pr: collapsed ? 0 : 2,
+          }}
+        >
+          <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Box
               component="img"
               src={appIcon}
@@ -83,19 +121,24 @@ function PanelApp() {
               sx={{ width: 24, height: 24, borderRadius: 0.5 }}
             />
           </Box>
-          <Typography variant="body2" sx={{ fontWeight: 600 }} color="text.secondary">
-            {t('panel:title')}
-          </Typography>
+          {!collapsed && (
+            <Typography variant="body2" sx={{ fontWeight: 600 }} color="text.secondary">
+              {t('panel:title')}
+            </Typography>
+          )}
         </Box>
-        <List sx={{ px: 1 }}>
+        <List sx={{ px: collapsed ? 0 : 1 }}>
           {menuItems.map(item => (
             <ListItemButton
               key={item.key}
               selected={activeMenu === item.key}
               onClick={() => setActiveMenu(item.key)}
+              {...(collapsed ? { 'aria-label': item.label } : {})}
               sx={{
                 'borderRadius': 2,
                 'mb': 0.5,
+                'justifyContent': collapsed ? 'center' : 'flex-start',
+                'px': collapsed ? 0 : 2,
                 '&.Mui-selected': {
                   bgcolor:
                     theme.palette.mode === 'light'
@@ -114,13 +157,46 @@ function PanelApp() {
                 },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 36, color: 'text.primary' }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText primary={item.label} />
+              <Tooltip title={collapsed ? item.label : ''} placement="right" disableInteractive>
+                <ListItemIcon
+                  sx={{
+                    minWidth: collapsed ? 0 : 36,
+                    justifyContent: 'center',
+                    color: 'text.primary',
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+              </Tooltip>
+              {!collapsed && <ListItemText primary={item.label} />}
             </ListItemButton>
           ))}
         </List>
+        {/* 底部折叠切换按钮：mt:auto 推到侧边栏底部，展开态 ChevronLeft / 折叠态 ChevronRight。 */}
+        <Box
+          sx={{
+            mt: 'auto',
+            borderTop: 1,
+            borderColor: 'divider',
+            display: 'flex',
+            justifyContent: 'center',
+            py: 0.5,
+          }}
+        >
+          <Tooltip
+            title={collapsed ? t('panel:sidebar.expand') : t('panel:sidebar.collapse')}
+            placement="right"
+          >
+            <IconButton
+              onClick={toggleCollapsed}
+              size="small"
+              aria-label={collapsed ? t('panel:sidebar.expand') : t('panel:sidebar.collapse')}
+              sx={{ color: 'text.secondary' }}
+            >
+              {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       <Box

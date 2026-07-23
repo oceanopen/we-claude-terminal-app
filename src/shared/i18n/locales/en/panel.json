@@ -3,5 +3,9 @@
   "menu": {
     "claudeSessions": "Claude Sessions",
     "repositories": "Repository Management"
+  },
+  "sidebar": {
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
   }
 }

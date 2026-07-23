@@ -57,6 +57,11 @@ export type Iterm2SplitDirection = 'horizontal' | 'vertical' | 'none';
 export const ITERM2_SPLIT_DIRECTION_KEY = 'iterm2_split_direction';
 export const DEFAULT_ITERM2_SPLIT_DIRECTION: Iterm2SplitDirection = 'horizontal';
 
+// panel 窗口侧边栏折叠状态。值用 YesNo，缺失视为 NO（默认展开）。
+// 纯前端偏好，后端不读取，故无需在 config.rs 加常量副本（参照 appearance 先例）。
+export const PANEL_SIDEBAR_COLLAPSED_KEY = 'panel_sidebar_collapsed';
+export const DEFAULT_PANEL_SIDEBAR_COLLAPSED = YES_NO.NO;
+
 // commands.xxx() 返回 tauri-specta 的 typedError 包装。unwrap 展开为 throw 风格，
 // 保持 getConfig/setConfig 的对外 API 不变（错误时 throw）。
 export async function getConfig(key: string): Promise<string | null> {
