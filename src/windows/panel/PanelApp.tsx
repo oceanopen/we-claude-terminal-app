@@ -118,11 +118,11 @@ function PanelApp() {
               component="img"
               src={appIcon}
               alt={t('common:brand')}
-              sx={{ width: 24, height: 24, borderRadius: 0.5 }}
+              sx={{ width: 20, height: 20, borderRadius: 0.5 }}
             />
           </Box>
           {!collapsed && (
-            <Typography variant="body2" sx={{ fontWeight: 600 }} color="text.secondary">
+            <Typography variant="body2" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }} color="text.secondary">
               {t('panel:title')}
             </Typography>
           )}
@@ -154,6 +154,7 @@ function PanelApp() {
                 '& .MuiListItemText-primary': {
                   fontWeight: 600,
                   fontSize: '0.875rem',
+                  whiteSpace: 'nowrap',
                 },
               }}
             >
@@ -183,19 +184,14 @@ function PanelApp() {
             py: 0.5,
           }}
         >
-          <Tooltip
-            title={collapsed ? t('panel:sidebar.expand') : t('panel:sidebar.collapse')}
-            placement="right"
+          <IconButton
+            onClick={toggleCollapsed}
+            size="small"
+            aria-label={collapsed ? t('panel:sidebar.expand') : t('panel:sidebar.collapse')}
+            sx={{ color: 'text.secondary' }}
           >
-            <IconButton
-              onClick={toggleCollapsed}
-              size="small"
-              aria-label={collapsed ? t('panel:sidebar.expand') : t('panel:sidebar.collapse')}
-              sx={{ color: 'text.secondary' }}
-            >
-              {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-            </IconButton>
-          </Tooltip>
+            {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+          </IconButton>
         </Box>
       </Box>
 
