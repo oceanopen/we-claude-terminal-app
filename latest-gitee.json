@@ -1,0 +1,31 @@
+{
+  "version": "0.1.0",
+  "notes": "",
+  "pub_date": "2026-07-24T07:53:40.765Z",
+  "platforms": {
+    "darwin-aarch64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYld1Tnc1Q25Ud2t0Wm5kOFQ4ZjNtZUJQb0xRRUdmcjdMM2hObXJVYm42Z2Z5Rk5PQjcyY0szYXVvYll4Qlh3bDdPUkNOS0YyUGxJTmNhZ3UxQ29pTXdoYjhSdkhrQ3dFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0ODc5MzAyCWZpbGU6V2UgQ2xhdWRlIFRlcm1pbmFsLmFwcC50YXIuZ3oKZEtHTHdzOHlxcHlGOFRSQmc2SVBZdnIrd2ZmT1BrbGkwR0Q0SStTVGxrZXgvdURoc2xURmFySmZOeXVxMFNRRHlVeExFREF5YWJnUjRKN1ZFeGhaRGc9PQo=",
+      "url": "https://gitee.com/ocean-open/we-claude-terminal-app/releases/download/v0.1.0/We.Claude.Terminal_aarch64.app.tar.gz"
+    },
+    "darwin-aarch64-app": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYld1Tnc1Q25Ud2t0Wm5kOFQ4ZjNtZUJQb0xRRUdmcjdMM2hObXJVYm42Z2Z5Rk5PQjcyY0szYXVvYll4Qlh3bDdPUkNOS0YyUGxJTmNhZ3UxQ29pTXdoYjhSdkhrQ3dFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0ODc5MzAyCWZpbGU6V2UgQ2xhdWRlIFRlcm1pbmFsLmFwcC50YXIuZ3oKZEtHTHdzOHlxcHlGOFRSQmc2SVBZdnIrd2ZmT1BrbGkwR0Q0SStTVGxrZXgvdURoc2xURmFySmZOeXVxMFNRRHlVeExFREF5YWJnUjRKN1ZFeGhaRGc9PQo=",
+      "url": "https://gitee.com/ocean-open/we-claude-terminal-app/releases/download/v0.1.0/We.Claude.Terminal_aarch64.app.tar.gz"
+    },
+    "darwin-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYld1Tnc1Q25Ud2lrNGVtQXZkdFFLa0lPR1lvUG90NHlLTTdZRHphK1R5OW5lV01haCtCbDhFUE9GckJyUkM3cXgxNHcrZnJSOUVvWklFTDVrdS8xRDBOQmp1UlkwbWdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0ODc5MzA3CWZpbGU6V2UgQ2xhdWRlIFRlcm1pbmFsLmFwcC50YXIuZ3oKM1dNTWJBUG1OazFiN2UzNmtqQ243cUE1SEJWamF2SW91MUZnNmFMM2J3cERIUnRoTHV1NFRobkhnY0c3UDA1VnkxN0wxemtQbkIrZ1AyQmNuTGtWQXc9PQo=",
+      "url": "https://gitee.com/ocean-open/we-claude-terminal-app/releases/download/v0.1.0/We.Claude.Terminal_x64.app.tar.gz"
+    },
+    "darwin-x86_64-app": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYld1Tnc1Q25Ud2lrNGVtQXZkdFFLa0lPR1lvUG90NHlLTTdZRHphK1R5OW5lV01haCtCbDhFUE9GckJyUkM3cXgxNHcrZnJSOUVvWklFTDVrdS8xRDBOQmp1UlkwbWdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0ODc5MzA3CWZpbGU6V2UgQ2xhdWRlIFRlcm1pbmFsLmFwcC50YXIuZ3oKM1dNTWJBUG1OazFiN2UzNmtqQ243cUE1SEJWamF2SW91MUZnNmFMM2J3cERIUnRoTHV1NFRobkhnY0c3UDA1VnkxN0wxemtQbkIrZ1AyQmNuTGtWQXc9PQo=",
+      "url": "https://gitee.com/ocean-open/we-claude-terminal-app/releases/download/v0.1.0/We.Claude.Terminal_x64.app.tar.gz"
+    },
+    "windows-x86_64": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYld1Tnc1Q25Ud2hsc2NrOCtIL1hNandORFlvWmtVdmFzTWVJVFNBT0tZbjV1Mm9CdlJaclVlb044MmJLUVhPU0E1VHZYYkdQSW1nRkZ1dU1scFVORWo2VUVEVGhvT1E0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0ODc5NjE4CWZpbGU6V2UgQ2xhdWRlIFRlcm1pbmFsXzAuMS4wX3g2NC1zZXR1cC5leGUKNWgvZ1dHcityek5LQ2QwQnV5U1kzTUlzSzhkOGdCUkwyZW5iUm9PNEVSdEVOSlk0U2tobGRsOWVaODhRdVZrSlJLelpoV0JieHJrRytPMm5nalkrQ1E9PQo=",
+      "url": "https://gitee.com/ocean-open/we-claude-terminal-app/releases/download/v0.1.0/We.Claude.Terminal_0.1.0_x64-setup.exe"
+    },
+    "windows-x86_64-nsis": {
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVTYld1Tnc1Q25Ud2hsc2NrOCtIL1hNandORFlvWmtVdmFzTWVJVFNBT0tZbjV1Mm9CdlJaclVlb044MmJLUVhPU0E1VHZYYkdQSW1nRkZ1dU1scFVORWo2VUVEVGhvT1E0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg0ODc5NjE4CWZpbGU6V2UgQ2xhdWRlIFRlcm1pbmFsXzAuMS4wX3g2NC1zZXR1cC5leGUKNWgvZ1dHcityek5LQ2QwQnV5U1kzTUlzSzhkOGdCUkwyZW5iUm9PNEVSdEVOSlk0U2tobGRsOWVaODhRdVZrSlJLelpoV0JieHJrRytPMm5nalkrQ1E9PQo=",
+      "url": "https://gitee.com/ocean-open/we-claude-terminal-app/releases/download/v0.1.0/We.Claude.Terminal_0.1.0_x64-setup.exe"
+    }
+  }
+}
