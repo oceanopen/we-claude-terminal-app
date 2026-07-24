@@ -207,7 +207,7 @@ function AppDbPage() {
             </Box>
           )}
           {tablesStatus === 'ready' && (
-            <List dense disablePadding>
+            <List disablePadding>
               {tables.map(table => (
                 <ListItemButton
                   key={table.name}
@@ -216,6 +216,7 @@ function AppDbPage() {
                   sx={{
                     'pl': 2,
                     'pr': 1,
+                    'mb': 0.5,
                     '& .MuiListItemText-primary': {
                       fontWeight: 600,
                       fontSize: '0.8125rem',
@@ -307,7 +308,7 @@ function AppDbPage() {
           {selected && dumpStatus === 'ready' && dump && dump.rows.length > 0 && (
             // TableContainer 作为滚动容器（双向 overflow），stickyHeader 吸附其顶部。
             <TableContainer sx={{ height: '100%', overflow: 'auto' }}>
-              <Table stickyHeader size="small">
+              <Table stickyHeader>
                 <TableHead>
                   <TableRow>
                     {dump.columns.map(col => (
