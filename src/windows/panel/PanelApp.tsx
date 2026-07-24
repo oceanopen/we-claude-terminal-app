@@ -6,6 +6,7 @@ import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined';
 import {
   alpha,
   Box,
+  Breadcrumbs,
   IconButton,
   List,
   ListItemButton,
@@ -44,6 +45,9 @@ function decodeSidebarCollapsed(raw: string | null): boolean {
 // useState<MenuKey> 单状态 + menuItems 配置数组驱动左侧 List + 右侧条件渲染。
 // 当前菜单：Claude 会话监听、本地仓库管理；后续在此数组追加新菜单项即可扩展。
 type MenuKey = 'claudeSessions' | 'repositories' | 'appDb';
+
+// 顶部栏高度：左侧标题栏与右侧顶部导航栏共用，保证两者等高、底部分隔线水平对齐。
+const TOP_BAR_HEIGHT = 56;
 
 function PanelApp() {
   const { t } = useTranslation();
@@ -84,6 +88,8 @@ function PanelApp() {
     { key: 'repositories', label: t('panel:menu.repositories'), icon: <FolderOutlinedIcon /> },
     { key: 'appDb', label: t('panel:menu.appDb'), icon: <StorageOutlinedIcon /> },
   ];
+  // 顶部导航栏页面标题：当前激活菜单项 label；单层面包屑，预留未来主/子菜单扩展。
+  const activeLabel = menuItems.find(item => item.key === activeMenu)?.label ?? '';
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -108,12 +114,15 @@ function PanelApp() {
             折叠态：仅居中显示 logo，隐藏标题文字。 */}
         <Box
           sx={{
+            height: TOP_BAR_HEIGHT,
+            flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: collapsed ? 'center' : 'flex-start',
-            py: 2,
             pl: collapsed ? 0 : 3,
             pr: collapsed ? 0 : 2,
+            borderBottom: 1,
+            borderColor: 'divider',
           }}
         >
           <Box sx={{ width: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -201,13 +210,37 @@ function PanelApp() {
       <Box
         sx={{
           flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
           overflow: 'hidden',
           bgcolor: 'background.default',
         }}
       >
-        {activeMenu === 'claudeSessions' && <ClaudeSessionsPage />}
-        {activeMenu === 'repositories' && <RepositoriesPage windowShownTrigger={repoRefreshTrigger} />}
-        {activeMenu === 'appDb' && <AppDbPage />}
+        {/* 顶部导航栏：固定高度，与左侧标题栏等高；底部分隔线与左侧标题/菜单分隔线水平对齐。 */}
+        <Box
+          sx={{
+            height: TOP_BAR_HEIGHT,
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            px: 2,
+            borderBottom: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+          }}
+        >
+          <Breadcrumbs aria-label="breadcrumb">
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {activeLabel}
+            </Typography>
+          </Breadcrumbs>
+        </Box>
+        {/* 页面内容区：各页面自带 header 原样保留。 */}
+        <Box sx={{ flex: 1, overflow: 'hidden' }}>
+          {activeMenu === 'claudeSessions' && <ClaudeSessionsPage />}
+          {activeMenu === 'repositories' && <RepositoriesPage windowShownTrigger={repoRefreshTrigger} />}
+          {activeMenu === 'appDb' && <AppDbPage />}
+        </Box>
       </Box>
     </Box>
   );
