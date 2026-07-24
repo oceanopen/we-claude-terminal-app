@@ -2,6 +2,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import FolderOutlinedIcon from '@mui/icons-material/FolderOutlined';
 import SensorsOutlinedIcon from '@mui/icons-material/SensorsOutlined';
+import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined';
 import {
   alpha,
   Box,
@@ -28,6 +29,7 @@ import { useConfigValue } from '@src/shared/useConfigValue';
 import { listen } from '@tauri-apps/api/event';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import AppDbPage from './AppDbPage';
 import ClaudeSessionsPage from './ClaudeSessionsPage';
 import RepositoriesPage from './RepositoriesPage';
 
@@ -41,7 +43,7 @@ function decodeSidebarCollapsed(raw: string | null): boolean {
 // 左侧菜单 + 右侧内容的交互复刻自 settings 窗口（SettingsApp）：
 // useState<MenuKey> 单状态 + menuItems 配置数组驱动左侧 List + 右侧条件渲染。
 // 当前菜单：Claude 会话监听、本地仓库管理；后续在此数组追加新菜单项即可扩展。
-type MenuKey = 'claudeSessions' | 'repositories';
+type MenuKey = 'claudeSessions' | 'repositories' | 'appDb';
 
 function PanelApp() {
   const { t } = useTranslation();
@@ -80,6 +82,7 @@ function PanelApp() {
   const menuItems: { key: MenuKey; label: string; icon: React.ReactNode }[] = [
     { key: 'claudeSessions', label: t('panel:menu.claudeSessions'), icon: <SensorsOutlinedIcon /> },
     { key: 'repositories', label: t('panel:menu.repositories'), icon: <FolderOutlinedIcon /> },
+    { key: 'appDb', label: t('panel:menu.appDb'), icon: <StorageOutlinedIcon /> },
   ];
 
   return (
@@ -204,6 +207,7 @@ function PanelApp() {
       >
         {activeMenu === 'claudeSessions' && <ClaudeSessionsPage />}
         {activeMenu === 'repositories' && <RepositoriesPage windowShownTrigger={repoRefreshTrigger} />}
+        {activeMenu === 'appDb' && <AppDbPage />}
       </Box>
     </Box>
   );
